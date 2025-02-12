@@ -21,8 +21,8 @@ const (
 
 // redis
 const (
-	//TODO: рассмотреть вопрос о остальных кренденшелах
-	RedisHost = "REDIS_HOST"
-	RedisPort = "REDIS_PORT"
-	RedisDb   = "REDIS_DB"
+	RedisHost     = "REDIS_HOST"
+	RedisPort     = "REDIS_PORT"
+	RedisUser     = "REDIS_USER"
+	RedisPassword = "REDIS_PASSWORD"
 )

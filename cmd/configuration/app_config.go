@@ -23,9 +23,10 @@ type DatabaseConfig struct {
 }
 
 type RedisConfig struct {
-	Host string
-	Port int
-	Name string
+	Host     string
+	Port     int
+	User     string
+	Password string
 }
 
 func NewConfiguration() AppConfiguration {
@@ -41,9 +42,10 @@ func NewConfiguration() AppConfiguration {
 			MigrationPath: viper.GetString(globalConfig.DbMigrationPatch),
 		},
 		RedisConfig{
-			Host: viper.GetString(globalConfig.RedisHost),
-			Port: viper.GetInt(globalConfig.RedisPort),
-			Name: viper.GetString(globalConfig.RedisDb),
+			Host:     viper.GetString(globalConfig.RedisHost),
+			Port:     viper.GetInt(globalConfig.RedisPort),
+			User:     viper.GetString(globalConfig.RedisUser),
+			Password: viper.GetString(globalConfig.RedisPassword),
 		},
 	}
 }

@@ -2,14 +2,21 @@ package main
 
 import (
 	"chickChirick/cmd/configuration"
+	"chickChirick/cmd/factory"
+	"chickChirick/cmd/service"
+	"fmt"
 )
 
-//TIP <p>To run your code, right-click the code and select <b>Run</b>.</p> <p>Alternatively, click
-// the <icon src="AllIcons.Actions.Execute"/> icon in the gutter and select the <b>Run</b> menu item from here.</p>
-
 func main() {
+	factory.InitViper()
 	appConfig := configuration.NewConfiguration()
 
-	configuration.InitViper()
-	configuration.InitDB(appConfig.DatabaseConfig)
+	dbDecorator := service.InitAndPrepareORM(appConfig.DatabaseConfig)
+
+	redis := factory.InitRedis(appConfig.RedisConfig)
+	httpProvider := factory.InitHttpClient()
+	httpServer := factory.InitServer()
+
+	//TODO: временная строка
+	fmt.Println(dbDecorator, redis, httpProvider, httpServer)
 }
