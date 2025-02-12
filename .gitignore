@@ -1,3 +1,4 @@
 .idea
 redisdata
 db_data
+.env
