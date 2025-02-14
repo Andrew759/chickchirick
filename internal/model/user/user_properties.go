@@ -1,6 +1,9 @@
 package user
 
+import "gorm.io/gorm"
+
 type Properties struct {
+	gorm.Model
 	UserId int  `json:"user_id" gorm:"type:int"`
 	User   User `json:"user" gorm:"references:UserId"`
 	//TODO: Доработать таймзоны. Сейчас архитектура описана таким образом,
