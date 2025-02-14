@@ -12,8 +12,8 @@ func main() {
 	appConfig := configuration.NewConfiguration()
 
 	dbDecorator := service.InitAndPrepareORM(appConfig.DatabaseConfig)
+	redis := service.InitAndPrepareRedis(appConfig.RedisConfig)
 
-	redis := factory.InitRedis(appConfig.RedisConfig)
 	httpProvider := factory.InitHttpClient()
 	httpServer := factory.InitServer()
 
