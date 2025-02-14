@@ -1,0 +1,12 @@
+package user
+
+import "gorm.io/gorm"
+
+type User struct {
+	gorm.Model
+	Id       int     `json:"id" gorm:"type:int; unique; primaryKey; autoIncrement"`
+	Phone    int64   `json:"phone" gorm:"type:bigint"`
+	Name     string  `json:"name" gorm:"type:varchar(256)"`
+	Surname  string  `json:"surname" gorm:"type:varchar(256)"`
+	Password *string `json:"password" gorm:"type:varchar(1024)"`
+}
