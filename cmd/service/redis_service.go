@@ -22,10 +22,12 @@ func InitAndPrepareRedis(config configuration.RedisConfig) RedisDecorator {
 		Client: client,
 	}
 
+	redisClient.DeferRedisClose()
+
 	return redisClient
 }
 
-func (rd RedisDecorator) deferRedisClose() {
+func (rd RedisDecorator) DeferRedisClose() {
 	defer func(client *redis.Client) {
 		err := client.Close()
 		if err != nil {
