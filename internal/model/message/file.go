@@ -1,6 +1,7 @@
 package message
 
 import (
+	"github.com/jackc/pgx/v5/pgtype"
 	"gorm.io/gorm"
 )
 
@@ -10,5 +11,5 @@ type File struct {
 	MessageId int     `json:"message_id" gorm:"type:int"`
 	Message   Message `json:"message" gorm:"references:MessageId"`
 	//TODO: удалить автогенерацию и мок, когда будет реализован сервис файлов
-	FileUuid string `json:"file_uuid" gorm:"type:uuid; default:gen_random_uuid()"`
+	FileUuid pgtype.UUID `json:"file_uuid" gorm:"type:uuid; default:gen_random_uuid()"`
 }
