@@ -17,7 +17,7 @@ func InitHttpClient() *http.Client {
 			}).DialContext,
 			//Тайм-аут для TLS рукопожатия
 			TLSHandshakeTimeout: time.Second,
-			//Тайм аут для ожидания получения заголовков
+			//Тайм-аут для ожидания получения заголовков
 			ResponseHeaderTimeout: time.Second,
 		},
 	}

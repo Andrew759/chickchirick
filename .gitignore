@@ -1,4 +1,5 @@
 .idea
-redisdata
+redis_data
 db_data
 .env
+pkg/migration/console/migration.yaml

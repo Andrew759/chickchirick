@@ -1,7 +1,7 @@
 package service
 
 import (
-	"chickChirick/cmd/configuration"
+	"chickChirick/cmd/config"
 	"fmt"
 	"github.com/redis/go-redis/v9"
 	"strconv"
@@ -11,7 +11,7 @@ type RedisDecorator struct {
 	Client *redis.Client
 }
 
-func InitAndPrepareRedis(config configuration.RedisConfig) RedisDecorator {
+func InitRedis(config config.RedisConfig) RedisDecorator {
 	client := redis.NewClient(&redis.Options{
 		Addr:     config.Host + ":" + strconv.Itoa(config.Port),
 		Username: config.User,
@@ -22,16 +22,12 @@ func InitAndPrepareRedis(config configuration.RedisConfig) RedisDecorator {
 		Client: client,
 	}
 
-	redisClient.DeferRedisClose()
-
 	return redisClient
 }
 
-func (rd RedisDecorator) DeferRedisClose() {
-	defer func(client *redis.Client) {
-		err := client.Close()
-		if err != nil {
-			panic(fmt.Errorf("redis close error: %w", err))
-		}
-	}(rd.Client)
+func (rd RedisDecorator) RedisClose() {
+	err := rd.Client.Close()
+	if err != nil {
+		panic(fmt.Errorf("redis close error: %w", err))
+	}
 }

@@ -1,7 +1,7 @@
 package service
 
 import (
-	"chickChirick/cmd/configuration"
+	"chickChirick/cmd/config"
 	"database/sql"
 	"fmt"
 	"gorm.io/driver/postgres"
@@ -15,7 +15,7 @@ type DBDecorator struct {
 	NativeInterface *sql.DB
 }
 
-func InitAndPrepareORM(config configuration.DatabaseConfig) DBDecorator {
+func InitORM(config config.DataBaseConfigInterface) DBDecorator {
 	dsn := dsn(config)
 
 	ORM, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
@@ -23,38 +23,37 @@ func InitAndPrepareORM(config configuration.DatabaseConfig) DBDecorator {
 		panic(fmt.Errorf("db connect failed: %w", err))
 	}
 
-	//TODO: предусмотреть обработку ошибок?
-	nativeDB, _ := ORM.DB()
+	nativeDB, err := ORM.DB()
+	if err != nil {
+		panic(fmt.Errorf("error receiving the native interface: %w", err))
+	}
+
 	dbd := DBDecorator{
 		ORMInterface:    ORM,
 		NativeInterface: nativeDB,
 	}
 
-	dbd.DeferDBClose()
-
 	return dbd
 }
 
-func dsn(config configuration.DatabaseConfig) string {
+func dsn(config config.DataBaseConfigInterface) string {
 	dsn := []string{
-		"host=" + config.Host,
-		"user=" + config.User,
-		"password=" + config.Password,
-		"dbname=" + config.Name,
-		"port=" + strconv.Itoa(config.Port),
+		"host=" + config.Host(),
+		"user=" + config.User(),
+		"password=" + config.Password(),
+		"dbname=" + config.Name(),
+		"port=" + strconv.Itoa(config.Port()),
 	}
-	if config.Timezone != "" {
-		dsn = append(dsn, "TimeZone="+config.Timezone)
+	if config.Timezone() != "" {
+		dsn = append(dsn, "TimeZone="+config.Timezone())
 	}
 
 	return strings.Join(dsn, " ")
 }
 
-func (dbd DBDecorator) DeferDBClose() {
-	defer func(NativeInterface *sql.DB) {
-		err := NativeInterface.Close()
-		if err != nil {
-			panic(fmt.Errorf("db close error: %w", err))
-		}
-	}(dbd.NativeInterface)
+func (dbd DBDecorator) CloseDB() {
+	err := dbd.NativeInterface.Close()
+	if err != nil {
+		panic(fmt.Errorf("db close error: %w", err))
+	}
 }

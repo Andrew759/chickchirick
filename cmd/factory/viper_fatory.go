@@ -8,11 +8,26 @@ import (
 
 func InitViper() {
 	viper.SetConfigFile(".env")
+	readConfig()
+}
+
+func readConfig() {
 	if err := viper.ReadInConfig(); err != nil {
 		var configFileNotFoundError viper.ConfigFileNotFoundError
 		if errors.As(err, &configFileNotFoundError) {
 			panic(fmt.Errorf("config file not found: %w", err))
 		}
-		panic(fmt.Errorf("fatal error config file: %w", err))
+		panic(fmt.Errorf("viper fatal error: %w", err))
+	}
+}
+
+func MergeConfigByFile(fileName string) {
+	viper.SetConfigFile(fileName)
+	if err := viper.MergeInConfig(); err != nil {
+		var configFileNotFoundError viper.ConfigFileNotFoundError
+		if errors.As(err, &configFileNotFoundError) {
+			panic(fmt.Errorf("config file not found: %w", err))
+		}
+		panic(fmt.Errorf("viper fatal error: %w", err))
 	}
 }

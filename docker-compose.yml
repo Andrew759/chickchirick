@@ -25,7 +25,7 @@ services:
     ports:
       - ${REDIS_PORT}:${REDIS_INTERNAL_PORT}
     volumes:
-      - ./redisdata:/data
+      - ./redis_data:/data
 
   postgres:
     image: postgres:17.2

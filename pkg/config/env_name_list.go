@@ -1,4 +1,4 @@
-package configuration
+package config
 
 // environment
 const (
@@ -15,8 +15,8 @@ const (
 	DbName           = "DB_NAME"
 	DbUser           = "DB_USER"
 	DbPass           = "DB_PASS"
-	DbMigrationPatch = "DB_MIGRATION_PATCH"
 	DbTimezone       = "DB_TIMEZONE"
+	DbMigrationPatch = "DB_MIGRATION_PATCH"
 )
 
 // redis
