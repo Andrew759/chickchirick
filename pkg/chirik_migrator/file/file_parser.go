@@ -3,7 +3,8 @@ package file
 import (
 	"chickChirick/pkg/chirik_ast"
 	"chickChirick/pkg/chirik_migrator/console/config"
-	"chickChirick/pkg/chirik_migrator/migrator/factory"
+	"chickChirick/pkg/chirik_migrator/file/dto"
+	migratorDto "chickChirick/pkg/chirik_migrator/migrator/dto"
 	"fmt"
 	"github.com/spf13/viper"
 	"io/fs"
@@ -37,18 +38,27 @@ func ReadDir(entityNames []string) error {
 	return nil
 }
 
-func readFile(path string, entityNames []string) error {
+func readFile(path string, entityNames []string) migratorDto.MigratorInfo {
 	file, err := chirik_ast.ReadFile(path)
+	mInfo := migratorDto.MigratorInfo{}
 	if err != nil {
-		return fmt.Errorf("error while reading file %s", err)
+		mInfo.Err = fmt.Errorf("error while reading file %s", err)
 	}
 	structureList := file.Structures.List()
 	for _, structure := range structureList {
 		if len(entityNames) > 0 && !slices.Contains(entityNames, structure.Name()) {
-			return nil
+			continue
 		}
-		//TODO: тут не доработано
-		_, _ = factory.InitMigratorTag(structure.Fields())
+
+		fileInfo := dto.FileInfo{}
+		fileInfo.File = *file
+		fileInfo.Struct = *structure
+
+		mInfo := migratorDto.MigratorInfo{}
+		err := mInfo.FillByFileInfo(fileInfo)
+		if err != nil {
+			mInfo.Err = err
+		}
 	}
 
 	return nil
