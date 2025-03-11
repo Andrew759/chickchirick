@@ -1,9 +1,9 @@
-package service
+package file
 
 import (
 	"chickChirick/pkg/chirik_ast"
-	"chickChirick/pkg/migration/console/config"
-	"chickChirick/pkg/migration/console/factory"
+	"chickChirick/pkg/chirik_migrator/console/config"
+	"chickChirick/pkg/chirik_migrator/migrator/factory"
 	"fmt"
 	"github.com/spf13/viper"
 	"io/fs"
@@ -13,6 +13,7 @@ import (
 
 func ReadDir(entityNames []string) error {
 	var fPaths []string
+
 	err := filepath.WalkDir(viper.GetString(config.EntityPath),
 		func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
@@ -46,9 +47,8 @@ func readFile(path string, entityNames []string) error {
 		if len(entityNames) > 0 && !slices.Contains(entityNames, structure.Name()) {
 			return nil
 		}
-		tag, err := factory.InitMigratorTag(structure.Fields())
-		//TODO: временная строка
-		println(tag, err)
+		//TODO: тут не доработано
+		_, _ = factory.InitMigratorTag(structure.Fields())
 	}
 
 	return nil

@@ -1,4 +1,4 @@
-package config
+package chirik_config
 
 // environment
 const (

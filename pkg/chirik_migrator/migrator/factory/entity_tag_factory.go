@@ -2,12 +2,13 @@ package factory
 
 import (
 	"chickChirick/pkg/chirik_ast"
-	"chickChirick/pkg/migration/console/config"
-	"chickChirick/pkg/migration/console/dto"
+	"chickChirick/pkg/chirik_migrator/console/config"
+	"chickChirick/pkg/chirik_migrator/migrator/dto"
 	"fmt"
 	"strconv"
 )
 
+// InitMigratorTag TODO: возможно стоит вынести это в DTO?
 func InitMigratorTag(fields *chirik_ast.Fields) (dto.MigratorTag, error) {
 	mTagDto := dto.MigratorTag{}
 	tag := fields.Tag(config.MigratorTag)

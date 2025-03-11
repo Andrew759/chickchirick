@@ -1,7 +1,8 @@
 package service
 
 import (
-	"chickChirick/pkg/migration/console/config"
+	"chickChirick/pkg/chirik_migrator/console/config"
+	"chickChirick/pkg/chirik_migrator/file"
 	"fmt"
 	"os"
 )
@@ -17,7 +18,7 @@ func ParseInput() error {
 
 	switch command {
 	case config.MigrateKey:
-		return ReadDir(os.Args[2:])
+		return file.ReadDir(os.Args[2:])
 	default:
 		return fmt.Errorf("invalid command")
 	}

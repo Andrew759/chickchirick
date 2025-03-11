@@ -1,7 +1,7 @@
 package service
 
 import (
-	"chickChirick/cmd/config"
+	"chickChirick/cmd/config/dto"
 	"database/sql"
 	"fmt"
 	"gorm.io/driver/postgres"
@@ -11,11 +11,11 @@ import (
 )
 
 type DBDecorator struct {
-	ORMInterface    *gorm.DB
+	GormInterface   *gorm.DB
 	NativeInterface *sql.DB
 }
 
-func InitORM(config config.DataBaseConfigInterface) DBDecorator {
+func InitORM(config dto.DataBaseConfigInterface) DBDecorator {
 	dsn := dsn(config)
 
 	ORM, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
@@ -29,14 +29,14 @@ func InitORM(config config.DataBaseConfigInterface) DBDecorator {
 	}
 
 	dbd := DBDecorator{
-		ORMInterface:    ORM,
+		GormInterface:   ORM,
 		NativeInterface: nativeDB,
 	}
 
 	return dbd
 }
 
-func dsn(config config.DataBaseConfigInterface) string {
+func dsn(config dto.DataBaseConfigInterface) string {
 	dsn := []string{
 		"host=" + config.Host(),
 		"user=" + config.User(),

@@ -1,2 +1,0 @@
-DB_MIGRATION_PATH: ./
-DB_ENTITY_PATH: internal/model

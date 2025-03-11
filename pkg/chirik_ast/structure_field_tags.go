@@ -74,6 +74,7 @@ func (ts *Tags) String() string {
 	return ts.ast.Value
 }
 
+// TagsToString TODO: если и в дальнейшем не будет использоваться - удалить
 func TagsToString(tags []Tag) string {
 	if len(tags) == 0 {
 		return ""
