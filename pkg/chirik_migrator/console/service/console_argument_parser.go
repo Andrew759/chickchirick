@@ -18,7 +18,14 @@ func ParseInput() error {
 
 	switch command {
 	case config.MigrateKey:
-		return file.ReadDir(os.Args[2:])
+		//TODO: распараллелить?
+		parsedFileChunks, err := file.ReadDir(os.Args[2:])
+		if err != nil {
+			return err
+		}
+		Migrator.CreateTable(parsedFileChunks)
+
+		return nil
 	default:
 		return fmt.Errorf("invalid command")
 	}

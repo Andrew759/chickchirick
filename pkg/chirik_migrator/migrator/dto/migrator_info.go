@@ -15,23 +15,18 @@ type MigratorInfo struct {
 	Err             error
 }
 
-// FillByFileInfo TODO: перенести сет ошибки сюда
-func (mInfo *MigratorInfo) FillByFileInfo(fileInfo dto.FileInfo) error {
+func (mInfo *MigratorInfo) FillByFileInfo(fileInfo dto.FileInfo) {
 	fields := fileInfo.Struct.Fields()
 	tag := fields.Tag(config.MigratorTag)
 	if tag == nil {
-		return fmt.Errorf("fields has invalid tags: %v", fields)
+		mInfo.Err = fmt.Errorf("fields has invalid tags: %v", fields)
+		return
 	}
-	err := mInfo.fillByTag(tag)
-	if err != nil {
-		return err
-	}
+	mInfo.fillByTag(tag)
 	mInfo.FileInfo = fileInfo
-
-	return nil
 }
 
-func (mInfo *MigratorInfo) fillByTag(tag *chirik_ast.Tag) error {
+func (mInfo *MigratorInfo) fillByTag(tag *chirik_ast.Tag) {
 	tValue := tag.Values[0]
 
 	switch tag.Key {
@@ -50,11 +45,11 @@ func (mInfo *MigratorInfo) fillByTag(tag *chirik_ast.Tag) error {
 		case strconv.Itoa(config.BUN):
 			mInfo.ORMType = config.BUN
 		default:
-			return fmt.Errorf("unknown ORM type: %s", tValue)
+			mInfo.Err = fmt.Errorf("unknown ORM type: %s", tValue)
 		}
 	}
 
-	return nil
+	return
 }
 
 func (mInfo *MigratorInfo) HasError() bool {

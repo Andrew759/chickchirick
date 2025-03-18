@@ -12,9 +12,8 @@ import (
 	"slices"
 )
 
-func ReadDir(entityNames []string) error {
+func ReadDir(entityNames []string) (map[string][]migratorDto.MigratorInfo, error) {
 	var fPaths []string
-
 	err := filepath.WalkDir(viper.GetString(config.EntityPath),
 		func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
@@ -26,40 +25,43 @@ func ReadDir(entityNames []string) error {
 			return nil
 		})
 
+	fPathsLen := len(fPaths)
+	parsedFileEntities := make(map[string][]migratorDto.MigratorInfo, fPathsLen)
 	for _, path := range fPaths {
 		//TODO: распараллелить?
-		err = readFile(path, entityNames)
+		migratorInfoList := readFile(path, entityNames)
+		if migratorInfoList != nil {
+			parsedFileEntities[path] = migratorInfoList
+		}
 	}
 
-	if err != nil {
-		return fmt.Errorf("error while reading files %s", err)
-	}
-
-	return nil
+	return parsedFileEntities, err
 }
 
-func readFile(path string, entityNames []string) migratorDto.MigratorInfo {
+func readFile(path string, entityNames []string) []migratorDto.MigratorInfo {
 	file, err := chirik_ast.ReadFile(path)
 	mInfo := migratorDto.MigratorInfo{}
 	if err != nil {
 		mInfo.Err = fmt.Errorf("error while reading file %s", err)
 	}
 	structureList := file.Structures.List()
+
+	var mInfoList []migratorDto.MigratorInfo
 	for _, structure := range structureList {
 		if len(entityNames) > 0 && !slices.Contains(entityNames, structure.Name()) {
 			continue
 		}
 
 		fileInfo := dto.FileInfo{}
+		fileInfo.Path = path
 		fileInfo.File = *file
 		fileInfo.Struct = *structure
 
 		mInfo := migratorDto.MigratorInfo{}
-		err := mInfo.FillByFileInfo(fileInfo)
-		if err != nil {
-			mInfo.Err = err
-		}
+		mInfo.FillByFileInfo(fileInfo)
+
+		mInfoList = append(mInfoList, mInfo)
 	}
 
-	return nil
+	return mInfoList
 }
