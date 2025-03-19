@@ -23,6 +23,15 @@ func run([][]Migrator) {
 
 }
 
+func (m *Migrator) CreateTables(migratorEntities map[string][]migratorDto.MigratorInfo) error {
+	err = nil
+	for entityPath, migratorInfoList := range migratorEntities {
+
+	}
+	//TODO: implement this
+	return err
+}
+
 func (m Migrator) CreateTable(migratorEntities map[string][]migratorDto.MigratorInfo) error {
 	for entityPath, migratorInfoList := range migratorEntities {
 		for _, migratorInfo := range migratorInfoList {
@@ -30,7 +39,7 @@ func (m Migrator) CreateTable(migratorEntities map[string][]migratorDto.Migrator
 				//TODO: возможно стоит предусмотреть тут выбрасывание ошибки
 				continue
 			}
-			migratorInfo.
+			migratorInfo.ORMType
 		}
 	}
 	//TODO: implement this
