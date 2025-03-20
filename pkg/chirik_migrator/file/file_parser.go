@@ -26,16 +26,16 @@ func ReadDir(entityNames []string) (map[string][]migratorDto.MigratorInfo, error
 		})
 
 	fPathsLen := len(fPaths)
-	parsedFileEntities := make(map[string][]migratorDto.MigratorInfo, fPathsLen)
+	migratorEntities := make(map[string][]migratorDto.MigratorInfo, fPathsLen)
 	for _, path := range fPaths {
 		//TODO: распараллелить?
 		migratorInfoList := readFile(path, entityNames)
 		if migratorInfoList != nil {
-			parsedFileEntities[path] = migratorInfoList
+			migratorEntities[path] = migratorInfoList
 		}
 	}
 
-	return parsedFileEntities, err
+	return migratorEntities, err
 }
 
 func readFile(path string, entityNames []string) []migratorDto.MigratorInfo {

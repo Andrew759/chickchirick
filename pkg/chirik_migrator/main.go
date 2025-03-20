@@ -12,14 +12,19 @@ import (
 
 func main() {
 	loadConfig()
-	err := service.ParseInput()
-	if err != nil {
-		panic(fmt.Errorf("failed to parse input: %w", err))
-	}
 
 	dbConfig := dto.NewConfiguration()
 	dbDecorator := appService.InitORM(&dbConfig)
 	defer dbDecorator.CloseDB()
+	commandService := service.CommandService{
+		DBDecorator: dbDecorator,
+	}
+
+	err := commandService.ParseInput()
+	if err != nil {
+		panic(fmt.Errorf("failed to parse input: %w", err))
+	}
+
 }
 
 func loadConfig() {

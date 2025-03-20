@@ -1,47 +1,40 @@
 package migrator
 
 import (
+	"chickChirick/cmd/service"
 	migratorDto "chickChirick/pkg/chirik_migrator/migrator/dto"
-	"database/sql"
-	"gorm.io/gorm"
 )
 
-type DBDecorator struct {
-	ORMInterface    *gorm.DB
-	NativeInterface *sql.DB
-}
 type Config struct {
 	CreateIndexAfterCreateTable bool
-	DBDecorator
+	service.DBDecorator
 }
 
 type Migrator struct {
 	Config
 }
 
-func run([][]Migrator) {
-
-}
-
-func (m *Migrator) CreateTables(migratorEntities map[string][]migratorDto.MigratorInfo) error {
-	err = nil
-	for entityPath, migratorInfoList := range migratorEntities {
-
-	}
-	//TODO: implement this
-	return err
-}
-
-func (m Migrator) CreateTable(migratorEntities map[string][]migratorDto.MigratorInfo) error {
-	for entityPath, migratorInfoList := range migratorEntities {
+func (m Migrator) CreateTables(migratorEntities map[string][]migratorDto.MigratorInfo) error {
+	//TODO: тут можно использовать entityPath вместо пустого вызова, стоит ли? Либо удалить
+	for _, migratorInfoList := range migratorEntities {
 		for _, migratorInfo := range migratorInfoList {
-			if !migratorInfo.MigratorEnabled {
-				//TODO: возможно стоит предусмотреть тут выбрасывание ошибки
-				continue
-			}
-			migratorInfo.ORMType
+			return m.CreateTable(migratorInfo)
 		}
 	}
-	//TODO: implement this
+	return nil
+}
+
+func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
+	if !migratorInfo.MigratorEnabled {
+		//TODO: возможно стоит предусмотреть тут выбрасывание ошибки
+		return nil
+	}
+	//TODO: реализовать тут абстракцию или выпилить
+	if migratorInfo.HasError() {
+		return migratorInfo.Err
+	}
+	migratorInfo.EntityInfo.Struct.Fields()
+	//if migratorInfo.ORMType == config.GORM
+	//migratorInfo.ORMType
 	return nil
 }

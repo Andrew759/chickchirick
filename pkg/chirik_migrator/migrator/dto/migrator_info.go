@@ -11,7 +11,7 @@ import (
 type MigratorInfo struct {
 	MigratorEnabled bool
 	ORMType         int
-	FileInfo        dto.FileInfo
+	EntityInfo      dto.FileInfo
 	Err             error
 }
 
@@ -23,7 +23,7 @@ func (mInfo *MigratorInfo) FillByFileInfo(fileInfo dto.FileInfo) {
 		return
 	}
 	mInfo.fillByTag(tag)
-	mInfo.FileInfo = fileInfo
+	mInfo.EntityInfo = fileInfo
 }
 
 func (mInfo *MigratorInfo) fillByTag(tag *chirik_ast.Tag) {
