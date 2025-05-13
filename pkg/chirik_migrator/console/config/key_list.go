@@ -11,15 +11,9 @@ const (
 // Ключи тегов мигратора
 const (
 	MigratorTag      = "c_migrator"
-	MigratorOrmType  = "c_migrator_orm"
 	MigratorEnabled  = "enabled"
 	MigratorDisabled = "disabled"
-)
-
-// Список поддерживаемых ORM
-const (
-	GORM = iota
-	BUN
+	MigratorGormTag  = "gorm"
 )
 
 const (

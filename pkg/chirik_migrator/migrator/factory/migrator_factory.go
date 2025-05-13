@@ -6,16 +6,14 @@ import (
 )
 
 type migratorOptions struct { //Конфигурация структуры
-	createIndexAfterCreateTable *bool
+	createIndexAfterCreateTable bool
 }
 
 type MigratorOption func(options *migratorOptions)
 
 func WithCreateIndexAfterCreateTable() MigratorOption { //Функция конфигурации,
 	return func(mOptions *migratorOptions) {
-		if mOptions.createIndexAfterCreateTable == nil {
-			*mOptions.createIndexAfterCreateTable = true
-		}
+		mOptions.createIndexAfterCreateTable = true
 	}
 }
 
@@ -26,9 +24,9 @@ func InitMigrator(dBDecorator service.DBDecorator, opts ...MigratorOption) migra
 	}
 
 	return migrator.Migrator{
-		migrator.Config{
-			*mOptions.createIndexAfterCreateTable,
-			dBDecorator,
+		Config: migrator.Config{
+			CreateIndexAfterCreateTable: mOptions.createIndexAfterCreateTable,
+			DBDecorator:                 dBDecorator,
 		},
 	}
 }

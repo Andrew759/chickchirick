@@ -5,6 +5,8 @@ import (
 	migratorDto "chickChirick/pkg/chirik_migrator/migrator/dto"
 )
 
+//TODO: согласовать с интерфейсом
+
 type Config struct {
 	CreateIndexAfterCreateTable bool
 	service.DBDecorator
@@ -29,12 +31,9 @@ func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
 		//TODO: возможно стоит предусмотреть тут выбрасывание ошибки
 		return nil
 	}
-	//TODO: реализовать тут абстракцию или выпилить
 	if migratorInfo.HasError() {
-		return migratorInfo.Err
+		//TODO доделать
 	}
-	migratorInfo.EntityInfo.Struct.Fields()
-	//if migratorInfo.ORMType == config.GORM
-	//migratorInfo.ORMType
+
 	return nil
 }
