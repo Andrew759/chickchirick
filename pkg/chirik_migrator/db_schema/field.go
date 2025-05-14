@@ -1,6 +1,9 @@
 package db_schema
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type (
 	DataType string
@@ -27,14 +30,18 @@ type Field struct {
 	DefaultValue           string
 	NotNull                bool
 	Unique                 bool
-	Comment                string
-	Size                   int
-	Schema                 *Schema
-	EmbeddedSchema         *Schema
-	OwnerSchema            *Schema
+	//TODO: это мок, а не полноценная реализация
+	HasIndex       bool
+	Comment        string
+	Size           int
+	Schema         *Schema
+	EmbeddedSchema *Schema
+	OwnerSchema    *Schema
 }
 
 func (f Field) FllDataTypeByString(fieldType string) (Field, error) {
+	fieldType = strings.ToLower(fieldType)
+
 	switch fieldType {
 	case "int", "int8", "int16", "int32", "int64":
 		f.DataType = Int
@@ -59,10 +66,6 @@ func (f Field) FllDataTypeByString(fieldType string) (Field, error) {
 	}
 
 	return f, nil
-}
-
-func (f Field) FillDataTypeByGormTag(fieldType string) {
-
 }
 
 func (f Field) HasName() bool {

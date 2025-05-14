@@ -5,6 +5,7 @@ import (
 	"chickChirick/pkg/chirik_migrator/console/config"
 	"chickChirick/pkg/chirik_migrator/db_schema"
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -28,14 +29,20 @@ func (mInfo *MigratorInfo) FillByEntity(structure chirik_ast.Structure) {
 	}
 
 	schema := mInfo.PrepareEmptySchema(structure)
+	var schemaFields []db_schema.Field
+
 	for _, field := range fields.List() {
-		schemaField, err := mInfo.prepareSchemaField(*field)
+		schemaField, err := mInfo.prepareSchemaField(*field, &schema)
 		if err != nil {
 			mInfo.ErrList = append(mInfo.ErrList, err)
 		}
 
-		//TODO: временно
-		fmt.Println(schema, schemaField)
+		schemaFields = append(schemaFields, schemaField)
+	}
+
+	schema.
+	for _, preparedField := range schemaFields {
+
 	}
 
 	//TODO: тут предусмотреть удобную структуру с считанными тегами для мигратора. А это можно удалить
@@ -47,15 +54,16 @@ func (mInfo *MigratorInfo) HasError() bool {
 }
 
 func (mInfo *MigratorInfo) PrepareEmptySchema(structure chirik_ast.Structure) db_schema.Schema {
-	tableName := strings.ToLower(structure.Name())
-
 	schema := db_schema.Schema{}
-	schema.Name = tableName
+	schema.Name = structure.Name()
+
+	tableName := strings.ToLower(structure.Name())
+	schema.Table = tableName
 
 	return schema
 }
 
-func (mInfo *MigratorInfo) prepareSchemaField(field chirik_ast.Field) (db_schema.Field, error) {
+func (mInfo *MigratorInfo) prepareSchemaField(field chirik_ast.Field, schema *db_schema.Schema) (db_schema.Field, error) {
 	schemaField := db_schema.Field{}
 
 	fName := field.Name()
@@ -63,18 +71,23 @@ func (mInfo *MigratorInfo) prepareSchemaField(field chirik_ast.Field) (db_schema
 	fTags := field.Tags()
 
 	schemaField.Name = fName
+	schemaField.Schema = schema
+
 	schemaField, err := schemaField.FllDataTypeByString(fType)
 
 	if fTags != nil {
 		for _, tag := range fTags.List() {
-			mInfo.fillByTag(tag, &schemaField)
+			err := mInfo.fillByTag(tag, &schemaField)
+			if err != nil {
+				break
+			}
 		}
 	}
 
 	return schemaField, err
 }
 
-func (mInfo *MigratorInfo) fillByTag(tag chirik_ast.Tag, schemaField *db_schema.Field) {
+func (mInfo *MigratorInfo) fillByTag(tag chirik_ast.Tag, schemaField *db_schema.Field) error {
 	tKey := tag.Key
 	tScalarVal := tag.Values[0]
 
@@ -88,24 +101,52 @@ func (mInfo *MigratorInfo) fillByTag(tag chirik_ast.Tag, schemaField *db_schema.
 			mInfo.MigratorEnabled = false
 		}
 	case config.MigratorGormTag:
-		mInfo.fillByGormTag(*schemaField, tag.Values)
+		return mInfo.fillByGormTag(schemaField, tag.Values)
 	}
+
+	return nil
 }
 
-func (mInfo *MigratorInfo) fillByGormTag(schemaField db_schema.Field, tValues []string) {
-	for _, tValue := range tValues {
-		switch tValue {
+func (mInfo *MigratorInfo) fillByGormTag(schemaField *db_schema.Field, tValues []string) error {
+	var err error
+
+	for _, tFullValue := range tValues {
+		splitTValue := strings.Split(tFullValue, ":")
+		tPrefix := strings.Trim(splitTValue[0], `"`)
+		tValue := strings.Trim(splitTValue[1], `"`)
+
+		switch tPrefix {
 		case "column":
+			schemaField.Name = tValue
 		case "type":
+			_, err = schemaField.FllDataTypeByString(tValue)
 		case "size":
+			schemaField.Size, err = strconv.Atoi(tValue)
 		case "primaryKey":
+			schemaField.PrimaryKey = true
 		case "unique":
+			schemaField.Unique = true
 		case "default":
+			schemaField.DefaultValue = tValue
 		case "not null":
+			schemaField.NotNull = true
 		case "autoincrement":
+			schemaField.AutoIncrement, err = strconv.ParseBool(tValue)
 		case "autoIncrementIncrement":
+			schemaField.AutoIncrementIncrement, err = strconv.ParseInt(tValue, 10, 64)
 		case "index":
+			//TODO: не реализовано
+			schemaField.HasIndex = true
 		case "uniqueIndex":
+			schemaField.Unique, err = strconv.ParseBool(tValue)
+		case "comment":
+			schemaField.Comment = tValue
+		}
+
+		if err != nil {
+			break
 		}
 	}
+
+	return err
 }
