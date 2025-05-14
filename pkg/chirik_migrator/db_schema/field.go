@@ -10,14 +10,15 @@ type (
 )
 
 const (
-	Bool   DataType = "bool"
-	Int    DataType = "int"
-	Uint   DataType = "uint"
-	Float  DataType = "float"
-	String DataType = "string"
-	Time   DataType = "time"
-	Bytes  DataType = "bytes"
-	Uuid   DataType = "uuid"
+	Bool     DataType = "bool"
+	Smallint DataType = "smallint"
+	Int      DataType = "integer"
+	Bigint   DataType = "bigint"
+	Float    DataType = "float"
+	Varchar  DataType = "varchar"
+	Time     DataType = "time"
+	Bytes    DataType = "bytes"
+	Uuid     DataType = "uuid"
 )
 
 type Field struct {
@@ -39,21 +40,24 @@ type Field struct {
 	OwnerSchema    *Schema
 }
 
-func (f Field) FllDataTypeByString(fieldType string) (Field, error) {
+func (f Field) FillPgDataTypeByString(fieldType string) (Field, error) {
 	fieldType = strings.ToLower(fieldType)
 
 	switch fieldType {
-	case "int", "int8", "int16", "int32", "int64", "bigint":
+	case "int8", "int16", "uint8", "uint16":
+		f.DataType = Smallint
+		break
+	case "int32", "uint32":
 		f.DataType = Int
 		break
-	case "uint", "uint8", "uint16", "uint32", "uint64":
-		f.DataType = Uint
+	case "int", "int64", "bigint", "uint", "uint64":
+		f.DataType = Bigint
 		break
 	case "float", "float32", "float64":
 		f.DataType = Float
 		break
 	case "string", "varchar":
-		f.DataType = String
+		f.DataType = Varchar
 		break
 	case "bool":
 		f.DataType = Bool

@@ -80,7 +80,7 @@ func (mInfo *MigratorInfo) prepareSchemaField(field chirik_ast.Field, schema *db
 	schemaField.Name = fName
 	schemaField.Schema = schema
 
-	schemaField, err := schemaField.FllDataTypeByString(fType)
+	schemaField, err := schemaField.FillPgDataTypeByString(fType)
 
 	if fTags != nil {
 		for _, tag := range fTags.List() {
@@ -123,19 +123,19 @@ func (mInfo *MigratorInfo) fillByGormTag(schemaField *db_schema.Field, tValues [
 		tPrefix := strings.Trim(splitTValue[0], `"`)
 		tValue := strings.Trim(splitTValue[1], `"`)
 
-		matches := tValueWithSizeRe.FindStringSubmatch(tValue)
-		if len(matches) == 3 {
-			tValue = matches[1]
+		valuesWithSize := tValueWithSizeRe.FindStringSubmatch(tValue)
+		if len(valuesWithSize) == 3 {
+			tValue = valuesWithSize[1]
 
-			//Предварительная установка размера, если он указан как тип, а не в виде отдельного параметра
-			schemaField.Size, err = strconv.Atoi(matches[2])
+			//В данном кейсе размер устанавливается заранее
+			schemaField.Size, err = strconv.Atoi(valuesWithSize[2])
 		}
 
 		switch tPrefix {
 		case "column":
 			schemaField.Name = tValue
 		case "type":
-			_, err = schemaField.FllDataTypeByString(tValue)
+			_, err = schemaField.FillPgDataTypeByString(tValue)
 		case "size":
 			schemaField.Size, err = strconv.Atoi(tValue)
 		case "primaryKey":
