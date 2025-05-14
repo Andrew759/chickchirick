@@ -5,6 +5,7 @@ import (
 	"chickChirick/pkg/chirik_migrator/console/config"
 	"chickChirick/pkg/chirik_migrator/db_schema"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -29,7 +30,7 @@ func (mInfo *MigratorInfo) FillByEntity(structure chirik_ast.Structure) {
 	}
 
 	schema := mInfo.PrepareEmptySchema(structure)
-	var schemaFields []db_schema.Field
+	var schemaFields []*db_schema.Field
 
 	for _, field := range fields.List() {
 		schemaField, err := mInfo.prepareSchemaField(*field, &schema)
@@ -37,16 +38,22 @@ func (mInfo *MigratorInfo) FillByEntity(structure chirik_ast.Structure) {
 			mInfo.ErrList = append(mInfo.ErrList, err)
 		}
 
-		schemaFields = append(schemaFields, schemaField)
+		schemaFields = append(schemaFields, &schemaField)
 	}
 
-	schema.
+	schema.Fields = schemaFields
+
+	//TODO: сейчас не работает
+	var schemaForeignKey []*db_schema.Field
+	schema.ForeignKey = schemaForeignKey
+
 	for _, preparedField := range schemaFields {
-
+		if preparedField.PrimaryKey {
+			schema.PrimaryKey = preparedField
+		}
 	}
 
-	//TODO: тут предусмотреть удобную структуру с считанными тегами для мигратора. А это можно удалить
-	//mInfo.EntityInfo = fileInfo
+	mInfo.Schema = schema
 }
 
 func (mInfo *MigratorInfo) HasError() bool {
@@ -109,11 +116,20 @@ func (mInfo *MigratorInfo) fillByTag(tag chirik_ast.Tag, schemaField *db_schema.
 
 func (mInfo *MigratorInfo) fillByGormTag(schemaField *db_schema.Field, tValues []string) error {
 	var err error
+	tValueWithSizeRe := regexp.MustCompile(`([a-zA-Zа-яА-ЯёЁ]+)\((\d+)\)`)
 
 	for _, tFullValue := range tValues {
 		splitTValue := strings.Split(tFullValue, ":")
 		tPrefix := strings.Trim(splitTValue[0], `"`)
 		tValue := strings.Trim(splitTValue[1], `"`)
+
+		matches := tValueWithSizeRe.FindStringSubmatch(tValue)
+		if len(matches) == 3 {
+			tValue = matches[1]
+
+			//Предварительная установка размера, если он указан как тип, а не в виде отдельного параметра
+			schemaField.Size, err = strconv.Atoi(matches[2])
+		}
 
 		switch tPrefix {
 		case "column":

@@ -43,7 +43,7 @@ func (f Field) FllDataTypeByString(fieldType string) (Field, error) {
 	fieldType = strings.ToLower(fieldType)
 
 	switch fieldType {
-	case "int", "int8", "int16", "int32", "int64":
+	case "int", "int8", "int16", "int32", "int64", "bigint":
 		f.DataType = Int
 		break
 	case "uint", "uint8", "uint16", "uint32", "uint64":
@@ -52,7 +52,7 @@ func (f Field) FllDataTypeByString(fieldType string) (Field, error) {
 	case "float", "float32", "float64":
 		f.DataType = Float
 		break
-	case "string":
+	case "string", "varchar":
 		f.DataType = String
 		break
 	case "bool":
@@ -60,6 +60,12 @@ func (f Field) FllDataTypeByString(fieldType string) (Field, error) {
 		break
 	case "byte", "rune":
 		f.DataType = Bytes
+		break
+	case "time":
+		f.DataType = Time
+		break
+	case "uuid":
+		f.DataType = Uuid
 		break
 	default:
 		return f, fmt.Errorf("unknown type: %s", fieldType)
