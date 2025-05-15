@@ -53,6 +53,7 @@ func (f Field) FillPgDataTypeByString(fieldType string) (Field, error) {
 	case "int", "int64", "bigint", "uint", "uint64":
 		f.DataType = Bigint
 		break
+		//TODO: не доработано
 	case "float", "float32", "float64":
 		f.DataType = Float
 		break

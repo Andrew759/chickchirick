@@ -6,7 +6,7 @@ import (
 
 type Personal struct {
 	gorm.Model
-	Id                int          `json:"id" gorm:"type:int; unique; primaryKey; autoIncrement"`
+	Id                int          `json:"id" gorm:"type:int;unique;primaryKey;autoIncrement"`
 	MessageId         int          `json:"message_id" gorm:"type:int"`
 	Message           Message      `json:"message" gorm:"references:MessageId"`
 	SenderId          int          `json:"sender_id" gorm:"type:int"`

@@ -33,6 +33,11 @@ func (mInfo *MigratorInfo) FillByEntity(structure chirik_ast.Structure) {
 	var schemaFields []*db_schema.Field
 
 	for _, field := range fields.List() {
+		//Пропуск незначищих полей
+		if field.Name() == "" {
+			continue
+		}
+
 		schemaField, err := mInfo.prepareSchemaField(*field, &schema)
 		if err != nil {
 			mInfo.ErrList = append(mInfo.ErrList, err)
@@ -73,16 +78,14 @@ func (mInfo *MigratorInfo) PrepareEmptySchema(structure chirik_ast.Structure) db
 func (mInfo *MigratorInfo) prepareSchemaField(field chirik_ast.Field, schema *db_schema.Schema) (db_schema.Field, error) {
 	schemaField := db_schema.Field{}
 
-	fName := field.Name()
-	fType := field.Type().Value()
-	fTags := field.Tags()
-
-	schemaField.Name = fName
+	schemaField.Name = field.Name()
 	schemaField.Schema = schema
 
-	schemaField, err := schemaField.FillPgDataTypeByString(fType)
+	schemaField, err := schemaField.FillPgDataTypeByString(field.Type().Value())
 
+	fTags := field.Tags()
 	if fTags != nil {
+		//fTags.ListMock()
 		for _, tag := range fTags.List() {
 			err := mInfo.fillByTag(tag, &schemaField)
 			if err != nil {
@@ -120,8 +123,12 @@ func (mInfo *MigratorInfo) fillByGormTag(schemaField *db_schema.Field, tValues [
 
 	for _, tFullValue := range tValues {
 		splitTValue := strings.Split(tFullValue, ":")
+
 		tPrefix := strings.Trim(splitTValue[0], `"`)
-		tValue := strings.Trim(splitTValue[1], `"`)
+		tValue := strings.Trim(splitTValue[0], `"`)
+		if len(splitTValue) > 1 {
+			tValue = strings.Trim(splitTValue[1], `"`)
+		}
 
 		valuesWithSize := tValueWithSizeRe.FindStringSubmatch(tValue)
 		if len(valuesWithSize) == 3 {
