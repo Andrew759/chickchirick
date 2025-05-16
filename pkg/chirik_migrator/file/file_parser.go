@@ -3,7 +3,7 @@ package file
 import (
 	"chickChirick/pkg/chirik_ast"
 	"chickChirick/pkg/chirik_migrator/console/config"
-	migratorDto "chickChirick/pkg/chirik_migrator/migrator/dto"
+	migratorDto "chickChirick/pkg/chirik_migrator/migrator/provider"
 	"fmt"
 	"github.com/spf13/viper"
 	"io/fs"

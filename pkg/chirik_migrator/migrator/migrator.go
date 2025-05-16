@@ -2,7 +2,7 @@ package migrator
 
 import (
 	"chickChirick/cmd/service"
-	migratorDto "chickChirick/pkg/chirik_migrator/migrator/dto"
+	migratorDto "chickChirick/pkg/chirik_migrator/migrator/provider"
 )
 
 //TODO: согласовать с интерфейсом

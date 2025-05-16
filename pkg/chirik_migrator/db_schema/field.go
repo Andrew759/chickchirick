@@ -16,6 +16,7 @@ const (
 	Bigint   DataType = "bigint"
 	Float    DataType = "float"
 	Varchar  DataType = "varchar"
+	Text     DataType = "text"
 	Time     DataType = "time"
 	Bytes    DataType = "bytes"
 	Uuid     DataType = "uuid"
@@ -32,10 +33,11 @@ type Field struct {
 	NotNull                bool
 	Unique                 bool
 	//TODO: это мок, а не полноценная реализация
-	HasIndex       bool
-	Comment        string
-	Size           int
-	Schema         *Schema
+	HasIndex bool
+	Comment  string
+	Size     int
+	Schema   *Schema
+	//TODO: необходимо доработать
 	EmbeddedSchema *Schema
 	OwnerSchema    *Schema
 }
@@ -60,6 +62,8 @@ func (f Field) FillPgDataTypeByString(fieldType string) (Field, error) {
 	case "string", "varchar":
 		f.DataType = Varchar
 		break
+	case "text":
+		f.DataType = Text
 	case "bool":
 		f.DataType = Bool
 		break
@@ -85,4 +89,8 @@ func (f Field) HasName() bool {
 
 func (f Field) HasDataType() bool {
 	return f.DataType != ""
+}
+
+func (f Field) HasSize() bool {
+	return f.Size != 0
 }

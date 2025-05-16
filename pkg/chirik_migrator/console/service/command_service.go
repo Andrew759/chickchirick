@@ -4,8 +4,8 @@ import (
 	"chickChirick/cmd/service"
 	"chickChirick/pkg/chirik_migrator/console/config"
 	"chickChirick/pkg/chirik_migrator/file"
-	migratorDto "chickChirick/pkg/chirik_migrator/migrator/dto"
 	"chickChirick/pkg/chirik_migrator/migrator/factory"
+	migratorDto "chickChirick/pkg/chirik_migrator/migrator/provider"
 	"fmt"
 	"os"
 )

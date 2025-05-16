@@ -2,7 +2,7 @@ package abstraction
 
 import (
 	"chickChirick/pkg/chirik_migrator/db_schema"
-	migratorDto "chickChirick/pkg/chirik_migrator/migrator/dto"
+	migratorDto "chickChirick/pkg/chirik_migrator/migrator/provider"
 	"reflect"
 )
 

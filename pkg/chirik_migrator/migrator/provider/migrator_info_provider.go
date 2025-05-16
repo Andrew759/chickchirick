@@ -1,4 +1,4 @@
-package dto
+package provider
 
 import (
 	"chickChirick/pkg/chirik_ast"
@@ -12,10 +12,8 @@ import (
 
 type MigratorInfo struct {
 	MigratorEnabled bool
-	//TODO: дорабоать
-	//EntityInfo      dto.FileInfo
-	Schema  db_schema.Schema
-	ErrList []error
+	Schema          db_schema.Schema
+	ErrList         []error
 }
 
 func (mInfo *MigratorInfo) FillByEntity(structure chirik_ast.Structure) {
@@ -153,15 +151,15 @@ func (mInfo *MigratorInfo) fillByGormTag(schemaField *db_schema.Field, tValues [
 			schemaField.DefaultValue = tValue
 		case "not null":
 			schemaField.NotNull = true
-		case "autoincrement":
-			schemaField.AutoIncrement, err = strconv.ParseBool(tValue)
+		case "autoIncrement":
+			schemaField.AutoIncrement = true
 		case "autoIncrementIncrement":
 			schemaField.AutoIncrementIncrement, err = strconv.ParseInt(tValue, 10, 64)
 		case "index":
 			//TODO: не реализовано
 			schemaField.HasIndex = true
 		case "uniqueIndex":
-			schemaField.Unique, err = strconv.ParseBool(tValue)
+			schemaField.Unique = true
 		case "comment":
 			schemaField.Comment = tValue
 		}
