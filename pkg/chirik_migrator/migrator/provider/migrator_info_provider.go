@@ -31,14 +31,15 @@ func (mInfo *MigratorInfo) FillByEntity(structure chirik_ast.Structure) {
 	var schemaFields []*db_schema.Field
 
 	for _, field := range fields.List() {
-		//Пропуск незначищих полей
-		if field.Name() == "" {
-			continue
-		}
-
 		schemaField, err := mInfo.prepareSchemaField(*field, &schema)
 		if err != nil {
 			mInfo.ErrList = append(mInfo.ErrList, err)
+		}
+
+		//Пропуск незначащих полей: могут иметь побочные действия, но при непосредственной
+		// миграции использоваться не могут
+		if schemaField.Name == "" {
+			continue
 		}
 
 		schemaFields = append(schemaFields, &schemaField)
