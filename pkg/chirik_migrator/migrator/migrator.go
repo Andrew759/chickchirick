@@ -3,6 +3,7 @@ package migrator
 import (
 	"chickChirick/cmd/service"
 	migratorDto "chickChirick/pkg/chirik_migrator/migrator/provider"
+	"fmt"
 )
 
 //TODO: согласовать с интерфейсом
@@ -28,12 +29,43 @@ func (m Migrator) CreateTables(migratorEntities map[string][]migratorDto.Migrato
 
 func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
 	if !migratorInfo.MigratorEnabled {
-		//TODO: возможно стоит предусмотреть тут выбрасывание ошибки
-		return nil
+		return fmt.Errorf("can't process entity with disabled migrator: %s", migratorInfo.Schema.Name)
 	}
+
+	schema := &migratorInfo.Schema
 	if migratorInfo.HasError() {
-		//TODO доделать
+		return fmt.Errorf("can't process entity with errors at prepare stage: %s : %s",
+			schema.Name,
+			migratorInfo.ErrList,
+		)
+	}
+
+	resultSQL := "CREATE TABLE ? ("
+
+	var sqlValues []string
+
+	sqlValues = append(sqlValues, schema.Table)
+
+	var fieldSQL string
+	var fieldSQLList []string
+
+	fmt.Sprintf(resultSQL, fieldSQLList)
+
+	hasConfiguredPrimaryKey := schema.HasPrimaryKey()
+	for _, field := range schema.Fields {
+		fieldSQL += field.Name + " " + field.DataType.String()
+		if !hasConfiguredPrimaryKey {
+
+		}
 	}
 
 	return nil
 }
+
+//CREATE TABLE users (
+//id INT AUTO_INCREMENT PRIMARY KEY,
+//phone BIGINT,
+//name VARCHAR(256),
+//surname VARCHAR(256),
+//password VARCHAR(1024)
+//);

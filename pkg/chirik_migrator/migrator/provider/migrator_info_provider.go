@@ -163,6 +163,9 @@ func (mInfo *MigratorInfo) fillByGormTag(schemaField *db_schema.Field, tValues [
 			schemaField.Unique = true
 		case "comment":
 			schemaField.Comment = tValue
+			//TODO: проверить работоспособность при реальной работе с GORM
+		case "ignoreMigration":
+			schemaField.IgnoreMigration = true
 		}
 
 		if err != nil {
