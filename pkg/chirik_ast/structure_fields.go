@@ -12,7 +12,7 @@ func (fs *Fields) List() []*Field {
 	out := make([]*Field, 0, len(fs.astStruct.Fields.List))
 
 	for _, f := range fs.astStruct.Fields.List {
-		if len(f.Names) > 0 {
+		if len(f.Names) < 0 {
 			continue
 		}
 

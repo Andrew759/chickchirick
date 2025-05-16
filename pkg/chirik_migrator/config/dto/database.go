@@ -1,13 +1,14 @@
-package config
+package dto
 
 import (
 	"chickChirick/cmd/config"
-	globalConfig "chickChirick/pkg/config"
+	"chickChirick/cmd/config/dto"
+	globalConfig "chickChirick/pkg/chirik_config"
 	"github.com/spf13/viper"
 )
 
 type DatabaseConfig struct {
-	stockDBC      config.DataBaseConfigInterface
+	stockDBC      dto.DataBaseConfigInterface
 	MigrationPath string
 }
 

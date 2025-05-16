@@ -2,4 +2,4 @@
 redis_data
 db_data
 .env
-pkg/migration/console/migration.yaml
+pkg/chirik_migrator/migration.yaml

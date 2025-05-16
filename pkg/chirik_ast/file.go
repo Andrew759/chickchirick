@@ -1,7 +1,6 @@
 package chirik_ast
 
 import (
-	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -31,34 +30,4 @@ func ReadFile(filepath string) (*File, error) {
 		astFile:    astFile,
 		fileSet:    fSet,
 	}, nil
-}
-
-func (f *File) Print() {
-	fmt.Println("--------------------")
-	fmt.Printf("package %s\n", f.Package.Name())
-	fmt.Println("--------------------")
-
-	fmt.Println("structs:")
-	for i, s := range f.Structures.List() {
-		if i > 0 {
-			fmt.Printf("\n")
-		}
-
-		fmt.Printf("-Name: %s\n", s.Name())
-
-		for _, field := range s.Fields().List() {
-			name := field.Name()
-			if name == "" {
-				name = "*empty*"
-			}
-
-			t := field.Tags().String()
-			if t == "" {
-				t = "*empty*"
-			}
-
-			fmt.Printf("--%s | %s | %s\n", name, field.Type(), t)
-
-		}
-	}
 }

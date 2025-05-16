@@ -1,4 +1,4 @@
-package config
+package dto
 
 type DataBaseConfigInterface interface {
 	Host() string

@@ -1,8 +1,10 @@
 package chirik_ast
 
 import (
+	"chickChirick/pkg/chirik_migrator/console/config"
 	"fmt"
 	"go/ast"
+	"regexp"
 	"strings"
 )
 
@@ -17,22 +19,27 @@ type Tag struct {
 
 func (ts *Tags) List() []Tag {
 	var tags []Tag
+
 	trimmedTags := strings.Trim(ts.String(), "`")
-	sParts := strings.Fields(trimmedTags)
+	re := regexp.MustCompile(`(\w+):"([^"]+)"`)
+	matches := re.FindAllStringSubmatch(trimmedTags, -1)
 
-	for _, part := range sParts {
-		sSplitParts := strings.Split(part, ":")
-		sSplitParts[0] = strings.Trim(sSplitParts[0], `"`)
+	if len(matches) > 0 {
+		for _, match := range matches {
+			key := strings.TrimLeft(strings.Trim(match[1], `"`), " ")
+			values := strings.TrimLeft(strings.Trim(match[2], `"`), " ")
 
-		vStr := strings.Join(sSplitParts[1:], ":")
-		vStrTrim := strings.Trim(vStr, `"`)
-		vStrTrimWithoutEndSep := strings.Replace(vStrTrim, ";", "", 1)
-		values := strings.Split(vStrTrimWithoutEndSep, ",")
+			valueList := strings.Split(values, ",")
+			if key == config.MigratorGormTag {
+				valueList = strings.Split(values, ";")
+			}
 
-		tags = append(tags, Tag{
-			Key:    sSplitParts[0],
-			Values: values,
-		})
+			tags = append(tags, Tag{
+				Key:    key,
+				Values: valueList,
+			})
+
+		}
 	}
 
 	return tags
@@ -74,6 +81,7 @@ func (ts *Tags) String() string {
 	return ts.ast.Value
 }
 
+// TagsToString TODO: если и в дальнейшем не будет использоваться - удалить
 func TagsToString(tags []Tag) string {
 	if len(tags) == 0 {
 		return ""

@@ -1,7 +1,8 @@
 package config
 
 import (
-	globalConfig "chickChirick/pkg/config"
+	"chickChirick/cmd/config/dto"
+	globalConfig "chickChirick/pkg/chirik_config"
 	"github.com/spf13/viper"
 )
 
@@ -11,7 +12,7 @@ type AppConfigurationInterface interface {
 
 type AppConfiguration struct {
 	Environment string
-	DatabaseConfig
+	dto.DatabaseConfig
 	RedisConfig
 }
 
@@ -35,8 +36,8 @@ func (c AppConfiguration) NewAppConfiguration() AppConfiguration {
 	}
 }
 
-func PrepareDatabaseConfig() DatabaseConfig {
-	dbc := DatabaseConfig{}
+func PrepareDatabaseConfig() dto.DatabaseConfig {
+	dbc := dto.DatabaseConfig{}
 
 	dbc.SetHost(viper.GetString(globalConfig.DbHost))
 	dbc.SetPort(viper.GetInt(globalConfig.DbPort))
