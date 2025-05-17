@@ -23,7 +23,7 @@ func (mInfo *MigratorInfo) FillByEntity(structure chirik_ast.Structure) {
 	//Сначала отдельно проверяется главный тег
 	mainMigratorTag := fields.Tag(config.MigratorTag)
 	if mainMigratorTag == nil {
-		mInfo.ErrList = append(mInfo.ErrList, fmt.Errorf("main migrator tag %s was not found", config.MigratorTag))
+		mInfo.ErrList = append(mInfo.ErrList, fmt.Errorf("main migrator tag was not found: %s", config.MigratorTag))
 		return
 	}
 
@@ -31,17 +31,22 @@ func (mInfo *MigratorInfo) FillByEntity(structure chirik_ast.Structure) {
 	var schemaFields []*db_schema.Field
 
 	for _, field := range fields.List() {
-		//Пропуск незначищих полей
-		if field.Name() == "" {
-			continue
-		}
+		skipField := false
 
 		schemaField, err := mInfo.prepareSchemaField(*field, &schema)
-		if err != nil {
+		//Пропуск незначащих полей: могут иметь побочные действия, но при непосредственной
+		// миграции использоваться не могут
+		if schemaField.Name == "" || schemaField.IgnoreMigration {
+			skipField = true
+		}
+
+		if err != nil && !skipField {
 			mInfo.ErrList = append(mInfo.ErrList, err)
 		}
 
-		schemaFields = append(schemaFields, &schemaField)
+		if !skipField {
+			schemaFields = append(schemaFields, &schemaField)
+		}
 	}
 
 	schema.Fields = schemaFields
@@ -79,13 +84,15 @@ func (mInfo *MigratorInfo) prepareSchemaField(field chirik_ast.Field, schema *db
 	schemaField.Name = field.Name()
 	schemaField.Schema = schema
 
-	schemaField, err := schemaField.FillPgDataTypeByString(field.Type().Value())
+	var err error
+	schemaField, err = schemaField.FillPgDataTypeByString(field.Type().Value())
 
 	fTags := field.Tags()
 	if fTags != nil {
-		//fTags.ListMock()
 		for _, tag := range fTags.List() {
-			err := mInfo.fillByTag(tag, &schemaField)
+			//Ошибка из тега наиболее приоритетна, поэтому она выбрасывается
+			//последней и обрабатывается первой (и иногда единственной)
+			err = mInfo.fillByTag(tag, &schemaField)
 			if err != nil {
 				break
 			}
@@ -105,6 +112,7 @@ func (mInfo *MigratorInfo) fillByTag(tag chirik_ast.Tag, schemaField *db_schema.
 		case config.MigratorEnabled:
 			mInfo.MigratorEnabled = true
 		case config.MigratorDisabled:
+			mInfo.MigratorEnabled = false
 		default:
 			mInfo.MigratorEnabled = false
 		}
@@ -116,13 +124,14 @@ func (mInfo *MigratorInfo) fillByTag(tag chirik_ast.Tag, schemaField *db_schema.
 }
 
 func (mInfo *MigratorInfo) fillByGormTag(schemaField *db_schema.Field, tValues []string) error {
-	var err error
 	tValueWithSizeRe := regexp.MustCompile(`([a-zA-Zа-яА-ЯёЁ]+)\((\d+)\)`)
+	var err error
 
 	for _, tFullValue := range tValues {
 		splitTValue := strings.Split(tFullValue, ":")
-
 		tPrefix := strings.Trim(splitTValue[0], `"`)
+
+		//Если значение не составное, то по умолчанию значением будет являться префикс
 		tValue := strings.Trim(splitTValue[0], `"`)
 		if len(splitTValue) > 1 {
 			tValue = strings.Trim(splitTValue[1], `"`)
@@ -162,6 +171,9 @@ func (mInfo *MigratorInfo) fillByGormTag(schemaField *db_schema.Field, tValues [
 			schemaField.Unique = true
 		case "comment":
 			schemaField.Comment = tValue
+			//TODO: проверить работоспособность при реальной работе с GORM
+		case "ignoreMigration":
+			schemaField.IgnoreMigration = true
 		}
 
 		if err != nil {
