@@ -18,7 +18,6 @@ type Migrator struct {
 }
 
 func (m Migrator) CreateTables(migratorEntities map[string][]migratorDto.MigratorInfo) error {
-	//TODO: тут можно использовать entityPath вместо пустого вызова, стоит ли? Либо удалить
 	for _, migratorInfoList := range migratorEntities {
 		for _, migratorInfo := range migratorInfoList {
 			return m.CreateTable(migratorInfo)
@@ -49,13 +48,18 @@ func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
 	var fieldSQL string
 	var fieldSQLList []string
 
-	fmt.Sprintf(resultSQL, fieldSQLList)
+	fmt.Println(resultSQL, fieldSQLList)
 
 	hasConfiguredPrimaryKey := schema.HasPrimaryKey()
-	for _, field := range schema.Fields {
-		fieldSQL += field.Name + " " + field.DataType.String()
-		if !hasConfiguredPrimaryKey {
-
+	for key, field := range schema.Fields {
+		fieldSQL += field.Name + " " + field.DataType.String() + " "
+		//Первичный ключ устанавливается только один раз, если его по какой-то причине нет в конфиге
+		if !hasConfiguredPrimaryKey && key == 0 {
+			fieldSQL += "PRIMARY KEY "
+		} else {
+			if field.PrimaryKey {
+				fieldSQL += "PRIMARY KEY "
+			}
 		}
 	}
 

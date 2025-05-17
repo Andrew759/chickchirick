@@ -55,13 +55,14 @@ func readFile(path string, entityNames []string) ([]migratorDto.MigratorInfo, er
 		return nil, fmt.Errorf("got invalid file %s", err)
 	}
 
+	hasNameRestriction := len(entityNames) > 0
 	structureList := file.Structures.List()
-
 	var mInfoList []migratorDto.MigratorInfo
+
 	for _, structure := range structureList {
 		mInfo := migratorDto.MigratorInfo{}
 
-		if len(entityNames) > 0 && !slices.Contains(entityNames, structure.Name()) {
+		if hasNameRestriction && !slices.Contains(entityNames, structure.Name()) {
 			continue
 		}
 

@@ -5,17 +5,20 @@ import (
 	"strings"
 )
 
+//TODO: впоследствии можно вынести эти константы и методы для posgres в отдельное место.
+
 const (
-	Bool     DataType = "bool"
-	Smallint DataType = "smallint"
-	Int      DataType = "integer"
-	Bigint   DataType = "bigint"
-	Float    DataType = "float"
-	Varchar  DataType = "varchar"
-	Text     DataType = "text"
-	Time     DataType = "time"
-	Bytes    DataType = "bytes"
-	Uuid     DataType = "uuid"
+	Bool     DataType = "BOOLEAN"
+	Smallint DataType = "SMALLINT"
+	Int      DataType = "INTEGER"
+	Bigint   DataType = "BIGINT"
+	Float    DataType = "FLOAT"
+	Varchar  DataType = "VARCHAR"
+	Text     DataType = "TEXT"
+	Time     DataType = "TIMESTAMP WITH TIME ZONE"
+	Bytes    DataType = "SMALLINT"
+	// Uuid TODO: требуется доработка:
+	Uuid DataType = "UUID"
 )
 
 type Field struct {
