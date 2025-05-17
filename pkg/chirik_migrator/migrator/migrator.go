@@ -4,6 +4,7 @@ import (
 	"chickChirick/cmd/service"
 	migratorDto "chickChirick/pkg/chirik_migrator/migrator/provider"
 	"fmt"
+	"strconv"
 )
 
 //TODO: согласовать с интерфейсом
@@ -39,29 +40,55 @@ func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
 		)
 	}
 
+	//TODO: переделать под подставляемые значения, а не включаемые на прямую в запрос
 	resultSQL := "CREATE TABLE ? ("
-
 	var sqlValues []string
-
 	sqlValues = append(sqlValues, schema.Table)
 
 	var fieldSQL string
 	var fieldSQLList []string
+	var fieldComment string
+	var fieldCommentList []string
 
-	fmt.Println(resultSQL, fieldSQLList)
-
-	hasConfiguredPrimaryKey := schema.HasPrimaryKey()
-	for key, field := range schema.Fields {
-		fieldSQL += field.Name + " " + field.DataType.String() + " "
-		//Первичный ключ устанавливается только один раз, если его по какой-то причине нет в конфиге
-		if !hasConfiguredPrimaryKey && key == 0 {
-			fieldSQL += "PRIMARY KEY "
-		} else {
-			if field.PrimaryKey {
-				fieldSQL += "PRIMARY KEY "
-			}
+	fieldsCount := len(schema.Fields)
+	for k, field := range schema.Fields {
+		fieldSQL = field.Name + " " + field.DataType.String()
+		if field.Size != 0 {
+			fieldSQL += "(" + strconv.Itoa(field.Size) + ")"
 		}
+		fieldSQL += " "
+
+		if field.PrimaryKey {
+			fieldSQL += "PRIMARY KEY "
+		}
+		if field.AutoIncrement {
+			fieldSQL += "AUTO_INCREMENT "
+		}
+		if field.HasDefaultValue {
+			fieldSQL += "DEFAULT " + field.DefaultValue
+		}
+		if field.NotNull {
+			fieldSQL += "NOT NULL "
+		}
+		if field.Unique {
+			fieldSQL += "UNIQUE "
+		}
+		if field.Comment != "" {
+			fieldComment = "comment on column " + schema.Name +
+				"." + field.Name + " is '" + field.Comment + "';"
+
+			fieldCommentList = append(fieldCommentList, fieldComment)
+		}
+		if k+1 < fieldsCount {
+			fieldSQL += ","
+		} else {
+			fieldSQL += ";"
+		}
+		fieldSQLList = append(fieldSQLList, fieldSQL)
 	}
+
+	//TODO: удалить
+	fmt.Println(resultSQL, fieldSQLList, fieldCommentList)
 
 	return nil
 }
