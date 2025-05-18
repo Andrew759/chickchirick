@@ -33,7 +33,7 @@ func (mInfo *MigratorInfo) FillByEntity(structure chirik_ast.Structure) {
 	for _, field := range fields.List() {
 		skipField := false
 
-		schemaField, err := mInfo.prepareSchemaField(*field, &schema)
+		schemaField, err := mInfo.PrepareSchemaField(*field, &schema)
 		//Пропуск незначащих полей: могут иметь побочные действия, но при непосредственной
 		// миграции использоваться не могут
 		if schemaField.Name == "" || schemaField.IgnoreMigration {
@@ -72,13 +72,20 @@ func (mInfo *MigratorInfo) PrepareEmptySchema(structure chirik_ast.Structure) db
 	schema := db_schema.Schema{}
 	schema.Name = structure.Name()
 
+	//TODO: вынести в отдельный метод? Добавление постфикса s и ловерспейс по умолчанию
 	tableName := strings.ToLower(structure.Name())
+	rTableName := []rune(tableName)
+	lastCharter := string(rTableName[len(rTableName)-1:])
+	if lastCharter != "s" {
+		tableName += "s"
+	}
+
 	schema.Table = tableName
 
 	return schema
 }
 
-func (mInfo *MigratorInfo) prepareSchemaField(field chirik_ast.Field, schema *db_schema.Schema) (db_schema.Field, error) {
+func (mInfo *MigratorInfo) PrepareSchemaField(field chirik_ast.Field, schema *db_schema.Schema) (db_schema.Field, error) {
 	schemaField := db_schema.Field{}
 
 	schemaField.Name = field.Name()
@@ -92,7 +99,7 @@ func (mInfo *MigratorInfo) prepareSchemaField(field chirik_ast.Field, schema *db
 		for _, tag := range fTags.List() {
 			//Ошибка из тега наиболее приоритетна, поэтому она выбрасывается
 			//последней и обрабатывается первой (и иногда единственной)
-			err = mInfo.fillByTag(tag, &schemaField)
+			err = mInfo.FillByTagAndSchemaField(tag, &schemaField)
 			if err != nil {
 				break
 			}
@@ -102,7 +109,7 @@ func (mInfo *MigratorInfo) prepareSchemaField(field chirik_ast.Field, schema *db
 	return schemaField, err
 }
 
-func (mInfo *MigratorInfo) fillByTag(tag chirik_ast.Tag, schemaField *db_schema.Field) error {
+func (mInfo *MigratorInfo) FillByTagAndSchemaField(tag chirik_ast.Tag, schemaField *db_schema.Field) error {
 	tKey := tag.Key
 	tScalarVal := tag.Values[0]
 
@@ -117,13 +124,13 @@ func (mInfo *MigratorInfo) fillByTag(tag chirik_ast.Tag, schemaField *db_schema.
 			mInfo.MigratorEnabled = false
 		}
 	case config.MigratorGormTag:
-		return mInfo.fillByGormTag(schemaField, tag.Values)
+		return mInfo.FillByGormTagAndSchemaField(schemaField, tag.Values)
 	}
 
 	return nil
 }
 
-func (mInfo *MigratorInfo) fillByGormTag(schemaField *db_schema.Field, tValues []string) error {
+func (mInfo *MigratorInfo) FillByGormTagAndSchemaField(schemaField *db_schema.Field, tValues []string) error {
 	tValueWithSizeRe := regexp.MustCompile(`([a-zA-Zа-яА-ЯёЁ]+)\((\d+)\)`)
 	var err error
 

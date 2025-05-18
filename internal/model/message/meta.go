@@ -6,7 +6,7 @@ import (
 )
 
 type Meta struct {
-	gorm.Model
+	gorm.Model      `c_migrator:"enabled" c_migrator_orm:"gorm"`
 	MessageUuid     pgtype.UUID `json:"message_uuid" gorm:"type:uuid;default:gen_random_uuid()"`
 	MessageId       int         `json:"message_id" gorm:"type:int"`
 	Message         Message     `json:"message" gorm:"references:MessageId"`

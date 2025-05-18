@@ -5,7 +5,6 @@ import (
 	mainService "chickChirick/cmd/service"
 	migratorDto "chickChirick/pkg/chirik_migrator/migrator/provider"
 	"chickChirick/pkg/chirik_migrator/migrator/service"
-	"encoding/json"
 	"fmt"
 	"strconv"
 )
@@ -44,9 +43,9 @@ func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
 	}
 
 	var sqlFieldList []string
-	sqlFieldList = append(sqlFieldList, "CREATE TABLE ? (")
+	sqlFieldList = append(sqlFieldList, "CREATE TABLE %s (")
 
-	var sqlValues []string
+	var sqlValues []any
 	sqlValues = append(sqlValues, schema.Table)
 
 	var fieldCommentList []string
@@ -54,10 +53,10 @@ func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
 
 	fieldsCount := len(schema.Fields)
 	for k, field := range schema.Fields {
-		sqlField := "? ?"
+		sqlField := "%s %s"
 
 		//TODO: При установке типа необходимость в дальнейшем вынесении отдельного провайдера для
-		// постгры, т.к в разных БД реализация будет отличаться
+		// postgres, т.к в разных БД реализация будет отличаться
 		if field.AutoIncrement {
 			sqlValues = append(sqlValues, field.Name, "BIGSERIAL")
 		} else {
@@ -65,7 +64,7 @@ func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
 		}
 
 		if field.Size != 0 {
-			sqlField += "(?)"
+			sqlField += "(%s)"
 			sqlValues = append(sqlValues, strconv.Itoa(field.Size))
 		}
 
@@ -73,7 +72,7 @@ func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
 			sqlField += " PRIMARY KEY"
 		}
 		if field.HasDefaultValue {
-			sqlField += "DEFAULT ?"
+			sqlField += "DEFAULT %s"
 			sqlValues = append(sqlValues, field.DefaultValue)
 		}
 		if field.NotNull {
@@ -83,36 +82,35 @@ func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
 			sqlField += " UNIQUE"
 		}
 		if field.Comment != "" {
-			fieldComment := "comment on column ?.? is '?';"
+			fieldComment := "comment on column %s.%s is '%s';"
 			fieldCommentValues = append(fieldCommentValues, schema.Name, field.Name, field.Comment)
 			fieldCommentList = append(fieldCommentList, fieldComment)
 		}
 		if k+1 < fieldsCount {
 			sqlField += ","
 		} else {
-			sqlField += ";"
+			sqlField += ");"
 		}
 		sqlFieldList = append(sqlFieldList, sqlField)
 	}
 
 	//Предотвращение SQL инъекций по образу, как это делалось в PHP
 	for k, v := range sqlValues {
-		sqlValues[k] = service.Escape(v)
+		sqlValues[k] = service.Escape(v.(string))
 	}
 
-	//TODO: возможно имеет смысл сразу сетить всё в строку. Пока что не используется
+	//TODO: возможно имеет смысл сразу сетить всё в строку.
 	var resultSQL string
 	for _, sqlField := range sqlFieldList {
 		resultSQL += sqlField
 	}
 
-	//TODO: удалить
-	test, _ := json.Marshal(sqlValues)
-	test2 := (string(test))
+	resultSQL = fmt.Sprintf(resultSQL, sqlValues...)
 
-	result, err := m.NativeDB().Exec(resultSQL, sqlValues)
+	result, err := m.NativeDB().Exec(resultSQL)
 
-	fmt.Println(result, test2)
+	//TODO: удалить. Можно вернуть результат и в отдельном сервисе записать в файл
+	fmt.Println(result)
 
 	return err
 }

@@ -33,7 +33,7 @@ func ReadDir(entityNames []string) (map[string][]migratorDto.MigratorInfo, error
 
 	for _, path := range fPaths {
 		//TODO: распараллелить? и подумать над более аккуратной обработкой ошибок
-		migratorInfoList, err := readFile(path, entityNames)
+		migratorInfoList, err := ReadFile(path, entityNames)
 		if err != nil {
 			return migratorEntities, err
 		}
@@ -46,7 +46,7 @@ func ReadDir(entityNames []string) (map[string][]migratorDto.MigratorInfo, error
 	return migratorEntities, err
 }
 
-func readFile(path string, entityNames []string) ([]migratorDto.MigratorInfo, error) {
+func ReadFile(path string, entityNames []string) ([]migratorDto.MigratorInfo, error) {
 	file, err := chirik_ast.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("error while reading file %s", err)
@@ -55,7 +55,14 @@ func readFile(path string, entityNames []string) ([]migratorDto.MigratorInfo, er
 		return nil, fmt.Errorf("got invalid file %s", err)
 	}
 
-	hasNameRestriction := len(entityNames) > 0
+	eCount := len(entityNames)
+	hasNameRestriction := eCount > 0
+	if hasNameRestriction && eCount == 1 {
+		if entityNames[0] == "*" {
+			hasNameRestriction = false
+		}
+	}
+
 	structureList := file.Structures.List()
 	var mInfoList []migratorDto.MigratorInfo
 

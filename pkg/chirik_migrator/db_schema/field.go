@@ -52,7 +52,7 @@ func (f Field) FillPgDataTypeByString(fieldType string) (Field, error) {
 	fieldType = strings.ToLower(fieldType)
 
 	switch fieldType {
-	case "int8", "int16", "uint8", "uint16":
+	case "smallint", "int8", "int16", "uint8", "uint16":
 		f.DataType = Smallint
 		break
 	case "int32", "uint32":
@@ -76,7 +76,7 @@ func (f Field) FillPgDataTypeByString(fieldType string) (Field, error) {
 	case "byte", "rune":
 		f.DataType = Bytes
 		break
-	case "time":
+	case "time", "timestamp without time zone", "timestamp with time zone":
 		f.DataType = Time
 		break
 	case "uuid":
