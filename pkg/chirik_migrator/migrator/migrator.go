@@ -1,8 +1,10 @@
 package migrator
 
 import (
-	"chickChirick/cmd/service"
+	//TODO: тут при разнесении на микросервисы может быть проблема
+	mainService "chickChirick/cmd/service"
 	migratorDto "chickChirick/pkg/chirik_migrator/migrator/provider"
+	"chickChirick/pkg/chirik_migrator/migrator/service"
 	"fmt"
 	"strconv"
 )
@@ -11,7 +13,7 @@ import (
 
 type Config struct {
 	CreateIndexAfterCreateTable bool
-	service.DBDecorator
+	mainService.DBDecorator
 }
 
 type Migrator struct {
@@ -19,12 +21,14 @@ type Migrator struct {
 }
 
 func (m Migrator) CreateTables(migratorEntities map[string][]migratorDto.MigratorInfo) error {
+	var err error
+
 	for _, migratorInfoList := range migratorEntities {
 		for _, migratorInfo := range migratorInfoList {
-			return m.CreateTable(migratorInfo)
+			err = m.CreateTable(migratorInfo)
 		}
 	}
-	return nil
+	return err
 }
 
 func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
@@ -40,63 +44,86 @@ func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
 		)
 	}
 
-	//TODO: переделать под подставляемые значения, а не включаемые на прямую в запрос
-	resultSQL := "CREATE TABLE ? ("
-	var sqlValues []string
+	var sqlFieldList []string
+	sqlFieldList = append(sqlFieldList, "CREATE TABLE IF NOT EXISTS %s (")
+
+	var sqlValues []any
 	sqlValues = append(sqlValues, schema.Table)
 
-	var fieldSQL string
-	var fieldSQLList []string
-	var fieldComment string
 	var fieldCommentList []string
+	var fieldCommentValues []string
 
 	fieldsCount := len(schema.Fields)
-	for k, field := range schema.Fields {
-		fieldSQL = field.Name + " " + field.DataType.String()
-		if field.Size != 0 {
-			fieldSQL += "(" + strconv.Itoa(field.Size) + ")"
+	processedCount := 0
+	for _, field := range schema.Fields {
+		fieldType := field.DataType.String()
+		//TODO: временное решение
+		//Пропуск полей без типа
+		if fieldType == "" {
+			fieldsCount--
+			continue
 		}
-		fieldSQL += " "
+
+		sqlField := "%s %s"
+
+		//TODO: При установке типа необходимость в дальнейшем вынесении отдельного провайдера для
+		// postgres, т.к в разных БД реализация будет отличаться
+		if field.AutoIncrement {
+			sqlValues = append(sqlValues, field.Name, "BIGSERIAL")
+		} else {
+			sqlValues = append(sqlValues, field.Name, fieldType)
+		}
+
+		if field.Size != 0 {
+			sqlField += "(%s)"
+			sqlValues = append(sqlValues, strconv.Itoa(field.Size))
+		}
 
 		if field.PrimaryKey {
-			fieldSQL += "PRIMARY KEY "
-		}
-		if field.AutoIncrement {
-			fieldSQL += "AUTO_INCREMENT "
+			sqlField += " PRIMARY KEY"
 		}
 		if field.HasDefaultValue {
-			fieldSQL += "DEFAULT " + field.DefaultValue
+			sqlField += "DEFAULT %s"
+			sqlValues = append(sqlValues, field.DefaultValue)
 		}
 		if field.NotNull {
-			fieldSQL += "NOT NULL "
+			sqlField += " NOT NULL"
 		}
 		if field.Unique {
-			fieldSQL += "UNIQUE "
+			sqlField += " UNIQUE"
 		}
 		if field.Comment != "" {
-			fieldComment = "comment on column " + schema.Name +
-				"." + field.Name + " is '" + field.Comment + "';"
-
+			fieldComment := "comment on column %s.%s is '%s';"
+			fieldCommentValues = append(fieldCommentValues, schema.Name, field.Name, field.Comment)
 			fieldCommentList = append(fieldCommentList, fieldComment)
 		}
-		if k+1 < fieldsCount {
-			fieldSQL += ","
-		} else {
-			fieldSQL += ";"
+
+		processedCount++
+		if processedCount < fieldsCount {
+			sqlField += ","
 		}
-		fieldSQLList = append(fieldSQLList, fieldSQL)
+
+		sqlFieldList = append(sqlFieldList, sqlField)
+	}
+	sqlFieldList = append(sqlFieldList, ");")
+
+	//Предотвращение SQL инъекций по образу, как это делалось в PHP
+	for k, v := range sqlValues {
+		sqlValues[k] = service.Escape(v.(string))
 	}
 
-	//TODO: удалить
-	fmt.Println(resultSQL, fieldSQLList, fieldCommentList)
+	//TODO: возможно имеет смысл сразу устанавливать всё в строку.
+	var resultSQL string
+	for _, sqlField := range sqlFieldList {
+		resultSQL += sqlField
+	}
 
-	return nil
+	resultSQL = fmt.Sprintf(resultSQL, sqlValues...)
+
+	result, err := m.NativeDB().Exec(resultSQL)
+
+	//TODO: удалить. Можно вернуть результат и в отдельном сервисе записать в файл
+	fmt.Println(result)
+
+	return err
 }
-
-//CREATE TABLE users (
-//id INT AUTO_INCREMENT PRIMARY KEY,
-//phone BIGINT,
-//name VARCHAR(256),
-//surname VARCHAR(256),
-//password VARCHAR(1024)
-//);

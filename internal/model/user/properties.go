@@ -3,9 +3,9 @@ package user
 import "gorm.io/gorm"
 
 type Properties struct {
-	gorm.Model
-	UserId int  `json:"user_id" gorm:"type:int"`
-	User   User `json:"user" gorm:"references:UserId"`
+	gorm.Model `c_migrator:"enabled" c_migrator_orm:"gorm"`
+	UserId     int  `json:"user_id" gorm:"type:int"`
+	User       User `json:"user" gorm:"references:UserId"`
 	//TODO: Доработать таймзоны. Сейчас архитектура описана таким образом,
 	// что всё время хранится без таймзон. Возможно потребуется отдельный сервис или
 	// пакет для ресолва временной зоны пользователя

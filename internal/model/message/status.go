@@ -6,7 +6,7 @@ import (
 )
 
 type Status struct {
-	gorm.Model
+	gorm.Model       `c_migrator:"enabled" c_migrator_orm:"gorm"`
 	Id               int          `json:"id" gorm:"type:int;unique;primaryKey;autoIncrement"`
 	MessageId        int          `json:"message_id" gorm:"type:int"`
 	Message          Message      `json:"message" gorm:"references:MessageId"`
