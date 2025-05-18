@@ -1,8 +1,11 @@
 package migrator
 
 import (
-	"chickChirick/cmd/service"
+	//TODO: тут при разнесении на микросервисы может быть проблема
+	mainService "chickChirick/cmd/service"
 	migratorDto "chickChirick/pkg/chirik_migrator/migrator/provider"
+	"chickChirick/pkg/chirik_migrator/migrator/service"
+	"encoding/json"
 	"fmt"
 	"strconv"
 )
@@ -11,7 +14,7 @@ import (
 
 type Config struct {
 	CreateIndexAfterCreateTable bool
-	service.DBDecorator
+	mainService.DBDecorator
 }
 
 type Migrator struct {
@@ -40,57 +43,78 @@ func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
 		)
 	}
 
-	//TODO: переделать под подставляемые значения, а не включаемые на прямую в запрос
-	resultSQL := "CREATE TABLE ? ("
+	var sqlFieldList []string
+	sqlFieldList = append(sqlFieldList, "CREATE TABLE ? (")
+
 	var sqlValues []string
 	sqlValues = append(sqlValues, schema.Table)
 
-	var fieldSQL string
-	var fieldSQLList []string
-	var fieldComment string
 	var fieldCommentList []string
+	var fieldCommentValues []string
 
 	fieldsCount := len(schema.Fields)
 	for k, field := range schema.Fields {
-		fieldSQL = field.Name + " " + field.DataType.String()
-		if field.Size != 0 {
-			fieldSQL += "(" + strconv.Itoa(field.Size) + ")"
+		sqlField := "? ?"
+
+		//TODO: При установке типа необходимость в дальнейшем вынесении отдельного провайдера для
+		// постгры, т.к в разных БД реализация будет отличаться
+		if field.AutoIncrement {
+			sqlValues = append(sqlValues, field.Name, "BIGSERIAL")
+		} else {
+			sqlValues = append(sqlValues, field.Name, field.DataType.String())
 		}
-		fieldSQL += " "
+
+		if field.Size != 0 {
+			sqlField += "(?)"
+			sqlValues = append(sqlValues, strconv.Itoa(field.Size))
+		}
 
 		if field.PrimaryKey {
-			fieldSQL += "PRIMARY KEY "
-		}
-		if field.AutoIncrement {
-			fieldSQL += "AUTO_INCREMENT "
+			sqlField += " PRIMARY KEY"
 		}
 		if field.HasDefaultValue {
-			fieldSQL += "DEFAULT " + field.DefaultValue
+			sqlField += "DEFAULT ?"
+			sqlValues = append(sqlValues, field.DefaultValue)
 		}
 		if field.NotNull {
-			fieldSQL += "NOT NULL "
+			sqlField += " NOT NULL"
 		}
 		if field.Unique {
-			fieldSQL += "UNIQUE "
+			sqlField += " UNIQUE"
 		}
 		if field.Comment != "" {
-			fieldComment = "comment on column " + schema.Name +
-				"." + field.Name + " is '" + field.Comment + "';"
-
+			fieldComment := "comment on column ?.? is '?';"
+			fieldCommentValues = append(fieldCommentValues, schema.Name, field.Name, field.Comment)
 			fieldCommentList = append(fieldCommentList, fieldComment)
 		}
 		if k+1 < fieldsCount {
-			fieldSQL += ","
+			sqlField += ","
 		} else {
-			fieldSQL += ";"
+			sqlField += ";"
 		}
-		fieldSQLList = append(fieldSQLList, fieldSQL)
+		sqlFieldList = append(sqlFieldList, sqlField)
+	}
+
+	//Предотвращение SQL инъекций по образу, как это делалось в PHP
+	for k, v := range sqlValues {
+		sqlValues[k] = service.Escape(v)
+	}
+
+	//TODO: возможно имеет смысл сразу сетить всё в строку. Пока что не используется
+	var resultSQL string
+	for _, sqlField := range sqlFieldList {
+		resultSQL += sqlField
 	}
 
 	//TODO: удалить
-	fmt.Println(resultSQL, fieldSQLList, fieldCommentList)
+	test, _ := json.Marshal(sqlValues)
+	test2 := (string(test))
 
-	return nil
+	result, err := m.NativeDB().Exec(resultSQL, sqlValues)
+
+	fmt.Println(result, test2)
+
+	return err
 }
 
 //CREATE TABLE users (
