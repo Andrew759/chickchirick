@@ -21,12 +21,14 @@ type Migrator struct {
 }
 
 func (m Migrator) CreateTables(migratorEntities map[string][]migratorDto.MigratorInfo) error {
+	var err error
+
 	for _, migratorInfoList := range migratorEntities {
 		for _, migratorInfo := range migratorInfoList {
-			return m.CreateTable(migratorInfo)
+			err = m.CreateTable(migratorInfo)
 		}
 	}
-	return nil
+	return err
 }
 
 func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
@@ -43,7 +45,7 @@ func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
 	}
 
 	var sqlFieldList []string
-	sqlFieldList = append(sqlFieldList, "CREATE TABLE %s (")
+	sqlFieldList = append(sqlFieldList, "CREATE TABLE IF NOT EXISTS %s (")
 
 	var sqlValues []any
 	sqlValues = append(sqlValues, schema.Table)
@@ -52,7 +54,16 @@ func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
 	var fieldCommentValues []string
 
 	fieldsCount := len(schema.Fields)
-	for k, field := range schema.Fields {
+	processedCount := 0
+	for _, field := range schema.Fields {
+		fieldType := field.DataType.String()
+		//TODO: временное решение
+		//Пропуск полей без типа
+		if fieldType == "" {
+			fieldsCount--
+			continue
+		}
+
 		sqlField := "%s %s"
 
 		//TODO: При установке типа необходимость в дальнейшем вынесении отдельного провайдера для
@@ -60,7 +71,7 @@ func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
 		if field.AutoIncrement {
 			sqlValues = append(sqlValues, field.Name, "BIGSERIAL")
 		} else {
-			sqlValues = append(sqlValues, field.Name, field.DataType.String())
+			sqlValues = append(sqlValues, field.Name, fieldType)
 		}
 
 		if field.Size != 0 {
@@ -86,20 +97,22 @@ func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
 			fieldCommentValues = append(fieldCommentValues, schema.Name, field.Name, field.Comment)
 			fieldCommentList = append(fieldCommentList, fieldComment)
 		}
-		if k+1 < fieldsCount {
+
+		processedCount++
+		if processedCount < fieldsCount {
 			sqlField += ","
-		} else {
-			sqlField += ");"
 		}
+
 		sqlFieldList = append(sqlFieldList, sqlField)
 	}
+	sqlFieldList = append(sqlFieldList, ");")
 
 	//Предотвращение SQL инъекций по образу, как это делалось в PHP
 	for k, v := range sqlValues {
 		sqlValues[k] = service.Escape(v.(string))
 	}
 
-	//TODO: возможно имеет смысл сразу сетить всё в строку.
+	//TODO: возможно имеет смысл сразу устанавливать всё в строку.
 	var resultSQL string
 	for _, sqlField := range sqlFieldList {
 		resultSQL += sqlField
@@ -114,11 +127,3 @@ func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
 
 	return err
 }
-
-//CREATE TABLE users (
-//id INT AUTO_INCREMENT PRIMARY KEY,
-//phone BIGINT,
-//name VARCHAR(256),
-//surname VARCHAR(256),
-//password VARCHAR(1024)
-//);

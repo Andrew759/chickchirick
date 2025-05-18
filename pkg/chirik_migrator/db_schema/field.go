@@ -8,17 +8,20 @@ import (
 //TODO: впоследствии можно вынести эти константы и методы для posgres в отдельное место.
 
 const (
-	Bool     DataType = "BOOLEAN"
-	Smallint DataType = "SMALLINT"
-	Int      DataType = "INTEGER"
-	Bigint   DataType = "BIGINT"
-	Float    DataType = "FLOAT"
-	Varchar  DataType = "VARCHAR"
-	Text     DataType = "TEXT"
-	Time     DataType = "TIMESTAMP WITH TIME ZONE"
-	Bytes    DataType = "SMALLINT"
+	Bool                     DataType = "BOOLEAN"
+	Smallint                 DataType = "SMALLINT"
+	Int                      DataType = "INTEGER"
+	Bigint                   DataType = "BIGINT"
+	Float                    DataType = "FLOAT"
+	Varchar                  DataType = "VARCHAR"
+	Text                     DataType = "TEXT"
+	TimestampWithTimezone    DataType = "TIMESTAMP WITH TIME ZONE"
+	TimestampWithoutTimezone DataType = "TIMESTAMP WITHOUT TIME ZONE"
+	Bytes                    DataType = "SMALLINT"
 	// Uuid TODO: требуется доработка:
-	Uuid DataType = "UUID"
+	Uuid  DataType = "UUID"
+	Json  DataType = "JSON"
+	Jsonb DataType = "JSONB"
 )
 
 type Field struct {
@@ -76,11 +79,17 @@ func (f Field) FillPgDataTypeByString(fieldType string) (Field, error) {
 	case "byte", "rune":
 		f.DataType = Bytes
 		break
-	case "time", "timestamp without time zone", "timestamp with time zone":
-		f.DataType = Time
+	case "timestamp without time zone":
+		f.DataType = TimestampWithoutTimezone
+	case "time", "time.time", "timestamp with time zone":
+		f.DataType = TimestampWithTimezone
 		break
-	case "uuid":
+	case "uuid", "pgtype.uuid":
 		f.DataType = Uuid
+	case "json":
+		f.DataType = Json
+	case "jsonb", "pgtype.jsonbcodec":
+		f.DataType = Jsonb
 		break
 	default:
 		return f, fmt.Errorf("unknown type: %s", fieldType)

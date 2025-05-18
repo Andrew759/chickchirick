@@ -4,6 +4,7 @@ import (
 	"chickChirick/pkg/chirik_ast"
 	"chickChirick/pkg/chirik_migrator/console/config"
 	"chickChirick/pkg/chirik_migrator/db_schema"
+	"chickChirick/pkg/chirik_migrator/migrator/service"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -72,13 +73,9 @@ func (mInfo *MigratorInfo) PrepareEmptySchema(structure chirik_ast.Structure) db
 	schema := db_schema.Schema{}
 	schema.Name = structure.Name()
 
-	//TODO: вынести в отдельный метод? Добавление постфикса s и ловерспейс по умолчанию
-	tableName := strings.ToLower(structure.Name())
-	rTableName := []rune(tableName)
-	lastCharter := string(rTableName[len(rTableName)-1:])
-	if lastCharter != "s" {
-		tableName += "s"
-	}
+	tableName := service.AddSingleSPostfix(
+		service.ToSnakeCase(structure.Name()),
+	)
 
 	schema.Table = tableName
 
@@ -88,7 +85,7 @@ func (mInfo *MigratorInfo) PrepareEmptySchema(structure chirik_ast.Structure) db
 func (mInfo *MigratorInfo) PrepareSchemaField(field chirik_ast.Field, schema *db_schema.Schema) (db_schema.Field, error) {
 	schemaField := db_schema.Field{}
 
-	schemaField.Name = field.Name()
+	schemaField.Name = service.ToSnakeCase(field.Name())
 	schemaField.Schema = schema
 
 	var err error
