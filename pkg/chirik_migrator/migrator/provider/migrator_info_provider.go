@@ -95,9 +95,10 @@ func (mInfo *MigratorInfo) PrepareSchemaField(field chirik_ast.Field, schema *db
 	if fTags != nil {
 		for _, tag := range fTags.List() {
 			mInfo.FillByTagAndSchemaField(tag, &schemaField)
-			if mInfo.HasError() {
-				break
-			}
+			//TODO: тут ошибка
+			//if mInfo.HasError() {
+			//	break
+			//}
 		}
 	}
 

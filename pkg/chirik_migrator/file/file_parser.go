@@ -67,12 +67,11 @@ func ReadEntityFile(path string, entityNames []string) ([]migratorDto.MigratorIn
 
 	entityNamespace := file.Package.Name()
 	for _, structure := range file.Structures.List() {
-		mInfo := migratorDto.MigratorInfo{}
-		mInfo.EntityNamespace = entityNamespace
-
 		if hasNameRestriction && !slices.Contains(entityNames, structure.Name()) {
 			continue
 		}
+		mInfo := migratorDto.MigratorInfo{}
+		mInfo.EntityNamespace = entityNamespace
 
 		mInfo.FillByEntity(*structure)
 
