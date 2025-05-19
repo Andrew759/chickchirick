@@ -12,7 +12,8 @@ const (
 	Smallint                 DataType = "SMALLINT"
 	Int                      DataType = "INTEGER"
 	Bigint                   DataType = "BIGINT"
-	Float                    DataType = "FLOAT"
+	Real                     DataType = "REAL"
+	DoublePrecision          DataType = "DOUBLE PRECISION"
 	Varchar                  DataType = "VARCHAR"
 	Text                     DataType = "TEXT"
 	TimestampWithTimezone    DataType = "TIMESTAMP WITH TIME ZONE"
@@ -64,10 +65,11 @@ func (f Field) FillPgDataTypeByString(fieldType string) (Field, error) {
 	case "int", "int64", "bigint", "uint", "uint64":
 		f.DataType = Bigint
 		break
-		//TODO: не доработано
-	case "float", "float32", "float64":
-		f.DataType = Float
-		break
+	//TODO: не доработано
+	case "float32", "real":
+		f.DataType = Real
+	case "float", "float64", "double precision":
+		f.DataType = DoublePrecision
 	case "string", "varchar":
 		f.DataType = Varchar
 		break

@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-func ReadDir(entityNames []string) (map[string][]migratorDto.MigratorInfo, error) {
+func ReadEntityDir(entityNames []string) (map[string][]migratorDto.MigratorInfo, error) {
 	var fPaths []string
 	err := filepath.WalkDir(viper.GetString(config.EntityPath),
 		func(path string, d fs.DirEntry, err error) error {
@@ -35,7 +35,7 @@ func ReadDir(entityNames []string) (map[string][]migratorDto.MigratorInfo, error
 
 	for _, path := range fPaths {
 		//TODO: распараллелить? и подумать над более аккуратной обработкой ошибок
-		migratorInfoList, err := ReadFile(path, entityNames)
+		migratorInfoList, err := ReadEntityFile(path, entityNames)
 		if err != nil {
 			return migratorEntities, err
 		}
@@ -48,7 +48,7 @@ func ReadDir(entityNames []string) (map[string][]migratorDto.MigratorInfo, error
 	return migratorEntities, err
 }
 
-func ReadFile(path string, entityNames []string) ([]migratorDto.MigratorInfo, error) {
+func ReadEntityFile(path string, entityNames []string) ([]migratorDto.MigratorInfo, error) {
 	file, err := chirik_ast.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("error while reading file %s", err)
@@ -59,17 +59,14 @@ func ReadFile(path string, entityNames []string) ([]migratorDto.MigratorInfo, er
 
 	eCount := len(entityNames)
 	hasNameRestriction := eCount > 0
-	if hasNameRestriction && eCount == 1 {
-		if entityNames[0] == "*" {
-			hasNameRestriction = false
-		}
+	if eCount == 1 && entityNames[0] == "*" {
+		hasNameRestriction = false
 	}
 
-	structureList := file.Structures.List()
 	var mInfoList []migratorDto.MigratorInfo
 
 	entityNamespace := file.Package.Name()
-	for _, structure := range structureList {
+	for _, structure := range file.Structures.List() {
 		mInfo := migratorDto.MigratorInfo{}
 		mInfo.EntityNamespace = entityNamespace
 

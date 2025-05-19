@@ -16,8 +16,11 @@ func main() {
 	dbConfig := dto.NewConfiguration()
 	dbDecorator := appService.InitORM(&dbConfig)
 	defer dbDecorator.CloseDB()
+
 	commandService := service.CommandService{
-		DBDecorator: dbDecorator,
+		MigratorService: service.MigratorService{
+			DBDecorator: dbDecorator,
+		},
 	}
 
 	err := commandService.ParseInput()

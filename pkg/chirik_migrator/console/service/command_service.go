@@ -1,17 +1,14 @@
 package service
 
 import (
-	"chickChirick/cmd/service"
 	"chickChirick/pkg/chirik_migrator/console/config"
 	"chickChirick/pkg/chirik_migrator/file"
-	"chickChirick/pkg/chirik_migrator/migrator/factory"
-	migratorDto "chickChirick/pkg/chirik_migrator/migrator/provider"
 	"fmt"
 	"os"
 )
 
 type CommandService struct {
-	DBDecorator service.DBDecorator
+	MigratorService
 }
 
 func (cs CommandService) ParseInput() error {
@@ -26,12 +23,12 @@ func (cs CommandService) ParseInput() error {
 	switch command {
 	case config.MigrateKey:
 		//TODO: распараллелить?
-		migratorEntities, err := file.ReadDir(os.Args[2:])
+		migratorEntities, err := file.ReadEntityDir(os.Args[2:])
 		if err != nil {
 			return err
 		}
 
-		err = cs.doMigrate(migratorEntities)
+		err = cs.MigratorService.DoMigrate(migratorEntities)
 		if err != nil {
 			return err
 		}
@@ -40,15 +37,4 @@ func (cs CommandService) ParseInput() error {
 	default:
 		return fmt.Errorf("invalid command")
 	}
-}
-
-// TODO: вынести отдельно как зависимость CommandService
-func (cs CommandService) doMigrate(migratorEntities map[string][]migratorDto.MigratorInfo) error {
-	migratorService := factory.InitMigrator(cs.DBDecorator, factory.WithCreateIndexAfterCreateTable())
-	err := migratorService.CreateTables(migratorEntities)
-	if err != nil {
-		//TODO: реализовать
-	}
-
-	return nil
 }
