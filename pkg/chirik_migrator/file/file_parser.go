@@ -85,9 +85,10 @@ func ReadFile(path string, entityNames []string) ([]migratorDto.MigratorInfo, er
 	return mInfoList, nil
 }
 
-func WriteSQLToFile(sql string, migrationPath string) error {
-	fileName := fmt.Sprintf("m%s.sql",
+func WriteSQLToFile(sql string, filePostfix string, migrationPath string) error {
+	fileName := fmt.Sprintf("m%s_%s.sql",
 		time.Now().Format("20060102_150405"),
+		filePostfix,
 	)
 	fullFN := migrationPath + "/" + fileName
 

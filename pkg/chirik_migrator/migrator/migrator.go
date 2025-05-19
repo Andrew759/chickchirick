@@ -28,6 +28,9 @@ func (m Migrator) CreateTables(migratorEntities map[string][]migratorDto.Migrato
 	for _, migratorInfoList := range migratorEntities {
 		for _, migratorInfo := range migratorInfoList {
 			err = m.CreateTable(migratorInfo)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return err
@@ -50,7 +53,8 @@ func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
 	sqlFieldList = append(sqlFieldList, "CREATE TABLE IF NOT EXISTS %s \n(")
 
 	var sqlValues []any
-	sqlValues = append(sqlValues, migratorInfo.EntityNamespace+"_"+schema.Table)
+	fullTableName := migratorInfo.EntityNamespace + "_" + schema.Table
+	sqlValues = append(sqlValues, fullTableName)
 
 	var fieldCommentList []string
 	var fieldCommentValues []string
@@ -124,5 +128,5 @@ func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
 		return err
 	}
 
-	return file.WriteSQLToFile(resultSQL, m.MigrationFilesPath)
+	return file.WriteSQLToFile(resultSQL, fullTableName, m.MigrationFilesPath)
 }
