@@ -46,6 +46,14 @@ type Field struct {
 	OwnerSchema    *Schema
 }
 
+type FieldTypeError struct {
+	Msg string
+}
+
+func (e *FieldTypeError) Error() string {
+	return e.Msg
+}
+
 type DataType string
 
 func (d DataType) String() string {
@@ -94,7 +102,7 @@ func (f Field) FillPgDataTypeByString(fieldType string) (Field, error) {
 		f.DataType = Jsonb
 		break
 	default:
-		return f, fmt.Errorf("unknown type: %s", fieldType)
+		return f, &FieldTypeError{fmt.Sprintf("unknown type: %s", fieldType)}
 	}
 
 	return f, nil

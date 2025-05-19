@@ -12,8 +12,10 @@ type MigratorService struct {
 
 func (ms MigratorService) DoMigrate(migratorEntities map[string][]migratorDto.MigratorInfo) error {
 	migratorService := factory.InitMigrator(ms.DBDecorator, factory.WithCreateIndexAfterCreateTable())
-	err := migratorService.CreateTables(migratorEntities)
-	if err != nil {
+	errList := migratorService.CreateTables(migratorEntities)
+
+	//TODO: временное решение на момент рефакторинга
+	for _, err := range errList {
 		return err
 	}
 

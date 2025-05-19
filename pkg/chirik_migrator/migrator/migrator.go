@@ -3,9 +3,11 @@ package migrator
 //TODO: тут при разнесении на микросервисы может быть проблема
 import (
 	mainService "chickChirick/cmd/service"
+	"chickChirick/pkg/chirik_migrator/db_schema"
 	"chickChirick/pkg/chirik_migrator/file"
 	migratorDto "chickChirick/pkg/chirik_migrator/migrator/provider"
 	"chickChirick/pkg/chirik_migrator/migrator/service"
+	"errors"
 	"fmt"
 	"strconv"
 )
@@ -22,18 +24,18 @@ type Migrator struct {
 	Config
 }
 
-func (m Migrator) CreateTables(migratorEntities map[string][]migratorDto.MigratorInfo) error {
-	var err error
+func (m Migrator) CreateTables(migratorEntities map[string][]migratorDto.MigratorInfo) []error {
+	var errList []error
 
 	for _, migratorInfoList := range migratorEntities {
 		for _, migratorInfo := range migratorInfoList {
-			err = m.CreateTable(migratorInfo)
+			err := m.CreateTable(migratorInfo)
 			if err != nil {
-				return err
+				errList = append(errList, err)
 			}
 		}
 	}
-	return err
+	return errList
 }
 
 func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
@@ -43,10 +45,19 @@ func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
 
 	schema := &migratorInfo.Schema
 	if migratorInfo.HasError() {
-		return fmt.Errorf("can't process entity with errors at prepare stage: %s : %s",
-			schema.Name,
-			migratorInfo.ErrList,
-		)
+		for _, err := range migratorInfo.ErrList {
+			var fieldTypeError *db_schema.FieldTypeError
+			if errors.As(err, &fieldTypeError) {
+				//TODO: временная реализация
+				continue
+			} else {
+				return fmt.Errorf("can't process entity with errors at prepare stage: %s : %s",
+					schema.Name,
+					migratorInfo.ErrList,
+				)
+			}
+		}
+
 	}
 
 	var sqlFieldList []string
