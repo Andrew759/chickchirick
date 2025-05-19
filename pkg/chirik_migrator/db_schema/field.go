@@ -73,7 +73,7 @@ func (f Field) FillPgDataTypeByString(fieldType string) (Field, error) {
 		break
 	case "text":
 		f.DataType = Text
-	case "bool":
+	case "bool", "boolean":
 		f.DataType = Bool
 		break
 	case "byte", "rune":

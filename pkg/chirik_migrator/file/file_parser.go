@@ -66,8 +66,10 @@ func ReadFile(path string, entityNames []string) ([]migratorDto.MigratorInfo, er
 	structureList := file.Structures.List()
 	var mInfoList []migratorDto.MigratorInfo
 
+	entityNamespace := file.Package.Name()
 	for _, structure := range structureList {
 		mInfo := migratorDto.MigratorInfo{}
+		mInfo.EntityNamespace = entityNamespace
 
 		if hasNameRestriction && !slices.Contains(entityNames, structure.Name()) {
 			continue

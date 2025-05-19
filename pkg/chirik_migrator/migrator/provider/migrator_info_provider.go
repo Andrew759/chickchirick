@@ -13,6 +13,7 @@ import (
 
 type MigratorInfo struct {
 	MigratorEnabled bool
+	EntityNamespace string
 	Schema          db_schema.Schema
 	ErrList         []error
 }
@@ -37,7 +38,9 @@ func (mInfo *MigratorInfo) FillByEntity(structure chirik_ast.Structure) {
 		schemaField, err := mInfo.PrepareSchemaField(*field, &schema)
 		//Пропуск незначащих полей: могут иметь побочные действия, но при непосредственной
 		// миграции использоваться не могут
-		if schemaField.Name == "" || schemaField.IgnoreMigration {
+		if schemaField.Name == "" ||
+			schemaField.DataType.String() == "" ||
+			schemaField.IgnoreMigration {
 			skipField = true
 		}
 

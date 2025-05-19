@@ -48,7 +48,7 @@ func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
 	sqlFieldList = append(sqlFieldList, "CREATE TABLE IF NOT EXISTS %s (")
 
 	var sqlValues []any
-	sqlValues = append(sqlValues, schema.Table)
+	sqlValues = append(sqlValues, migratorInfo.EntityNamespace+"_"+schema.Table)
 
 	var fieldCommentList []string
 	var fieldCommentValues []string
@@ -60,7 +60,6 @@ func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
 		//TODO: временное решение
 		//Пропуск полей без типа
 		if fieldType == "" {
-			fieldsCount--
 			continue
 		}
 
@@ -123,7 +122,11 @@ func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
 	result, err := m.NativeDB().Exec(resultSQL)
 
 	//TODO: удалить. Можно вернуть результат и в отдельном сервисе записать в файл
-	fmt.Println(result)
+	if err != nil {
+		fmt.Println(err)
+		fmt.Println(result)
+
+	}
 
 	return err
 }
