@@ -1,8 +1,9 @@
 package migrator
 
+//TODO: тут при разнесении на микросервисы может быть проблема
 import (
-	//TODO: тут при разнесении на микросервисы может быть проблема
 	mainService "chickChirick/cmd/service"
+	"chickChirick/pkg/chirik_migrator/file"
 	migratorDto "chickChirick/pkg/chirik_migrator/migrator/provider"
 	"chickChirick/pkg/chirik_migrator/migrator/service"
 	"fmt"
@@ -14,6 +15,7 @@ import (
 type Config struct {
 	CreateIndexAfterCreateTable bool
 	mainService.DBDecorator
+	MigrationFilesPath string
 }
 
 type Migrator struct {
@@ -26,6 +28,9 @@ func (m Migrator) CreateTables(migratorEntities map[string][]migratorDto.Migrato
 	for _, migratorInfoList := range migratorEntities {
 		for _, migratorInfo := range migratorInfoList {
 			err = m.CreateTable(migratorInfo)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return err
@@ -45,10 +50,11 @@ func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
 	}
 
 	var sqlFieldList []string
-	sqlFieldList = append(sqlFieldList, "CREATE TABLE IF NOT EXISTS %s (")
+	sqlFieldList = append(sqlFieldList, "CREATE TABLE IF NOT EXISTS %s \n(")
 
 	var sqlValues []any
-	sqlValues = append(sqlValues, schema.Table)
+	fullTableName := migratorInfo.EntityNamespace + "_" + schema.Table
+	sqlValues = append(sqlValues, fullTableName)
 
 	var fieldCommentList []string
 	var fieldCommentValues []string
@@ -57,14 +63,12 @@ func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
 	processedCount := 0
 	for _, field := range schema.Fields {
 		fieldType := field.DataType.String()
-		//TODO: временное решение
 		//Пропуск полей без типа
 		if fieldType == "" {
-			fieldsCount--
 			continue
 		}
 
-		sqlField := "%s %s"
+		sqlField := "\n %s %s"
 
 		//TODO: При установке типа необходимость в дальнейшем вынесении отдельного провайдера для
 		// postgres, т.к в разных БД реализация будет отличаться
@@ -105,14 +109,13 @@ func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
 
 		sqlFieldList = append(sqlFieldList, sqlField)
 	}
-	sqlFieldList = append(sqlFieldList, ");")
+	sqlFieldList = append(sqlFieldList, "\n);")
 
 	//Предотвращение SQL инъекций по образу, как это делалось в PHP
 	for k, v := range sqlValues {
 		sqlValues[k] = service.Escape(v.(string))
 	}
 
-	//TODO: возможно имеет смысл сразу устанавливать всё в строку.
 	var resultSQL string
 	for _, sqlField := range sqlFieldList {
 		resultSQL += sqlField
@@ -120,10 +123,10 @@ func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
 
 	resultSQL = fmt.Sprintf(resultSQL, sqlValues...)
 
-	result, err := m.NativeDB().Exec(resultSQL)
+	_, err := m.NativeDB().Exec(resultSQL)
+	if err != nil {
+		return err
+	}
 
-	//TODO: удалить. Можно вернуть результат и в отдельном сервисе записать в файл
-	fmt.Println(result)
-
-	return err
+	return file.WriteSQLToFile(resultSQL, fullTableName, m.MigrationFilesPath)
 }

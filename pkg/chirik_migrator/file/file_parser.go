@@ -7,8 +7,10 @@ import (
 	"fmt"
 	"github.com/spf13/viper"
 	"io/fs"
+	"os"
 	"path/filepath"
 	"slices"
+	"time"
 )
 
 func ReadDir(entityNames []string) (map[string][]migratorDto.MigratorInfo, error) {
@@ -66,8 +68,10 @@ func ReadFile(path string, entityNames []string) ([]migratorDto.MigratorInfo, er
 	structureList := file.Structures.List()
 	var mInfoList []migratorDto.MigratorInfo
 
+	entityNamespace := file.Package.Name()
 	for _, structure := range structureList {
 		mInfo := migratorDto.MigratorInfo{}
+		mInfo.EntityNamespace = entityNamespace
 
 		if hasNameRestriction && !slices.Contains(entityNames, structure.Name()) {
 			continue
@@ -79,4 +83,14 @@ func ReadFile(path string, entityNames []string) ([]migratorDto.MigratorInfo, er
 	}
 
 	return mInfoList, nil
+}
+
+func WriteSQLToFile(sql string, filePostfix string, migrationPath string) error {
+	fileName := fmt.Sprintf("m%s_%s.sql",
+		time.Now().Format("20060102_150405"),
+		filePostfix,
+	)
+	fullFN := migrationPath + "/" + fileName
+
+	return os.WriteFile(fullFN, []byte(sql), 0644)
 }

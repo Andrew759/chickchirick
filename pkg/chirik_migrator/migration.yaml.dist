@@ -1,2 +1,2 @@
-DB_MIGRATION_PATH: sql/
+DB_MIGRATION_PATH: ./pkg/chirik_migrator/sql
 DB_ENTITY_PATH: ./internal/model
