@@ -7,8 +7,10 @@ import (
 	"fmt"
 	"github.com/spf13/viper"
 	"io/fs"
+	"os"
 	"path/filepath"
 	"slices"
+	"time"
 )
 
 func ReadDir(entityNames []string) (map[string][]migratorDto.MigratorInfo, error) {
@@ -33,7 +35,7 @@ func ReadDir(entityNames []string) (map[string][]migratorDto.MigratorInfo, error
 
 	for _, path := range fPaths {
 		//TODO: распараллелить? и подумать над более аккуратной обработкой ошибок
-		migratorInfoList, err := readFile(path, entityNames)
+		migratorInfoList, err := ReadFile(path, entityNames)
 		if err != nil {
 			return migratorEntities, err
 		}
@@ -46,7 +48,7 @@ func ReadDir(entityNames []string) (map[string][]migratorDto.MigratorInfo, error
 	return migratorEntities, err
 }
 
-func readFile(path string, entityNames []string) ([]migratorDto.MigratorInfo, error) {
+func ReadFile(path string, entityNames []string) ([]migratorDto.MigratorInfo, error) {
 	file, err := chirik_ast.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("error while reading file %s", err)
@@ -55,13 +57,23 @@ func readFile(path string, entityNames []string) ([]migratorDto.MigratorInfo, er
 		return nil, fmt.Errorf("got invalid file %s", err)
 	}
 
-	structureList := file.Structures.List()
+	eCount := len(entityNames)
+	hasNameRestriction := eCount > 0
+	if hasNameRestriction && eCount == 1 {
+		if entityNames[0] == "*" {
+			hasNameRestriction = false
+		}
+	}
 
+	structureList := file.Structures.List()
 	var mInfoList []migratorDto.MigratorInfo
+
+	entityNamespace := file.Package.Name()
 	for _, structure := range structureList {
 		mInfo := migratorDto.MigratorInfo{}
+		mInfo.EntityNamespace = entityNamespace
 
-		if len(entityNames) > 0 && !slices.Contains(entityNames, structure.Name()) {
+		if hasNameRestriction && !slices.Contains(entityNames, structure.Name()) {
 			continue
 		}
 
@@ -71,4 +83,14 @@ func readFile(path string, entityNames []string) ([]migratorDto.MigratorInfo, er
 	}
 
 	return mInfoList, nil
+}
+
+func WriteSQLToFile(sql string, filePostfix string, migrationPath string) error {
+	fileName := fmt.Sprintf("m%s_%s.sql",
+		time.Now().Format("20060102_150405"),
+		filePostfix,
+	)
+	fullFN := migrationPath + "/" + fileName
+
+	return os.WriteFile(fullFN, []byte(sql), 0644)
 }

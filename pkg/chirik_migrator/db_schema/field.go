@@ -5,21 +5,23 @@ import (
 	"strings"
 )
 
-type (
-	DataType string
-)
+//TODO: впоследствии можно вынести эти константы и методы для posgres в отдельное место.
 
 const (
-	Bool     DataType = "bool"
-	Smallint DataType = "smallint"
-	Int      DataType = "integer"
-	Bigint   DataType = "bigint"
-	Float    DataType = "float"
-	Varchar  DataType = "varchar"
-	Text     DataType = "text"
-	Time     DataType = "time"
-	Bytes    DataType = "bytes"
-	Uuid     DataType = "uuid"
+	Bool                     DataType = "BOOLEAN"
+	Smallint                 DataType = "SMALLINT"
+	Int                      DataType = "INTEGER"
+	Bigint                   DataType = "BIGINT"
+	Float                    DataType = "FLOAT"
+	Varchar                  DataType = "VARCHAR"
+	Text                     DataType = "TEXT"
+	TimestampWithTimezone    DataType = "TIMESTAMP WITH TIME ZONE"
+	TimestampWithoutTimezone DataType = "TIMESTAMP WITHOUT TIME ZONE"
+	Bytes                    DataType = "SMALLINT"
+	// Uuid TODO: требуется доработка:
+	Uuid  DataType = "UUID"
+	Json  DataType = "JSON"
+	Jsonb DataType = "JSONB"
 )
 
 type Field struct {
@@ -33,20 +35,27 @@ type Field struct {
 	NotNull                bool
 	Unique                 bool
 	//TODO: это мок, а не полноценная реализация
-	HasIndex bool
-	Comment  string
-	Size     int
-	Schema   *Schema
+	HasIndex        bool
+	Comment         string
+	Size            int
+	IgnoreMigration bool
+	Schema          *Schema
 	//TODO: необходимо доработать
 	EmbeddedSchema *Schema
 	OwnerSchema    *Schema
+}
+
+type DataType string
+
+func (d DataType) String() string {
+	return string(d)
 }
 
 func (f Field) FillPgDataTypeByString(fieldType string) (Field, error) {
 	fieldType = strings.ToLower(fieldType)
 
 	switch fieldType {
-	case "int8", "int16", "uint8", "uint16":
+	case "smallint", "int8", "int16", "uint8", "uint16":
 		f.DataType = Smallint
 		break
 	case "int32", "uint32":
@@ -64,17 +73,23 @@ func (f Field) FillPgDataTypeByString(fieldType string) (Field, error) {
 		break
 	case "text":
 		f.DataType = Text
-	case "bool":
+	case "bool", "boolean":
 		f.DataType = Bool
 		break
 	case "byte", "rune":
 		f.DataType = Bytes
 		break
-	case "time":
-		f.DataType = Time
+	case "timestamp without time zone":
+		f.DataType = TimestampWithoutTimezone
+	case "time", "time.time", "timestamp with time zone":
+		f.DataType = TimestampWithTimezone
 		break
-	case "uuid":
+	case "uuid", "pgtype.uuid":
 		f.DataType = Uuid
+	case "json":
+		f.DataType = Json
+	case "jsonb", "pgtype.jsonbcodec":
+		f.DataType = Jsonb
 		break
 	default:
 		return f, fmt.Errorf("unknown type: %s", fieldType)

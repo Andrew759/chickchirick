@@ -2,7 +2,9 @@ package factory
 
 import (
 	"chickChirick/cmd/service"
+	"chickChirick/pkg/chirik_migrator/console/config"
 	"chickChirick/pkg/chirik_migrator/migrator"
+	"github.com/spf13/viper"
 )
 
 type migratorOptions struct { //Конфигурация структуры
@@ -27,6 +29,7 @@ func InitMigrator(dBDecorator service.DBDecorator, opts ...MigratorOption) migra
 		Config: migrator.Config{
 			CreateIndexAfterCreateTable: mOptions.createIndexAfterCreateTable,
 			DBDecorator:                 dBDecorator,
+			MigrationFilesPath:          viper.GetString(config.MigrationPath),
 		},
 	}
 }

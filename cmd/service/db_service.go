@@ -57,3 +57,11 @@ func (dbd DBDecorator) CloseDB() {
 		panic(fmt.Errorf("db close error: %w", err))
 	}
 }
+
+func (dbd DBDecorator) GDB() *gorm.DB {
+	return dbd.GormInterface
+}
+
+func (dbd DBDecorator) NativeDB() *sql.DB {
+	return dbd.NativeInterface
+}
