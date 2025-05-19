@@ -24,18 +24,16 @@ type Migrator struct {
 	Config
 }
 
-func (m Migrator) CreateTables(migratorEntities map[string][]migratorDto.MigratorInfo) []error {
-	var errList []error
-
+func (m Migrator) CreateTables(migratorEntities map[string][]migratorDto.MigratorInfo) error {
 	for _, migratorInfoList := range migratorEntities {
 		for _, migratorInfo := range migratorInfoList {
 			err := m.CreateTable(migratorInfo)
 			if err != nil {
-				errList = append(errList, err)
+				return err
 			}
 		}
 	}
-	return errList
+	return nil
 }
 
 func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
@@ -44,20 +42,20 @@ func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
 	}
 
 	schema := &migratorInfo.Schema
-	if migratorInfo.HasError() {
+	if migratorInfo.HasCriticalError() {
+		return fmt.Errorf("can't process entity with errors at prepare stage: %s : %s",
+			schema.Name,
+			migratorInfo.ErrList,
+		)
+	}
+
+	if migratorInfo.HasInfoError() {
+		var fieldTypeError *db_schema.FieldTypeError
 		for _, err := range migratorInfo.ErrList {
-			var fieldTypeError *db_schema.FieldTypeError
 			if errors.As(err, &fieldTypeError) {
-				//TODO: временная реализация
-				continue
-			} else {
-				return fmt.Errorf("can't process entity with errors at prepare stage: %s : %s",
-					schema.Name,
-					migratorInfo.ErrList,
-				)
+				//TODO: Implement this
 			}
 		}
-
 	}
 
 	var sqlFieldList []string

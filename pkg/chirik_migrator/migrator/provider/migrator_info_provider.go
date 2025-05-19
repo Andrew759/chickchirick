@@ -16,6 +16,7 @@ type MigratorInfo struct {
 	EntityNamespace string
 	Schema          db_schema.Schema
 	ErrList         []error
+	InfoErrList     []error
 }
 
 func (mInfo *MigratorInfo) FillByEntity(structure chirik_ast.Structure) {
@@ -62,8 +63,12 @@ func (mInfo *MigratorInfo) FillByEntity(structure chirik_ast.Structure) {
 	mInfo.Schema = schema
 }
 
-func (mInfo *MigratorInfo) HasError() bool {
+func (mInfo *MigratorInfo) HasCriticalError() bool {
 	return mInfo.ErrList != nil
+}
+
+func (mInfo *MigratorInfo) HasInfoError() bool {
+	return mInfo.InfoErrList != nil
 }
 
 func (mInfo *MigratorInfo) PrepareEmptySchema(structure chirik_ast.Structure) db_schema.Schema {
@@ -85,20 +90,19 @@ func (mInfo *MigratorInfo) PrepareSchemaField(field chirik_ast.Field, schema *db
 	schemaField.Name = service.ToSnakeCase(field.Name())
 	schemaField.Schema = schema
 
-	var err error
-	schemaField, err = schemaField.FillPgDataTypeByString(field.Type().Value())
-	if err != nil {
-		mInfo.ErrList = append(mInfo.ErrList, err)
+	var infoErr error
+	schemaField, infoErr = schemaField.FillPgDataTypeByString(field.Type().Value())
+	if infoErr != nil {
+		mInfo.InfoErrList = append(mInfo.ErrList, infoErr)
 	}
 
 	fTags := field.Tags()
 	if fTags != nil {
 		for _, tag := range fTags.List() {
 			mInfo.FillByTagAndSchemaField(tag, &schemaField)
-			//TODO: тут ошибка
-			//if mInfo.HasError() {
-			//	break
-			//}
+			if mInfo.HasCriticalError() {
+				break
+			}
 		}
 	}
 
@@ -153,7 +157,8 @@ func (mInfo *MigratorInfo) FillByGormTagAndSchemaField(schemaField *db_schema.Fi
 		case "column":
 			schemaField.Name = tValue
 		case "type":
-			_, err = schemaField.FillPgDataTypeByString(tValue)
+			_, typeErr := schemaField.FillPgDataTypeByString(tValue)
+			mInfo.InfoErrList = append(mInfo.InfoErrList, typeErr)
 		case "size":
 			schemaField.Size, err = strconv.Atoi(tValue)
 		case "primaryKey":
