@@ -7,8 +7,10 @@ import (
 	"fmt"
 	"github.com/spf13/viper"
 	"io/fs"
+	"os"
 	"path/filepath"
 	"slices"
+	"time"
 )
 
 func ReadDir(entityNames []string) (map[string][]migratorDto.MigratorInfo, error) {
@@ -81,4 +83,13 @@ func ReadFile(path string, entityNames []string) ([]migratorDto.MigratorInfo, er
 	}
 
 	return mInfoList, nil
+}
+
+func WriteSQLToFile(sql string, migrationPath string) error {
+	fileName := fmt.Sprintf("m%s.sql",
+		time.Now().Format("20060102_150405"),
+	)
+	fullFN := migrationPath + "/" + fileName
+
+	return os.WriteFile(fullFN, []byte(sql), 0644)
 }
