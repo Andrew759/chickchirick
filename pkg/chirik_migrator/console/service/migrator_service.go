@@ -11,6 +11,6 @@ type MigratorService struct {
 }
 
 func (ms MigratorService) DoMigrate(migratorEntities map[string][]migratorDto.MigratorInfo) error {
-	migratorService := factory.InitMigrator(ms.DBDecorator, factory.WithCreateIndexAfterCreateTable())
-	return migratorService.CreateTables(migratorEntities)
+	migrator := factory.InitMigrator(ms.DBDecorator, factory.WithCreateIndexAfterCreateTable())
+	return migrator.CreateTables(migratorEntities)
 }
