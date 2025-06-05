@@ -5,37 +5,36 @@ ARG USER_UID=1000
 
 FROM golang:${GOLANG_VERSION}-alpine as builder
 
-#TODO Починить
-#RUN apk update && apk upgrade && \
-#    apk add --no-cache bash git openssh
+#Устанавливаются нужные пакеты
+RUN apk update && apk upgrade && \
+    apk add --no-cache bash git openssh
 
-
-# Устанавливаем рабочую директорию
+# Устанавливается рабочая директория
 WORKDIR /app
 
-# Копируем go.mod и go.sum из корневой директории
+# Копируется go.mod и go.sum из корневой директории
 COPY ./go.mod ./go.sum ./
 
-# Загружаем зависимости
+# Загружаются зависимости go
 RUN go mod download
 
-# Копируем исходный код
+# Копируется исходный код
 COPY ./ ./
 
-# Компилируем приложение
+# Компилируется приложение
 RUN go build -o main ./cmd/main.go
 
-
-# Финальный минимальный образ
+# Создается финальный образ
 FROM alpine:latest
 
+# Устанавливается рабочая директория
 WORKDIR /root/
 
-# Копируем бинарник из стадии сборки
+# Копируется бинарник из стадии сборки
 COPY --from=builder . .
 
-# Открываем порт
+# Открывается порт
 EXPOSE 8080
 
-# Команда по умолчанию
+# Запуск бинарника
 CMD ["./app/main"]
