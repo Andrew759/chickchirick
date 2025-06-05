@@ -5,20 +5,18 @@ services:
       - '81:80'
     depends_on:
       - api
-    networks:
-      - backend
   api:
     build:
-      context: .
+#      context: .
       dockerfile: ./build/Dockerfile
     ports:
       - "8081:8080"
-    depends_on:
-      - redis
+#    depends_on:
+#      - redis
     volumes:
       - .:/app
-    networks:
-      - backend
+#    networks:
+#      - backend
 
   redis:
     image: redis:latest
@@ -28,8 +26,8 @@ services:
       REDIS_USER_PASSWORD: ${REDIS_PASSWORD}
     ports:
       - ${REDIS_PORT}:${REDIS_INTERNAL_PORT}
-  #    volumes:
-  #      - ./redis_data:/data
+#    volumes:
+#      - ./redis_data:/data
 
   postgres:
     image: postgres:17.2
@@ -39,10 +37,14 @@ services:
       POSTGRES_PASSWORD: ${DB_PASS}
     ports:
       - ${DB_PORT}:${DB_INTERNAL_PORT}
-    networks:
-      - backend
-  #    volumes:
-  #      - ./db_data:/var/lib/postgresql/data
+#    volumes:
+#      - ./db_data:/var/lib/postgresql/data
+  #TODO: тут нет network, возможно поэтому не будет работать
+
+#TODO: временно убрал volumes
+#volumes:
+#  db_data:
 
 networks:
   backend:
+#    driver: bridge

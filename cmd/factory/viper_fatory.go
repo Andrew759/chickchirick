@@ -7,7 +7,7 @@ import (
 )
 
 func InitViper() {
-	viper.SetConfigFile(".env")
+	viper.SetConfigFile("/app/.env")
 	readConfig()
 }
 

@@ -3,33 +3,39 @@
 ARG GOLANG_VERSION='1.23.5'
 ARG USER_UID=1000
 
-FROM golang:${GOLANG_VERSION}-alpine
+FROM golang:${GOLANG_VERSION}-alpine as builder
 
-# The latest alpine images don't have some tools like (`git` and `bash`).
-# Adding git, bash and openssh to the image
-RUN apk update && apk upgrade && \
-    apk add --no-cache bash git openssh
+#TODO Починить
+#RUN apk update && apk upgrade && \
+#    apk add --no-cache bash git openssh
 
-# Add Maintainer Info
 
-# Set the Current Working Directory inside the container
+# Устанавливаем рабочую директорию
 WORKDIR /app
 
-# Copy go mod and sum files
-COPY go.mod go.sum ./
+# Копируем go.mod и go.sum из корневой директории
+COPY ./go.mod ./go.sum ./
 
-# Download all dependancies. Dependencies will be cached if the go.mod and go.sum files are not changed
+# Загружаем зависимости
 RUN go mod download
 
-# Copy the source from the current directory to the Working Directory inside the container
-COPY . .
+# Копируем исходный код
+COPY ./ ./
 
-#TODO: починить
-# Build the Go app
-#RUN go build -o main .
+# Компилируем приложение
+RUN go build -o main ./cmd/main.go
 
-# Expose port 8080 to the outside world
+
+# Финальный минимальный образ
+FROM alpine:latest
+
+WORKDIR /root/
+
+# Копируем бинарник из стадии сборки
+COPY --from=builder . .
+
+# Открываем порт
 EXPOSE 8080
 
-# Run the executable
-#CMD ["./main"]
+# Команда по умолчанию
+CMD ["./app/main"]
