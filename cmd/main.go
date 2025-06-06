@@ -4,7 +4,6 @@ import (
 	"chickChirick/cmd/config"
 	"chickChirick/cmd/factory"
 	"chickChirick/cmd/service"
-	"fmt"
 )
 
 func main() {
@@ -18,9 +17,6 @@ func main() {
 	redis := service.InitRedis(appConfig.RedisConfig)
 	defer redis.RedisClose()
 
-	httpClient := factory.InitHttpClient()
-	httpServer := factory.InitServer()
-
-	//TODO: временная строка
-	fmt.Println(dbDecorator, redis, httpClient, httpServer)
+	//httpClient := factory.InitHttpClient()
+	factory.InitServer()
 }
