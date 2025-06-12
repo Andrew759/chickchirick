@@ -26,18 +26,20 @@
 
 # Ручной запуск
 1. Выполнить Docker-compose build (--no-cache без кэшей)
-   * Для dev: docker-compose -f docker-compose.yml -f docker-compose.dev.yml build
-   * Для stage: docker-compose -f docker-compose.yml docker-compose.stage.yml build 
-   * Для prod: docker-compose -f docker-compose.prod.yml build
+   * Для dev: docker-compose -f docker-compose.yml -f build/dev/docker-compose.yml build
+   * Для stage: docker-compose -f docker-compose.yml -f build/stage/docker-compose.yml build 
+   * Для prod: docker-compose -f build/prod/docker-compose.yml build
 2. Выполнить Docker-compose up (-d фоном)
-   * Для dev: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
-   * Для stage: docker-compose -f docker-compose.yml docker-compose.stage.yml up
-   * Для prod: docker-compose -f docker-compose.prod.yml up
+   * Для dev: docker-compose -f docker-compose.yml -f build/dev/docker-compose.yml up
+   * Для stage: docker-compose -f docker-compose.yml -f build/stage/docker-compose.yml up
+   * Для prod: docker-compose -f build/prod/docker-compose.yml up
 3. Если требуется запуск исполняемого бинарника локально, а не
 в контейнере - необходимо локально создать директорию /app и поместить в неё
 .env файл приложения
 
 ## Пояснения к запуску приложений 
+* Для прод используется свой отдельный docker-compose.yml файл без включения корневого (в дальнейшем можно уйти от
+этого решения)
 * Большая часть зависимостей контейнеров в dev окружении ограничивается
 версией "latest". Для prod/stage окружений такое ограничение недопустимо
 * prod окружение, при создании контейнера, использует файл .env в директории проекта; остальные окружения по умолчанию
