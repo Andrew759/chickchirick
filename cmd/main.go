@@ -14,9 +14,9 @@ func main() {
 	dbDecorator := service.InitORM(&appConfig.DatabaseConfig)
 	defer dbDecorator.CloseDB()
 
-	redis := service.InitRedis(appConfig.RedisConfig)
-	defer redis.RedisClose()
+	redisDecorator := service.InitRedis(appConfig.RedisConfig)
+	defer redisDecorator.RedisClose()
 
 	//httpClient := factory.InitHttpClient()
-	factory.InitServer()
+	factory.InitServer(dbDecorator, redisDecorator)
 }

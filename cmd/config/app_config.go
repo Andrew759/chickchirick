@@ -25,9 +25,9 @@ type RedisConfig struct {
 
 func (c AppConfiguration) NewAppConfiguration() AppConfiguration {
 	return AppConfiguration{
-		viper.GetString(globalConfig.Enviroment),
-		PrepareDatabaseConfig(),
-		RedisConfig{
+		Environment:    viper.GetString(globalConfig.Enviroment),
+		DatabaseConfig: PrepareDatabaseConfig(),
+		RedisConfig: RedisConfig{
 			Host:     viper.GetString(globalConfig.RedisHost),
 			Port:     viper.GetInt(globalConfig.RedisPort),
 			User:     viper.GetString(globalConfig.RedisUser),
