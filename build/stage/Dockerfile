@@ -20,7 +20,7 @@ RUN go mod download
 
 # Копируется исходный код
 COPY ./ ./
-COPY ./.env.stage ./.env
+COPY ./.env.stage .env
 
 # Компилируется приложение
 RUN go build -o main ./cmd/main.go
