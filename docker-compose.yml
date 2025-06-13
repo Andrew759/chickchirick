@@ -6,8 +6,8 @@ services:
       REDIS_USER_PASSWORD: ${REDIS_PASSWORD}
     ports:
       - ${REDIS_PORT}:${REDIS_INTERNAL_PORT}
-    volumes:
-      - ./redis_data:/data
+#    volumes:
+#      - ./redis_data:/data
 
   postgres:
     image: postgres:17.2
@@ -19,8 +19,13 @@ services:
       - ${DB_PORT}:${DB_INTERNAL_PORT}
     networks:
       - backend
-    volumes:
-      - ./db_data:/var/lib/postgresql/data
+#    volumes:
+#      - ./db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER}" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
 networks:
   backend:
