@@ -1,2 +1,3 @@
 DB_MIGRATION_PATH: ./pkg/chirik_migrator/sql
 DB_ENTITY_PATH: ./internal/model
+ENABLE_TABLE_NAMESPACE: false

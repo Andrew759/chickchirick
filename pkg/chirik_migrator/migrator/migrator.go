@@ -17,7 +17,8 @@ import (
 type Config struct {
 	CreateIndexAfterCreateTable bool
 	mainService.DBDecorator
-	MigrationFilesPath string
+	MigrationFilesPath   string
+	EnableTableNamespace bool
 }
 
 type Migrator struct {
@@ -37,32 +38,22 @@ func (m Migrator) CreateTables(migratorEntities map[string][]migratorDto.Migrato
 }
 
 func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
-	if !migratorInfo.MigratorEnabled {
-		return fmt.Errorf("can't process entity with disabled migrator: %s", migratorInfo.Schema.Name)
-	}
-
-	schema := &migratorInfo.Schema
-	if migratorInfo.HasCriticalError() {
-		return fmt.Errorf("can't process entity with errors at prepare stage: %s : %s",
-			schema.Name,
-			migratorInfo.ErrList,
-		)
-	}
-
-	if migratorInfo.HasInfoError() {
-		var fieldTypeError *db_schema.FieldTypeError
-		for _, err := range migratorInfo.ErrList {
-			if errors.As(err, &fieldTypeError) {
-				//TODO: Implement this
-			}
-		}
+	err := m.validateMInfo(migratorInfo)
+	if err != nil {
+		return err
 	}
 
 	var sqlFieldList []string
 	sqlFieldList = append(sqlFieldList, "CREATE TABLE IF NOT EXISTS %s \n(")
 
 	var sqlValues []any
-	fullTableName := migratorInfo.EntityNamespace + "_" + schema.Table
+
+	schema := &migratorInfo.Schema
+	fullTableName := schema.Table
+	if m.Config.EnableTableNamespace {
+		fullTableName = migratorInfo.EntityNamespace + "_" + schema.Table
+	}
+
 	sqlValues = append(sqlValues, fullTableName)
 
 	var fieldCommentList []string
@@ -132,10 +123,34 @@ func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
 
 	resultSQL = fmt.Sprintf(resultSQL, sqlValues...)
 
-	_, err := m.NativeDB().Exec(resultSQL)
+	_, err = m.NativeDB().Exec(resultSQL)
 	if err != nil {
 		return err
 	}
 
 	return file.WriteSQLToFile(resultSQL, fullTableName, m.MigrationFilesPath)
+}
+
+func (m Migrator) validateMInfo(migratorInfo migratorDto.MigratorInfo) error {
+	if !migratorInfo.MigratorEnabled {
+		return fmt.Errorf("can't process entity with disabled migrator: %s", migratorInfo.Schema.Name)
+	}
+
+	if migratorInfo.HasCriticalError() {
+		return fmt.Errorf("can't process entity with errors at prepare stage: %s : %s",
+			migratorInfo.Schema.Name,
+			migratorInfo.ErrList,
+		)
+	}
+
+	if migratorInfo.HasInfoError() {
+		var fieldTypeError *db_schema.FieldTypeError
+		for _, err := range migratorInfo.ErrList {
+			if errors.As(err, &fieldTypeError) {
+				//TODO: Implement this
+			}
+		}
+	}
+
+	return nil
 }

@@ -8,15 +8,17 @@ const (
 	AllTables      = "*"
 )
 
+// Ключи мигратора
+const (
+	MigrationPath        = "DB_MIGRATION_PATH"
+	EntityPath           = "DB_ENTITY_PATH"
+	EnableTableNamespace = "ENABLE_TABLE_NAMESPACE"
+)
+
 // Ключи тегов мигратора
 const (
 	MigratorTag      = "c_migrator"
 	MigratorEnabled  = "enabled"
 	MigratorDisabled = "disabled"
 	MigratorGormTag  = "gorm"
-)
-
-const (
-	MigrationPath = "DB_MIGRATION_PATH"
-	EntityPath    = "DB_ENTITY_PATH"
 )

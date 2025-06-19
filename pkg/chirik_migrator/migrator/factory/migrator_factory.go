@@ -30,6 +30,7 @@ func InitMigrator(dBDecorator service.DBDecorator, opts ...MigratorOption) migra
 			CreateIndexAfterCreateTable: mOptions.createIndexAfterCreateTable,
 			DBDecorator:                 dBDecorator,
 			MigrationFilesPath:          viper.GetString(config.MigrationPath),
+			EnableTableNamespace:        viper.GetBool(config.EnableTableNamespace),
 		},
 	}
 }

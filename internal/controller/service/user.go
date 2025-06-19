@@ -11,48 +11,48 @@ type UserController struct {
 	AbstractController abstraction.Controller
 }
 
-func (controller *UserController) HandleRequest() {
+func (uc *UserController) HandleRequest() {
 	http.HandleFunc("/users", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
-			GetUsers(w, r)
+			uc.GetUsers(w)
 		case http.MethodPost:
-			CreateUser(w, r)
+			uc.CreateUser(w, r)
 		default:
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
 
 	http.HandleFunc("/user", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodGet {
-			GetUser(w, r)
-		} else {
+		switch r.Method {
+		case http.MethodGet:
+			uc.GetUser(w, r)
+		case http.MethodPost:
+			uc.CreateUser(w, r)
+		default:
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
 }
 
-var users = []user.User{
-	user.User{
-		Id:       1,
-		Phone:    79634823344,
-		Name:     "Andrey",
-		Surname:  "Velkov",
-		Password: nil,
-	},
-}
+func (uc *UserController) GetUsers(w http.ResponseWriter) {
+	users, err := user.GetAllUsers(uc.AbstractController.Dependencies.DBDecorator.GDB())
+	if err != nil {
+		//TODO: реализовать
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
 
-func GetUsers(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(users)
 }
 
-// Get user by ID
-func GetUser(w http.ResponseWriter, r *http.Request) {
+// GetUser Get user by ID
+func (uc *UserController) GetUser(w http.ResponseWriter, r *http.Request) {
 	//implement this
 }
 
 // Create user
-func CreateUser(w http.ResponseWriter, r *http.Request) {
+func (uc *UserController) CreateUser(w http.ResponseWriter, r *http.Request) {
 	//implement this
 }
