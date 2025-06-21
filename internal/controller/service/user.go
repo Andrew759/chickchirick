@@ -38,13 +38,16 @@ func (uc *UserController) HandleRequest() {
 func (uc *UserController) GetUsers(w http.ResponseWriter) {
 	users, err := user.GetAllUsers(uc.AbstractController.Dependencies.DBDecorator.GDB())
 	if err != nil {
-		//TODO: реализовать
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		//TODO: implement this
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(users)
+	err = json.NewEncoder(w).Encode(users)
+	if err != nil {
+		//TODO: implement this
+	}
 }
 
 // GetUser Get user by ID

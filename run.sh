@@ -25,7 +25,7 @@ echo "2) up"
 echo "3) down"
 echo "4) build main file only"
 
-read -p "Введите соответствующий номер операции над файлом (1-3): " command
+read -p "Введите соответствующий номер операции над файлом (1-4): " command
 
 case $command in
   1) COMMAND="build" ;;
