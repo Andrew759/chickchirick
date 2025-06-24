@@ -1,6 +1,6 @@
 # Dockerfile References: https://docs.docker.com/engine/reference/builder/
 
-ENV GOLANG_VERSION=1.24.4
+ARG GOLANG_VERSION='1.24.4'
 ARG USER_UID=1000
 
 FROM golang:${GOLANG_VERSION}-alpine as builder
@@ -27,6 +27,8 @@ RUN go build -o main ./cmd/main.go
 
 # Создается финальный образ
 FROM alpine:latest
+
+ENV GOLANG_VERSION=1.24.4
 
 # Устанавливается рабочая директория
 WORKDIR /root/
