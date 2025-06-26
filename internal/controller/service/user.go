@@ -52,6 +52,16 @@ func (uc *UserController) GetUsers(w http.ResponseWriter) {
 
 // GetUser Get user by ID
 func (uc *UserController) GetUser(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(r)
+
+	//_, err := user.GetAllUsers(uc.AbstractController.Dependencies.DBDecorator.GDB())
+	//if err != nil {
+	//	//TODO: implement this
+	//	http.Error(w, err.Error(), http.StatusInternalServerError)
+	//	return
+	//}
+
 	//implement this
 }
 

@@ -20,28 +20,32 @@ case $choice in
 esac
 
 echo "Выберите действие с файлом $C_FILE_PATH..."
-echo "1) build"
-echo "2) up"
-echo "3) down"
-echo "4) build main file only"
+echo "1) build (no cache)"
+echo "2) build (with cache)"
+echo "3) up"
+echo "4) down"
+echo "5) build main file only"
 
-read -p "Введите соответствующий номер операции над файлом (1-4): " command
+read -p "Введите соответствующий номер операции над файлом (1-5): " command
 
 case $command in
-  1) COMMAND="build" ;;
-  2) COMMAND="up" ;;
-  3) COMMAND="down" ;;
-  4) COMMAND="build main file only" ;;
+  1) COMMAND="build (no cache)" ;;
+  2) COMMAND="build (with cache)" ;;
+  3) COMMAND="up" ;;
+  4) COMMAND="down" ;;
+  5) COMMAND="build main file only" ;;
   *) echo "Неверный номер операции"; exit 1 ;;
 esac
 
-if [ "$COMMAND" = "build" ]; then
+if [ "$COMMAND" = "build (no cache)" ]; then
   docker-compose -f docker-compose.yml -f "$C_FILE_PATH" build --no-cache
+elif [ "$COMMAND" = "build (with cache)" ]; then
+  docker-compose -f docker-compose.yml -f "$C_FILE_PATH" build
 elif [ "$COMMAND" = "up" ]; then
   docker-compose -f docker-compose.yml -f "$C_FILE_PATH" up
 elif [ "$COMMAND" = "down" ]; then
   docker-compose -f docker-compose.yml -f "$C_FILE_PATH" down
 #TODO: доработать (сейчас не работает)
 elif [ "$COMMAND" = "build main file only" ]; then
-   docker-compose -f docker-compose.yml -f "$C_FILE_PATH" exec api go build -o main cmd/main.go
+   docker-compose -f docker-compose.yml -f "$C_FILE_PATH" exec api go build -o main app/cmd/main.go
 fi
