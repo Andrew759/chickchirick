@@ -17,8 +17,10 @@ import (
 type Config struct {
 	CreateIndexAfterCreateTable bool
 	mainService.DBDecorator
-	MigrationFilesPath   string
-	EnableTableNamespace bool
+	MigrationFilesPath    string
+	EnableTableNamespace  bool
+	EnableDeleteAtColumn  bool
+	EnableCreatedAtColumn bool
 }
 
 type Migrator struct {
@@ -109,6 +111,17 @@ func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
 
 		sqlFieldList = append(sqlFieldList, sqlField)
 	}
+
+	//TODO: тут вероятны баги с запятой
+	if m.EnableDeleteAtColumn {
+		sqlField := ", deleted_at " + db_schema.TimestampWithTimezone.String() + " NULL"
+		sqlFieldList = append(sqlFieldList, sqlField)
+	}
+	if m.EnableDeleteAtColumn {
+		sqlField := ", created_at " + db_schema.TimestampWithTimezone.String() + " NULL"
+		sqlFieldList = append(sqlFieldList, sqlField)
+	}
+
 	sqlFieldList = append(sqlFieldList, "\n);")
 
 	//Предотвращение SQL инъекций по образу, как это делалось в PHP

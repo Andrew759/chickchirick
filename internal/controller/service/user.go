@@ -53,7 +53,7 @@ func (uc *UserController) GetUsers(w http.ResponseWriter) {
 // GetUser Get user by ID
 func (uc *UserController) GetUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(r)
+	_ = json.NewEncoder(w).Encode(r.URL.Query())
 
 	//_, err := user.GetAllUsers(uc.AbstractController.Dependencies.DBDecorator.GDB())
 	//if err != nil {
