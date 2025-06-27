@@ -1,10 +1,10 @@
 package migrator
 
-//TODO: тут при разнесении на микросервисы может быть проблема
 import (
 	mainService "chickChirick/cmd/service"
 	"chickChirick/pkg/chirik_migrator/db_schema"
 	"chickChirick/pkg/chirik_migrator/file"
+	"chickChirick/pkg/chirik_migrator/migrator/dto"
 	migratorDto "chickChirick/pkg/chirik_migrator/migrator/provider"
 	"chickChirick/pkg/chirik_migrator/migrator/service"
 	"errors"
@@ -45,6 +45,54 @@ func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
 		return err
 	}
 
+	sqlMeta := m.processSchemaFields(migratorInfo)
+	sqlMeta = m.addMigratorFields(sqlMeta)
+
+	//Предотвращение SQL инъекций по образу, как это делалось в PHP
+	for k, v := range sqlMeta.SqlValues {
+		sqlMeta.SqlValues[k] = service.Escape(v.(string))
+	}
+
+	var resultSQL string
+	for _, sqlField := range sqlMeta.SqlFieldList {
+		resultSQL += sqlField
+	}
+
+	resultSQL = fmt.Sprintf(resultSQL, sqlMeta.SqlValues...)
+
+	_, err = m.NativeDB().Exec(resultSQL)
+	if err != nil {
+		return err
+	}
+
+	return file.WriteSQLToFile(resultSQL, sqlMeta.TableName, m.MigrationFilesPath)
+}
+
+func (m Migrator) validateMInfo(migratorInfo migratorDto.MigratorInfo) error {
+	if !migratorInfo.MigratorEnabled {
+		return fmt.Errorf("can't process entity with disabled migrator: %s", migratorInfo.Schema.Name)
+	}
+
+	if migratorInfo.HasCriticalError() {
+		return fmt.Errorf("can't process entity with errors at prepare stage: %s : %s",
+			migratorInfo.Schema.Name,
+			migratorInfo.ErrList,
+		)
+	}
+
+	if migratorInfo.HasInfoError() {
+		var fieldTypeError *db_schema.FieldTypeError
+		for _, err := range migratorInfo.ErrList {
+			if errors.As(err, &fieldTypeError) {
+				//TODO: Implement this
+			}
+		}
+	}
+
+	return nil
+}
+
+func (m Migrator) processSchemaFields(migratorInfo migratorDto.MigratorInfo) dto.Meta {
 	var sqlFieldList []string
 	sqlFieldList = append(sqlFieldList, "CREATE TABLE IF NOT EXISTS %s \n(")
 
@@ -55,15 +103,16 @@ func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
 	if m.Config.EnableTableNamespace {
 		fullTableName = migratorInfo.EntityNamespace + "_" + schema.Table
 	}
-
 	sqlValues = append(sqlValues, fullTableName)
 
 	var fieldCommentList []string
 	var fieldCommentValues []string
-
+	var fieldNames []string
 	fieldsCount := len(schema.Fields)
 	processedCount := 0
+
 	for _, field := range schema.Fields {
+		fieldNames = append(fieldNames, field.Name)
 		fieldType := field.DataType.String()
 		//Пропуск полей без типа
 		if fieldType == "" {
@@ -112,61 +161,31 @@ func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
 		sqlFieldList = append(sqlFieldList, sqlField)
 	}
 
-	if m.EnableDeleteAtColumn {
-		sqlField := "\n deleted_at " +
-			db_schema.TimestampWithTimezone.String() + " " +
-			db_schema.Null.String() + " " + ","
-		sqlFieldList = append(sqlFieldList, sqlField)
+	return dto.Meta{
+		TableName:          fullTableName,
+		SqlFieldList:       sqlFieldList,
+		SqlValues:          sqlValues,
+		FieldCommentList:   fieldCommentList,
+		FieldCommentValues: fieldCommentValues,
+		FieldNames:         fieldNames,
 	}
-	if m.EnableDeleteAtColumn {
-		sqlField := "\n created_at " +
-			db_schema.TimestampWithTimezone.String() + " " +
-			db_schema.Null.String()
-		sqlFieldList = append(sqlFieldList, sqlField)
-	}
-
-	sqlFieldList = append(sqlFieldList, "\n);")
-
-	//Предотвращение SQL инъекций по образу, как это делалось в PHP
-	for k, v := range sqlValues {
-		sqlValues[k] = service.Escape(v.(string))
-	}
-
-	var resultSQL string
-	for _, sqlField := range sqlFieldList {
-		resultSQL += sqlField
-	}
-
-	resultSQL = fmt.Sprintf(resultSQL, sqlValues...)
-
-	_, err = m.NativeDB().Exec(resultSQL)
-	if err != nil {
-		return err
-	}
-
-	return file.WriteSQLToFile(resultSQL, fullTableName, m.MigrationFilesPath)
 }
 
-func (m Migrator) validateMInfo(migratorInfo migratorDto.MigratorInfo) error {
-	if !migratorInfo.MigratorEnabled {
-		return fmt.Errorf("can't process entity with disabled migrator: %s", migratorInfo.Schema.Name)
+func (m Migrator) addMigratorFields(sqlMeta dto.Meta) dto.Meta {
+	if m.EnableDeleteAtColumn {
+		sqlField := ",\n deleted_at " +
+			db_schema.TimestampWithTimezone.String() + " " +
+			db_schema.Null.String()
+		sqlMeta.SqlFieldList = append(sqlMeta.SqlFieldList, sqlField)
+	}
+	if m.EnableDeleteAtColumn {
+		sqlField := ",\n created_at " +
+			db_schema.TimestampWithTimezone.String() + " " +
+			db_schema.Null.String()
+		sqlMeta.SqlFieldList = append(sqlMeta.SqlFieldList, sqlField)
 	}
 
-	if migratorInfo.HasCriticalError() {
-		return fmt.Errorf("can't process entity with errors at prepare stage: %s : %s",
-			migratorInfo.Schema.Name,
-			migratorInfo.ErrList,
-		)
-	}
+	sqlMeta.SqlFieldList = append(sqlMeta.SqlFieldList, "\n);")
 
-	if migratorInfo.HasInfoError() {
-		var fieldTypeError *db_schema.FieldTypeError
-		for _, err := range migratorInfo.ErrList {
-			if errors.As(err, &fieldTypeError) {
-				//TODO: Implement this
-			}
-		}
-	}
-
-	return nil
+	return sqlMeta
 }
