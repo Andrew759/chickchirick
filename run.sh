@@ -45,7 +45,8 @@ elif [ "$COMMAND" = "up" ]; then
   docker-compose -f docker-compose.yml -f "$C_FILE_PATH" up
 elif [ "$COMMAND" = "down" ]; then
   docker-compose -f docker-compose.yml -f "$C_FILE_PATH" down
-#TODO: доработать (сейчас не работает)
+#TODO: временное решение с контейнером
 elif [ "$COMMAND" = "build main file only" ]; then
+   docker cp ./local-dir chickchirick_api_1:/app/target-dir
    docker-compose -f docker-compose.yml -f "$C_FILE_PATH" exec api go build -o main app/cmd/main.go
 fi

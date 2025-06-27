@@ -112,13 +112,16 @@ func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
 		sqlFieldList = append(sqlFieldList, sqlField)
 	}
 
-	//TODO: тут вероятны баги с запятой
 	if m.EnableDeleteAtColumn {
-		sqlField := ", deleted_at " + db_schema.TimestampWithTimezone.String() + " NULL"
+		sqlField := "\n deleted_at " +
+			db_schema.TimestampWithTimezone.String() + " " +
+			db_schema.Null.String() + " " + ","
 		sqlFieldList = append(sqlFieldList, sqlField)
 	}
 	if m.EnableDeleteAtColumn {
-		sqlField := ", created_at " + db_schema.TimestampWithTimezone.String() + " NULL"
+		sqlField := "\n created_at " +
+			db_schema.TimestampWithTimezone.String() + " " +
+			db_schema.Null.String()
 		sqlFieldList = append(sqlFieldList, sqlField)
 	}
 

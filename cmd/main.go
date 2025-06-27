@@ -6,6 +6,7 @@ import (
 	"chickChirick/cmd/service"
 )
 
+// TODO: добавить логирование
 func main() {
 	factory.InitViper()
 

@@ -5,8 +5,7 @@ import (
 	"strings"
 )
 
-//TODO: впоследствии можно вынести эти константы и методы для posgres в отдельное место.
-
+// TODO: требуется доработка Uuid
 const (
 	Bool                     DataType = "BOOLEAN"
 	Smallint                 DataType = "SMALLINT"
@@ -19,10 +18,10 @@ const (
 	TimestampWithTimezone    DataType = "TIMESTAMP WITH TIME ZONE"
 	TimestampWithoutTimezone DataType = "TIMESTAMP WITHOUT TIME ZONE"
 	Bytes                    DataType = "SMALLINT"
-	// Uuid TODO: требуется доработка:
-	Uuid  DataType = "UUID"
-	Json  DataType = "JSON"
-	Jsonb DataType = "JSONB"
+	Uuid                     DataType = "UUID"
+	Json                     DataType = "JSON"
+	Jsonb                    DataType = "JSONB"
+	Null                     DataType = "NULL"
 )
 
 type Field struct {
@@ -35,13 +34,13 @@ type Field struct {
 	DefaultValue           string
 	NotNull                bool
 	Unique                 bool
-	//TODO: это мок, а не полноценная реализация
+	//TODO: это мок, а не полноценная реализация HasIndex
 	HasIndex        bool
 	Comment         string
 	Size            int
 	IgnoreMigration bool
 	Schema          *Schema
-	//TODO: необходимо доработать
+	//TODO: необходимо доработать EmbeddedSchema и OwnerSchema
 	EmbeddedSchema *Schema
 	OwnerSchema    *Schema
 }
@@ -73,7 +72,6 @@ func (f Field) FillPgDataTypeByString(fieldType string) (Field, error) {
 	case "int", "int64", "bigint", "uint", "uint64":
 		f.DataType = Bigint
 		break
-	//TODO: не доработано
 	case "float32", "real":
 		f.DataType = Real
 	case "float", "float64", "double precision":

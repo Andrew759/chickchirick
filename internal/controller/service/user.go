@@ -5,6 +5,7 @@ import (
 	"chickChirick/internal/model/user"
 	"encoding/json"
 	"net/http"
+	"strconv"
 )
 
 type UserController struct {
@@ -38,7 +39,6 @@ func (uc *UserController) HandleRequest() {
 func (uc *UserController) GetUsers(w http.ResponseWriter) {
 	users, err := user.GetAllUsers(uc.AbstractController.Dependencies.DBDecorator.GDB())
 	if err != nil {
-		//TODO: implement this
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -46,26 +46,47 @@ func (uc *UserController) GetUsers(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(users)
 	if err != nil {
-		//TODO: implement this
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
-// GetUser Get user by ID
 func (uc *UserController) GetUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(r.URL.Query())
+	idVal := r.URL.Query().Get("id")
+	if idVal == "" {
+		http.Error(w, "Missing user ID", http.StatusBadRequest)
+		return
+	}
 
-	//_, err := user.GetAllUsers(uc.AbstractController.Dependencies.DBDecorator.GDB())
-	//if err != nil {
-	//	//TODO: implement this
-	//	http.Error(w, err.Error(), http.StatusInternalServerError)
-	//	return
-	//}
+	id, _ := strconv.Atoi(idVal)
+	u, err := user.GetUserById(uc.AbstractController.Dependencies.DBDecorator.GDB(), id)
+	if err != nil {
+		http.Error(w, "User not found: "+err.Error(), http.StatusNotFound)
+		return
+	}
 
-	//implement this
+	// Возвращаем пользователя
+	if err := json.NewEncoder(w).Encode(u); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
-// Create user
 func (uc *UserController) CreateUser(w http.ResponseWriter, r *http.Request) {
-	//implement this
+	w.Header().Set("Content-Type", "application/json")
+
+	var u user.User
+	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
+		http.Error(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if err := user.CreateUser(uc.AbstractController.Dependencies.DBDecorator.GDB(), &u); err != nil {
+		http.Error(w, "Failed to create user: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	if err := json.NewEncoder(w).Encode(u); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }

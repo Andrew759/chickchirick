@@ -18,3 +18,14 @@ func GetAllUsers(db *gorm.DB) ([]User, error) {
 
 	return users, result.Error
 }
+
+func GetUserById(db *gorm.DB, id int) (User, error) {
+	var user User
+	result := db.First(&user, id)
+
+	return user, result.Error
+}
+
+func CreateUser(db *gorm.DB, u *User) error {
+	return db.Create(u).Error
+}

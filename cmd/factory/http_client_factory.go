@@ -12,7 +12,7 @@ func InitHttpClient() *http.Client {
 		Timeout: 5 * time.Second,
 		Transport: &http.Transport{
 			DialContext: (&net.Dialer{
-				//Тайм-аут для запроса и ожиданиясоединения
+				//Тайм-аут для запроса и ожидания соединения
 				Timeout: time.Second,
 			}).DialContext,
 			//Тайм-аут для TLS рукопожатия
