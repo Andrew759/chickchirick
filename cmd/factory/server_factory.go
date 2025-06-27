@@ -3,7 +3,7 @@ package factory
 import (
 	mainService "chickChirick/cmd/service"
 	"chickChirick/internal/controller/abstraction"
-	internalService "chickChirick/internal/controller/service"
+	internalService "chickChirick/internal/controller/service/user"
 	"net/http"
 )
 
@@ -34,7 +34,7 @@ func InitServer(dbDecorator mainService.DBDecorator, redisDecorator mainService.
 
 func initUserService(abstractDiContainer abstraction.DIContainer) internalService.UserController {
 	userService := internalService.UserController{
-		AbstractController: abstraction.Controller{
+		MainController: abstraction.Controller{
 			Dependencies: abstractDiContainer,
 		},
 	}

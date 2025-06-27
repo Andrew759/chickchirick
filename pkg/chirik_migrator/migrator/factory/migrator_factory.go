@@ -31,8 +31,9 @@ func InitMigrator(dBDecorator service.DBDecorator, opts ...MigratorOption) migra
 			DBDecorator:                 dBDecorator,
 			MigrationFilesPath:          viper.GetString(config.MigrationPath),
 			EnableTableNamespace:        viper.GetBool(config.EnableTableNamespace),
-			EnableDeleteAtColumn:        viper.GetBool(config.EnableDeleteAtColumn),
 			EnableCreatedAtColumn:       viper.GetBool(config.EnableCreatedAtColumn),
+			EnableUpdatedAtColumn:       viper.GetBool(config.EnableUpdatedAtColumn),
+			EnableDeleteAtColumn:        viper.GetBool(config.EnableDeleteAtColumn),
 		},
 	}
 }

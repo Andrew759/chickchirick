@@ -1,4 +1,4 @@
-package service
+package user
 
 import (
 	"chickChirick/internal/controller/abstraction"
@@ -8,36 +8,34 @@ import (
 	"strconv"
 )
 
-type UserController struct {
-	AbstractController abstraction.Controller
+type BanController struct {
+	MainController abstraction.Controller
 }
 
-func (uc *UserController) HandleRequest() {
-	http.HandleFunc("/users", func(w http.ResponseWriter, r *http.Request) {
+func (uc *BanController) HandleRequest() {
+	http.HandleFunc("/bans", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
-			uc.GetUsers(w)
-		case http.MethodPost:
-			uc.CreateUser(w, r)
+			uc.GetBans(w)
 		default:
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
 
-	http.HandleFunc("/user", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/ban", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
-			uc.GetUser(w, r)
+			uc.GetBan(w, r)
 		case http.MethodPost:
-			uc.CreateUser(w, r)
+			uc.Ban(w, r)
 		default:
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
 }
 
-func (uc *UserController) GetUsers(w http.ResponseWriter) {
-	users, err := user.GetAllUsers(uc.AbstractController.Dependencies.DBDecorator.GDB())
+func (uc *BanController) GetBans(w http.ResponseWriter) {
+	users, err := user.GetAllUsers(uc.MainController.Dependencies.DBDecorator.GDB())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -50,28 +48,27 @@ func (uc *UserController) GetUsers(w http.ResponseWriter) {
 	}
 }
 
-func (uc *UserController) GetUser(w http.ResponseWriter, r *http.Request) {
+func (uc *BanController) GetBan(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	idVal := r.URL.Query().Get("id")
 	if idVal == "" {
-		http.Error(w, "Missing user ID", http.StatusBadRequest)
+		http.Error(w, "Missing ban ID", http.StatusBadRequest)
 		return
 	}
 
 	id, _ := strconv.Atoi(idVal)
-	u, err := user.GetUserById(uc.AbstractController.Dependencies.DBDecorator.GDB(), id)
+	u, err := user.GetBanById(uc.MainController.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
-		http.Error(w, "User not found: "+err.Error(), http.StatusNotFound)
+		http.Error(w, "Ban not found: "+err.Error(), http.StatusNotFound)
 		return
 	}
 
-	// Возвращаем пользователя
 	if err := json.NewEncoder(w).Encode(u); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
-func (uc *UserController) CreateUser(w http.ResponseWriter, r *http.Request) {
+func (uc *BanController) Ban(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	var u user.User
@@ -80,7 +77,7 @@ func (uc *UserController) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := user.CreateUser(uc.AbstractController.Dependencies.DBDecorator.GDB(), &u); err != nil {
+	if err := user.CreateUser(uc.MainController.Dependencies.DBDecorator.GDB(), &u); err != nil {
 		http.Error(w, "Failed to create user: "+err.Error(), http.StatusInternalServerError)
 		return
 	}

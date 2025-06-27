@@ -19,8 +19,9 @@ type Config struct {
 	mainService.DBDecorator
 	MigrationFilesPath    string
 	EnableTableNamespace  bool
-	EnableDeleteAtColumn  bool
 	EnableCreatedAtColumn bool
+	EnableUpdatedAtColumn bool
+	EnableDeleteAtColumn  bool
 }
 
 type Migrator struct {
@@ -46,7 +47,7 @@ func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
 	}
 
 	sqlMeta := m.processSchemaFields(migratorInfo)
-	sqlMeta = m.addMigratorFields(sqlMeta)
+	m.addMigratorFields(&sqlMeta)
 
 	//Предотвращение SQL инъекций по образу, как это делалось в PHP
 	for k, v := range sqlMeta.SqlValues {
@@ -96,13 +97,13 @@ func (m Migrator) processSchemaFields(migratorInfo migratorDto.MigratorInfo) dto
 	var sqlFieldList []string
 	sqlFieldList = append(sqlFieldList, "CREATE TABLE IF NOT EXISTS %s \n(")
 
-	var sqlValues []any
-
 	schema := &migratorInfo.Schema
 	fullTableName := schema.Table
 	if m.Config.EnableTableNamespace {
 		fullTableName = migratorInfo.EntityNamespace + "_" + schema.Table
 	}
+
+	var sqlValues []any
 	sqlValues = append(sqlValues, fullTableName)
 
 	var fieldCommentList []string
@@ -171,21 +172,25 @@ func (m Migrator) processSchemaFields(migratorInfo migratorDto.MigratorInfo) dto
 	}
 }
 
-func (m Migrator) addMigratorFields(sqlMeta dto.Meta) dto.Meta {
+func (m Migrator) addMigratorFields(sqlMeta *dto.Meta) {
+	if m.EnableCreatedAtColumn {
+		sqlField := ",\n created_at " +
+			db_schema.TimestampWithTimezone.String() + " " +
+			db_schema.Null.String()
+		sqlMeta.SqlFieldList = append(sqlMeta.SqlFieldList, sqlField)
+	}
+	if m.EnableUpdatedAtColumn {
+		sqlField := ",\n updated_at " +
+			db_schema.TimestampWithTimezone.String() + " " +
+			db_schema.Null.String()
+		sqlMeta.SqlFieldList = append(sqlMeta.SqlFieldList, sqlField)
+	}
 	if m.EnableDeleteAtColumn {
 		sqlField := ",\n deleted_at " +
 			db_schema.TimestampWithTimezone.String() + " " +
 			db_schema.Null.String()
 		sqlMeta.SqlFieldList = append(sqlMeta.SqlFieldList, sqlField)
 	}
-	if m.EnableDeleteAtColumn {
-		sqlField := ",\n created_at " +
-			db_schema.TimestampWithTimezone.String() + " " +
-			db_schema.Null.String()
-		sqlMeta.SqlFieldList = append(sqlMeta.SqlFieldList, sqlField)
-	}
 
 	sqlMeta.SqlFieldList = append(sqlMeta.SqlFieldList, "\n);")
-
-	return sqlMeta
 }

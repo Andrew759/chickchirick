@@ -11,7 +11,6 @@ type User struct {
 	Password   *string `json:"password" gorm:"type:varchar(1024)"`
 }
 
-// GetAllUsers Получение всех пользователей
 func GetAllUsers(db *gorm.DB) ([]User, error) {
 	var users []User
 	result := db.Find(&users)

@@ -13,8 +13,9 @@ const (
 	MigrationPath         = "DB_MIGRATION_PATH"
 	EntityPath            = "DB_ENTITY_PATH"
 	EnableTableNamespace  = "ENABLE_TABLE_NAMESPACE"
-	EnableDeleteAtColumn  = "ENABLE_DELETE_AT_COLUMN"
 	EnableCreatedAtColumn = "ENABLE_CREATED_AT_COLUMN"
+	EnableUpdatedAtColumn = "ENABLE_CREATED_AT_COLUMN"
+	EnableDeleteAtColumn  = "ENABLE_DELETE_AT_COLUMN"
 )
 
 // Ключи тегов мигратора

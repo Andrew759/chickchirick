@@ -19,4 +19,6 @@ type ControllerInterface interface {
 func (c *Controller) initController(diContainer DIContainer) {
 	c.Dependencies = diContainer
 }
+
+// HandleRequest TODO: удалить, если не будет использоваться
 func (c *Controller) HandleRequest() {}
