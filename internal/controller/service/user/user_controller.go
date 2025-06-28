@@ -5,7 +5,6 @@ import (
 	"chickChirick/internal/model/user"
 	"encoding/json"
 	"net/http"
-	"strconv"
 )
 
 type UserController struct {
@@ -49,14 +48,7 @@ func (uc *UserController) GetUsers(w http.ResponseWriter) {
 }
 
 func (uc *UserController) GetUser(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	idVal := r.URL.Query().Get("id")
-	if idVal == "" {
-		http.Error(w, "Missing user ID", http.StatusBadRequest)
-		return
-	}
-
-	id, _ := strconv.Atoi(idVal)
+	id := uc.MainController.GETId(w, r)
 	u, err := user.GetBanById(uc.MainController.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		http.Error(w, "User not found: "+err.Error(), http.StatusNotFound)

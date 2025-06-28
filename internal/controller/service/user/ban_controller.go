@@ -2,9 +2,10 @@ package user
 
 import (
 	"chickChirick/internal/controller/abstraction"
-	"chickChirick/internal/model/user"
+	ban "chickChirick/internal/model/user"
 	"encoding/json"
 	"net/http"
+	"os/user"
 	"strconv"
 )
 
@@ -35,14 +36,14 @@ func (uc *BanController) HandleRequest() {
 }
 
 func (uc *BanController) GetBans(w http.ResponseWriter) {
-	users, err := user.GetAllUsers(uc.MainController.Dependencies.DBDecorator.GDB())
+	bans, err := ban.GetBans(uc.MainController.Dependencies.DBDecorator.GDB())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(users)
+	err = json.NewEncoder(w).Encode(bans)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -55,9 +56,9 @@ func (uc *BanController) GetBan(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Missing ban ID", http.StatusBadRequest)
 		return
 	}
-
 	id, _ := strconv.Atoi(idVal)
-	u, err := user.GetBanById(uc.MainController.Dependencies.DBDecorator.GDB(), id)
+
+	u, err := ban.GetBanById(uc.MainController.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		http.Error(w, "Ban not found: "+err.Error(), http.StatusNotFound)
 		return

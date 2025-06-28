@@ -2,7 +2,6 @@ package user
 
 import "gorm.io/gorm"
 
-// Ban TODO: доработать связи
 type Ban struct {
 	gorm.Model `c_migrator:"enabled" c_migrator_orm:"gorm"`
 	Id         int `json:"id" gorm:"type:int;unique;primaryKey;autoIncrement"`
