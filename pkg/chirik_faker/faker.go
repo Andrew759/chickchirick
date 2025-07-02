@@ -10,8 +10,20 @@ import (
 
 func FakeValue(fieldName string, dataType db_schema.DataType) string {
 	switch fieldName {
-
+	case "name":
+		return gofakeit.Name()
+	case "phone":
+		return gofakeit.Phone()
+	case "email":
+		return gofakeit.Email()
+	case "password":
+		return gofakeit.Password(true, true, true, true, false, 20)
+	case "created_at", "updated_at", "deleted_at":
+		return gofakeit.TimeZoneFull()
+	case "token":
+		return gofakeit.UUID()
 	}
+
 	switch dataType {
 	case db_schema.Bool:
 		return fmt.Sprintf("%v", gofakeit.Bool())
