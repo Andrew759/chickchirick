@@ -23,6 +23,7 @@ type Config struct {
 	EnableCreatedAtColumn bool
 	EnableUpdatedAtColumn bool
 	EnableDeleteAtColumn  bool
+	EnableFixtures        bool
 }
 
 type Migrator struct {
@@ -67,7 +68,16 @@ func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
 		return err
 	}
 
-	return file.WriteSQLToFile(resultSQL, sqlMeta.TableName, m.MigrationFilesPath)
+	err = file.WriteSQLToFile(resultSQL, sqlMeta.TableName, m.MigrationFilesPath)
+	if err != nil {
+		return err
+	}
+
+	if m.EnableFixtures {
+		m.insertFixtures(sqlMeta)
+	}
+
+	return err
 }
 
 func (m Migrator) validateMInfo(migratorInfo migratorDto.MigratorInfo) error {
@@ -109,12 +119,11 @@ func (m Migrator) processSchemaFields(migratorInfo migratorDto.MigratorInfo) dto
 
 	var fieldCommentList []string
 	var fieldCommentValues []string
-	var fieldNames []string
-	fieldsCount := len(schema.Fields)
+	var fieldMetas []dto.FieldMeta
+	fieldCount := len(schema.Fields)
 	processedCount := 0
 
 	for _, field := range schema.Fields {
-		fieldNames = append(fieldNames, field.Name)
 		fieldType := field.DataType.String()
 		//Пропуск полей без типа
 		if fieldType == "" {
@@ -126,10 +135,9 @@ func (m Migrator) processSchemaFields(migratorInfo migratorDto.MigratorInfo) dto
 		//TODO: При установке типа необходимость в дальнейшем вынесении отдельного провайдера для
 		// postgres, т.к в разных БД реализация будет отличаться
 		if field.AutoIncrement {
-			sqlValues = append(sqlValues, field.Name, "BIGSERIAL")
-		} else {
-			sqlValues = append(sqlValues, field.Name, fieldType)
+			fieldType = string(db_schema.BigSerial)
 		}
+		sqlValues = append(sqlValues, field.Name, fieldType)
 
 		if field.Size != 0 {
 			sqlField += "(%s)"
@@ -156,11 +164,16 @@ func (m Migrator) processSchemaFields(migratorInfo migratorDto.MigratorInfo) dto
 		}
 
 		processedCount++
-		if processedCount < fieldsCount {
+		if processedCount < fieldCount {
 			sqlField += ","
 		}
 
 		sqlFieldList = append(sqlFieldList, sqlField)
+
+		fieldMetas = append(fieldMetas, dto.FieldMeta{
+			Name: field.Name,
+			Type: fieldType,
+		})
 	}
 
 	return dto.Meta{
@@ -169,7 +182,8 @@ func (m Migrator) processSchemaFields(migratorInfo migratorDto.MigratorInfo) dto
 		SqlValues:          sqlValues,
 		FieldCommentList:   fieldCommentList,
 		FieldCommentValues: fieldCommentValues,
-		FieldNames:         fieldNames,
+		FieldMetas:         fieldMetas,
+		FieldCount:         fieldCount,
 	}
 }
 
@@ -194,4 +208,24 @@ func (m Migrator) addMigratorFields(sqlMeta *dto.Meta) {
 	}
 
 	sqlMeta.SqlFieldList = append(sqlMeta.SqlFieldList, "\n);")
+}
+
+func (m Migrator) insertFixtures(sqlMeta *dto.Meta) error {
+	var sqlFieldList []string
+	sqlFieldList = append(sqlFieldList, "INSERT INTO %s \n(")
+
+	var sqlValues []any
+	sqlValues = append(sqlValues, sqlMeta.TableName)
+
+	processedCount := 0
+	for _, fieldName := range sqlMeta.FieldNames {
+		sqlField := "\n %s %s"
+
+		processedCount++
+		if processedCount < sqlMeta.FieldCount {
+			s += ","
+		}
+
+		sqlFieldList = append(sqlFieldList, sqlField)
+	}
 }

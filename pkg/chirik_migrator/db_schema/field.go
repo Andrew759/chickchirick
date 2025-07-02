@@ -11,6 +11,7 @@ const (
 	Smallint                 DataType = "SMALLINT"
 	Int                      DataType = "INTEGER"
 	Bigint                   DataType = "BIGINT"
+	BigSerial                DataType = "BIGSERIAL"
 	Real                     DataType = "REAL"
 	DoublePrecision          DataType = "DOUBLE PRECISION"
 	Varchar                  DataType = "VARCHAR"
@@ -72,10 +73,15 @@ func (f Field) FillPgDataTypeByString(fieldType string) (Field, error) {
 	case "int", "int64", "bigint", "uint", "uint64":
 		f.DataType = Bigint
 		break
+	case "bigserial":
+		f.DataType = BigSerial
+		break
 	case "float32", "real":
 		f.DataType = Real
+		break
 	case "float", "float64", "double precision":
 		f.DataType = DoublePrecision
+		break
 	case "string", "varchar":
 		f.DataType = Varchar
 		break
@@ -89,13 +95,16 @@ func (f Field) FillPgDataTypeByString(fieldType string) (Field, error) {
 		break
 	case "timestamp without time zone":
 		f.DataType = TimestampWithoutTimezone
+		break
 	case "time", "time.time", "timestamp with time zone":
 		f.DataType = TimestampWithTimezone
 		break
 	case "uuid", "pgtype.uuid":
 		f.DataType = Uuid
+		break
 	case "json":
 		f.DataType = Json
+		break
 	case "jsonb", "pgtype.jsonbcodec":
 		f.DataType = Jsonb
 		break

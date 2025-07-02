@@ -6,5 +6,6 @@ type Meta struct {
 	SqlValues          []any
 	FieldCommentList   []string
 	FieldCommentValues []string
-	FieldNames         []string
+	FieldMetas         []FieldMeta
+	FieldCount         int
 }
