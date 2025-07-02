@@ -25,9 +25,6 @@ func (c *Controller) initController(diContainer DIContainer) {
 	c.Dependencies = diContainer
 }
 
-// HandleRequest TODO: удалить, если не будет использоваться
-func (c *Controller) HandleRequest() {}
-
 func (c *Controller) GETId(w http.ResponseWriter, r *http.Request) int {
 	w.Header().Set("Content-Type", "application/json")
 	idVal := r.URL.Query().Get("id")

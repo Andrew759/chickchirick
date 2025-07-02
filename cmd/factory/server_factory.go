@@ -24,6 +24,7 @@ func InitServer(dbDecorator mainService.DBDecorator, redisDecorator mainService.
 	}
 
 	_ = initUserService(abstractDiContainer)
+	_ = initBanService(abstractDiContainer)
 
 	// Запуск сервера
 	err := http.ListenAndServe(":8080", nil)
@@ -34,11 +35,22 @@ func InitServer(dbDecorator mainService.DBDecorator, redisDecorator mainService.
 
 func initUserService(abstractDiContainer abstraction.DIContainer) internalService.UserController {
 	userService := internalService.UserController{
-		MainController: abstraction.Controller{
+		Controller: abstraction.Controller{
 			Dependencies: abstractDiContainer,
 		},
 	}
 	userService.HandleRequest()
 
 	return userService
+}
+
+func initBanService(abstractDiContainer abstraction.DIContainer) internalService.BanController {
+	banService := internalService.BanController{
+		Controller: abstraction.Controller{
+			Dependencies: abstractDiContainer,
+		},
+	}
+	banService.HandleRequest()
+
+	return banService
 }

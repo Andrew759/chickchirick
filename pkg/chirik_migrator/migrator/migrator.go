@@ -15,6 +15,7 @@ import (
 //TODO: согласовать с интерфейсом
 
 type Config struct {
+	//TOOD: CreateIndexAfterCreateTable сейчас не используется. Проверить необходимость
 	CreateIndexAfterCreateTable bool
 	mainService.DBDecorator
 	MigrationFilesPath    string
