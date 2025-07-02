@@ -1,14 +1,14 @@
 package chirik_faker
 
 import (
-	"chickChirick/pkg/chirik_migrator/db_schema"
+	dbs "chickChirick/pkg/chirik_migrator/db_schema"
 	"encoding/json"
 	"fmt"
 	"github.com/brianvoe/gofakeit/v6"
 	"time"
 )
 
-func FakeValue(fieldName string, dataType db_schema.DataType) string {
+func FakeValue(fieldName string, dataType string) string {
 	switch fieldName {
 	case "name":
 		return gofakeit.Name()
@@ -25,37 +25,40 @@ func FakeValue(fieldName string, dataType db_schema.DataType) string {
 	}
 
 	switch dataType {
-	case db_schema.Bool:
+	case string(dbs.Bool):
 		return fmt.Sprintf("%v", gofakeit.Bool())
 
-	case db_schema.Smallint:
+	case string(dbs.Smallint):
 		return fmt.Sprintf("%d", gofakeit.IntRange(-32768, 32767))
 
-	case db_schema.Int:
+	case string(dbs.Int):
 		return fmt.Sprintf("%d", gofakeit.IntRange(-2147483648, 2147483647))
 
-	case db_schema.Bigint:
+	case string(dbs.Bigint):
 		return fmt.Sprintf("%d", gofakeit.Int64())
 
-	case db_schema.Real:
+	case string(dbs.BigSerial):
+		return fmt.Sprintf("%d", gofakeit.Int64())
+
+	case string(dbs.Real):
 		return fmt.Sprintf("%.4f", gofakeit.Float32Range(-1000, 1000))
 
-	case db_schema.DoublePrecision:
+	case string(dbs.DoublePrecision):
 		return fmt.Sprintf("%.6f", gofakeit.Float64Range(-1e6, 1e6))
 
-	case db_schema.Varchar, db_schema.Text:
+	case string(dbs.Varchar), string(dbs.Text):
 		return fmt.Sprintf("'%s'", gofakeit.Sentence(5))
 
-	case db_schema.TimestampWithTimezone:
+	case string(dbs.TimestampWithTimezone):
 		return fmt.Sprintf("'%s'", gofakeit.Date().Format(time.RFC3339))
 
-	case db_schema.TimestampWithoutTimezone:
+	case string(dbs.TimestampWithoutTimezone):
 		return fmt.Sprintf("'%s'", gofakeit.Date().Format("2006-01-02 15:04:05"))
 
-	case db_schema.Uuid:
+	case string(dbs.Uuid):
 		return fmt.Sprintf("'%s'", gofakeit.UUID())
 
-	case db_schema.Json, db_schema.Jsonb:
+	case string(dbs.Json), string(dbs.Jsonb):
 		fakeMap := map[string]string{
 			"name":  gofakeit.FirstName(),
 			"email": gofakeit.Email(),
@@ -63,7 +66,7 @@ func FakeValue(fieldName string, dataType db_schema.DataType) string {
 		b, _ := json.Marshal(fakeMap)
 		return fmt.Sprintf("'%s'", string(b))
 
-	case db_schema.Null:
+	case string(dbs.Null):
 		return "NULL"
 
 	default:

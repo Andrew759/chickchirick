@@ -2,11 +2,12 @@ package migrator
 
 import (
 	mainService "chickChirick/cmd/service"
+	"chickChirick/pkg/chirik_faker"
 	"chickChirick/pkg/chirik_migrator/db_schema"
 	"chickChirick/pkg/chirik_migrator/file"
 	"chickChirick/pkg/chirik_migrator/migrator/dto"
 	migratorDto "chickChirick/pkg/chirik_migrator/migrator/provider"
-	"chickChirick/pkg/chirik_migrator/migrator/service"
+	//"chickChirick/pkg/chirik_migrator/migrator/service"
 	"errors"
 	"fmt"
 	"strconv"
@@ -51,10 +52,22 @@ func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
 	sqlMeta := m.processSchemaFields(migratorInfo)
 	m.addMigratorFields(&sqlMeta)
 
-	//Предотвращение SQL инъекций по образу, как это делалось в PHP
-	for k, v := range sqlMeta.SqlValues {
-		sqlMeta.SqlValues[k] = service.Escape(v.(string))
+	err = m.processSQLMeta(sqlMeta)
+	if err != nil {
+		return err
 	}
+
+	if m.EnableFixtures {
+		m.setFixturesToSqlMeta(&sqlMeta)
+	}
+	return m.processSQLMeta(sqlMeta)
+}
+
+func (m Migrator) processSQLMeta(sqlMeta dto.Meta) error {
+	//Предотвращение SQL инъекций по образу, как это делалось в PHP
+	//for k, v := range sqlMeta.SqlValues {
+	//	sqlMeta.SqlValues[k] = service.Escape(v.(string))
+	//}
 
 	var resultSQL string
 	for _, sqlField := range sqlMeta.SqlFieldList {
@@ -63,21 +76,12 @@ func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
 
 	resultSQL = fmt.Sprintf(resultSQL, sqlMeta.SqlValues...)
 
-	_, err = m.NativeDB().Exec(resultSQL)
+	_, err := m.NativeDB().Exec(resultSQL)
 	if err != nil {
 		return err
 	}
 
-	err = file.WriteSQLToFile(resultSQL, sqlMeta.TableName, m.MigrationFilesPath)
-	if err != nil {
-		return err
-	}
-
-	if m.EnableFixtures {
-		m.insertFixtures(sqlMeta)
-	}
-
-	return err
+	return file.WriteSQLToFile(resultSQL, sqlMeta.TableName, m.MigrationFilesPath)
 }
 
 func (m Migrator) validateMInfo(migratorInfo migratorDto.MigratorInfo) error {
@@ -210,22 +214,43 @@ func (m Migrator) addMigratorFields(sqlMeta *dto.Meta) {
 	sqlMeta.SqlFieldList = append(sqlMeta.SqlFieldList, "\n);")
 }
 
-func (m Migrator) insertFixtures(sqlMeta *dto.Meta) error {
+// TODO: сделать однообразно
+func (m Migrator) setFixturesToSqlMeta(sqlMeta *dto.Meta) {
 	var sqlFieldList []string
-	sqlFieldList = append(sqlFieldList, "INSERT INTO %s \n(")
+	sqlFieldList = append(sqlFieldList, "INSERT INTO %s (")
 
 	var sqlValues []any
-	sqlValues = append(sqlValues, sqlMeta.TableName)
 
+	sqlValues = append(sqlValues, sqlMeta.TableName)
 	processedCount := 0
-	for _, fieldName := range sqlMeta.FieldNames {
-		sqlField := "\n %s %s"
+
+	for _, fieldMeta := range sqlMeta.FieldMetas {
+		sqlField := fieldMeta.Name
 
 		processedCount++
 		if processedCount < sqlMeta.FieldCount {
-			s += ","
+			sqlField += ", "
+		} else if processedCount == sqlMeta.FieldCount {
+			sqlField += ")"
 		}
-
+		sqlValues = append(sqlValues, chirik_faker.FakeValue(fieldMeta.Name, fieldMeta.Type))
 		sqlFieldList = append(sqlFieldList, sqlField)
 	}
+
+	fixtureValuesHolder := " VALUES ("
+	for i := 1; i <= sqlMeta.FieldCount; i++ {
+		if i != sqlMeta.FieldCount {
+			fixtureValuesHolder += "%s, "
+		} else {
+			fixtureValuesHolder += "%s"
+		}
+	}
+	fixtureValuesHolder += ");"
+
+	sqlFieldList = append(sqlFieldList, fixtureValuesHolder)
+
+	sqlMeta.SqlFieldList = sqlFieldList
+	sqlMeta.SqlValues = sqlValues
+	sqlMeta.FieldCommentList = []string{}
+	sqlMeta.FieldCommentValues = []string{}
 }
