@@ -5,7 +5,6 @@ import (
 	ban "chickChirick/internal/model/user"
 	"encoding/json"
 	"net/http"
-	"os/user"
 	"strconv"
 )
 
@@ -13,11 +12,11 @@ type BanController struct {
 	MainController abstraction.Controller
 }
 
-func (uc *BanController) HandleRequest() {
+func (bc *BanController) HandleRequest() {
 	http.HandleFunc("/bans", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
-			uc.GetBans(w)
+			bc.GetBans(w)
 		default:
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
@@ -26,17 +25,19 @@ func (uc *BanController) HandleRequest() {
 	http.HandleFunc("/ban", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
-			uc.GetBan(w, r)
+			bc.GetBan(w, r)
 		case http.MethodPost:
-			uc.Ban(w, r)
+			bc.Ban(w, r)
+		case http.MethodDelete:
+			bc.DeleteBan(w, r)
 		default:
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
 }
 
-func (uc *BanController) GetBans(w http.ResponseWriter) {
-	bans, err := ban.GetBans(uc.MainController.Dependencies.DBDecorator.GDB())
+func (bc *BanController) GetBans(w http.ResponseWriter) {
+	bans, err := ban.GetBans(bc.MainController.Dependencies.DBDecorator.GDB())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -49,7 +50,7 @@ func (uc *BanController) GetBans(w http.ResponseWriter) {
 	}
 }
 
-func (uc *BanController) GetBan(w http.ResponseWriter, r *http.Request) {
+func (bc *BanController) GetBan(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	idVal := r.URL.Query().Get("id")
 	if idVal == "" {
@@ -58,7 +59,7 @@ func (uc *BanController) GetBan(w http.ResponseWriter, r *http.Request) {
 	}
 	id, _ := strconv.Atoi(idVal)
 
-	u, err := ban.GetBanById(uc.MainController.Dependencies.DBDecorator.GDB(), id)
+	u, err := ban.GetBanById(bc.MainController.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		http.Error(w, "Ban not found: "+err.Error(), http.StatusNotFound)
 		return
@@ -69,22 +70,34 @@ func (uc *BanController) GetBan(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (uc *BanController) Ban(w http.ResponseWriter, r *http.Request) {
+func (bc *BanController) Ban(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	var u user.User
-	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
+	var b ban.Ban
+	if err := json.NewDecoder(r.Body).Decode(&b); err != nil {
 		http.Error(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	if err := user.CreateUser(uc.MainController.Dependencies.DBDecorator.GDB(), &u); err != nil {
-		http.Error(w, "Failed to create user: "+err.Error(), http.StatusInternalServerError)
+	if err := ban.CreateBan(bc.MainController.Dependencies.DBDecorator.GDB(), &b); err != nil {
+		http.Error(w, "Failed to create ban: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	if err := json.NewEncoder(w).Encode(u); err != nil {
+	if err := json.NewEncoder(w).Encode(b); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+}
+
+func (bc *BanController) DeleteBan(w http.ResponseWriter, r *http.Request) {
+	id := bc.MainController.GETId(w, r)
+
+	err := ban.DeleteBanById(bc.MainController.Dependencies.DBDecorator.GDB(), id)
+	if err != nil {
+		http.Error(w, "Failed to delete ban: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

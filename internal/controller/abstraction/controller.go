@@ -32,7 +32,7 @@ func (c *Controller) GETId(w http.ResponseWriter, r *http.Request) int {
 	w.Header().Set("Content-Type", "application/json")
 	idVal := r.URL.Query().Get("id")
 	if idVal == "" {
-		http.Error(w, "Missing ID", http.StatusBadRequest)
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
 	}
 	id, _ := strconv.Atoi(idVal)
 

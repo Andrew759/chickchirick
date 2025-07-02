@@ -28,3 +28,7 @@ func GetBanById(db *gorm.DB, id int) (Ban, error) {
 func CreateBan(db *gorm.DB, b *Ban) error {
 	return db.Create(b).Error
 }
+
+func DeleteBanById(db *gorm.DB, id int) error {
+	return db.Delete(&Ban{}, id).Error
+}

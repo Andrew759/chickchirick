@@ -27,6 +27,8 @@ func (uc *UserController) HandleRequest() {
 			uc.GetUser(w, r)
 		case http.MethodPost:
 			uc.CreateUser(w, r)
+		case http.MethodDelete:
+			uc.DeleteUser(w, r)
 		default:
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
@@ -49,7 +51,7 @@ func (uc *UserController) GetUsers(w http.ResponseWriter) {
 
 func (uc *UserController) GetUser(w http.ResponseWriter, r *http.Request) {
 	id := uc.MainController.GETId(w, r)
-	u, err := user.GetBanById(uc.MainController.Dependencies.DBDecorator.GDB(), id)
+	u, err := user.GetUserById(uc.MainController.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		http.Error(w, "User not found: "+err.Error(), http.StatusNotFound)
 		return
@@ -78,4 +80,16 @@ func (uc *UserController) CreateUser(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(u); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+}
+
+func (uc *UserController) DeleteUser(w http.ResponseWriter, r *http.Request) {
+	id := uc.MainController.GETId(w, r)
+
+	err := user.DeleteUserById(uc.MainController.Dependencies.DBDecorator.GDB(), id)
+	if err != nil {
+		http.Error(w, "Failed to delete user: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

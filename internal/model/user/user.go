@@ -11,6 +11,10 @@ type User struct {
 	Password   *string `json:"password" gorm:"type:varchar(1024)"`
 }
 
+func CreateUser(db *gorm.DB, u *User) error {
+	return db.Create(u).Error
+}
+
 func GetAllUsers(db *gorm.DB) ([]User, error) {
 	var users []User
 	result := db.Find(&users)
@@ -25,6 +29,6 @@ func GetUserById(db *gorm.DB, id int) (User, error) {
 	return user, result.Error
 }
 
-func CreateUser(db *gorm.DB, u *User) error {
-	return db.Create(u).Error
+func DeleteUserById(db *gorm.DB, id int) error {
+	return db.Delete(&User{}, id).Error
 }
