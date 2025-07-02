@@ -1,10 +1,10 @@
 package migrator
 
-//TODO: тут при разнесении на микросервисы может быть проблема
 import (
 	mainService "chickChirick/cmd/service"
 	"chickChirick/pkg/chirik_migrator/db_schema"
 	"chickChirick/pkg/chirik_migrator/file"
+	"chickChirick/pkg/chirik_migrator/migrator/dto"
 	migratorDto "chickChirick/pkg/chirik_migrator/migrator/provider"
 	"chickChirick/pkg/chirik_migrator/migrator/service"
 	"errors"
@@ -17,7 +17,11 @@ import (
 type Config struct {
 	CreateIndexAfterCreateTable bool
 	mainService.DBDecorator
-	MigrationFilesPath string
+	MigrationFilesPath    string
+	EnableTableNamespace  bool
+	EnableCreatedAtColumn bool
+	EnableUpdatedAtColumn bool
+	EnableDeleteAtColumn  bool
 }
 
 type Migrator struct {
@@ -37,14 +41,42 @@ func (m Migrator) CreateTables(migratorEntities map[string][]migratorDto.Migrato
 }
 
 func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
+	err := m.validateMInfo(migratorInfo)
+	if err != nil {
+		return err
+	}
+
+	sqlMeta := m.processSchemaFields(migratorInfo)
+	m.addMigratorFields(&sqlMeta)
+
+	//Предотвращение SQL инъекций по образу, как это делалось в PHP
+	for k, v := range sqlMeta.SqlValues {
+		sqlMeta.SqlValues[k] = service.Escape(v.(string))
+	}
+
+	var resultSQL string
+	for _, sqlField := range sqlMeta.SqlFieldList {
+		resultSQL += sqlField
+	}
+
+	resultSQL = fmt.Sprintf(resultSQL, sqlMeta.SqlValues...)
+
+	_, err = m.NativeDB().Exec(resultSQL)
+	if err != nil {
+		return err
+	}
+
+	return file.WriteSQLToFile(resultSQL, sqlMeta.TableName, m.MigrationFilesPath)
+}
+
+func (m Migrator) validateMInfo(migratorInfo migratorDto.MigratorInfo) error {
 	if !migratorInfo.MigratorEnabled {
 		return fmt.Errorf("can't process entity with disabled migrator: %s", migratorInfo.Schema.Name)
 	}
 
-	schema := &migratorInfo.Schema
 	if migratorInfo.HasCriticalError() {
 		return fmt.Errorf("can't process entity with errors at prepare stage: %s : %s",
-			schema.Name,
+			migratorInfo.Schema.Name,
 			migratorInfo.ErrList,
 		)
 	}
@@ -58,19 +90,30 @@ func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
 		}
 	}
 
+	return nil
+}
+
+func (m Migrator) processSchemaFields(migratorInfo migratorDto.MigratorInfo) dto.Meta {
 	var sqlFieldList []string
 	sqlFieldList = append(sqlFieldList, "CREATE TABLE IF NOT EXISTS %s \n(")
 
+	schema := &migratorInfo.Schema
+	fullTableName := schema.Table
+	if m.Config.EnableTableNamespace {
+		fullTableName = migratorInfo.EntityNamespace + "_" + schema.Table
+	}
+
 	var sqlValues []any
-	fullTableName := migratorInfo.EntityNamespace + "_" + schema.Table
 	sqlValues = append(sqlValues, fullTableName)
 
 	var fieldCommentList []string
 	var fieldCommentValues []string
-
+	var fieldNames []string
 	fieldsCount := len(schema.Fields)
 	processedCount := 0
+
 	for _, field := range schema.Fields {
+		fieldNames = append(fieldNames, field.Name)
 		fieldType := field.DataType.String()
 		//Пропуск полей без типа
 		if fieldType == "" {
@@ -118,24 +161,36 @@ func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
 
 		sqlFieldList = append(sqlFieldList, sqlField)
 	}
-	sqlFieldList = append(sqlFieldList, "\n);")
 
-	//Предотвращение SQL инъекций по образу, как это делалось в PHP
-	for k, v := range sqlValues {
-		sqlValues[k] = service.Escape(v.(string))
+	return dto.Meta{
+		TableName:          fullTableName,
+		SqlFieldList:       sqlFieldList,
+		SqlValues:          sqlValues,
+		FieldCommentList:   fieldCommentList,
+		FieldCommentValues: fieldCommentValues,
+		FieldNames:         fieldNames,
+	}
+}
+
+func (m Migrator) addMigratorFields(sqlMeta *dto.Meta) {
+	if m.EnableCreatedAtColumn {
+		sqlField := ",\n created_at " +
+			db_schema.TimestampWithTimezone.String() + " " +
+			db_schema.Null.String()
+		sqlMeta.SqlFieldList = append(sqlMeta.SqlFieldList, sqlField)
+	}
+	if m.EnableUpdatedAtColumn {
+		sqlField := ",\n updated_at " +
+			db_schema.TimestampWithTimezone.String() + " " +
+			db_schema.Null.String()
+		sqlMeta.SqlFieldList = append(sqlMeta.SqlFieldList, sqlField)
+	}
+	if m.EnableDeleteAtColumn {
+		sqlField := ",\n deleted_at " +
+			db_schema.TimestampWithTimezone.String() + " " +
+			db_schema.Null.String()
+		sqlMeta.SqlFieldList = append(sqlMeta.SqlFieldList, sqlField)
 	}
 
-	var resultSQL string
-	for _, sqlField := range sqlFieldList {
-		resultSQL += sqlField
-	}
-
-	resultSQL = fmt.Sprintf(resultSQL, sqlValues...)
-
-	_, err := m.NativeDB().Exec(resultSQL)
-	if err != nil {
-		return err
-	}
-
-	return file.WriteSQLToFile(resultSQL, fullTableName, m.MigrationFilesPath)
+	sqlMeta.SqlFieldList = append(sqlMeta.SqlFieldList, "\n);")
 }

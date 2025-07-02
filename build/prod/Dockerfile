@@ -1,7 +1,6 @@
 # Dockerfile References: https://docs.docker.com/engine/reference/builder/
 
-ARG GOLANG_VERSION='1.23.5'
-ARG USER_UID=1000
+ARG GOLANG_VERSION='1.24.4'
 
 FROM golang:${GOLANG_VERSION}-alpine as builder
 

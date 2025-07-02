@@ -11,3 +11,25 @@ type Meta struct {
 	UserId     int         `json:"user_id" gorm:"type:int"`
 	User       User        `json:"user" gorm:"references:UserId"`
 }
+
+func CreateMeta(db *gorm.DB, b *Meta) error {
+	return db.Create(b).Error
+}
+
+func GetMetas(db *gorm.DB) ([]Meta, error) {
+	var metas []Meta
+	result := db.Find(&metas)
+
+	return metas, result.Error
+}
+
+func GetMetaById(db *gorm.DB, id int) (Meta, error) {
+	var meta Meta
+	result := db.First(&meta, id)
+
+	return meta, result.Error
+}
+
+func DeleteMetaById(db *gorm.DB, id int) error {
+	return db.Delete(&Meta{}, id).Error
+}

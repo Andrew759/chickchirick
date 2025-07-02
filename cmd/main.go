@@ -6,6 +6,7 @@ import (
 	"chickChirick/cmd/service"
 )
 
+// TODO: добавить логирование
 func main() {
 	factory.InitViper()
 
@@ -14,9 +15,10 @@ func main() {
 	dbDecorator := service.InitORM(&appConfig.DatabaseConfig)
 	defer dbDecorator.CloseDB()
 
-	redis := service.InitRedis(appConfig.RedisConfig)
-	defer redis.RedisClose()
+	redisDecorator := service.InitRedis(appConfig.RedisConfig)
+	defer redisDecorator.RedisClose()
 
+	//TODO: если не потребуется - удалить
 	//httpClient := factory.InitHttpClient()
-	factory.InitServer()
+	factory.InitServer(dbDecorator, redisDecorator)
 }

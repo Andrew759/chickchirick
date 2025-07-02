@@ -7,7 +7,7 @@ services:
     ports:
       - ${REDIS_PORT}:${REDIS_INTERNAL_PORT}
     volumes:
-      - ./redis_data:/data
+      - redis_data:/data
 
   postgres:
     image: postgres:17.2
@@ -20,7 +20,16 @@ services:
     networks:
       - backend
     volumes:
-      - ./db_data:/var/lib/postgresql/data
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER}" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
 networks:
   backend:
+
+volumes:
+  db_data:
+  redis_data:
