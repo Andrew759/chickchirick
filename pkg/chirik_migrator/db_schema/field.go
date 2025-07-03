@@ -54,6 +54,7 @@ func (e *FieldTypeError) Error() string {
 	return e.Msg
 }
 
+// DataType TODO: вынести отдельно
 type DataType string
 
 func (d DataType) String() string {

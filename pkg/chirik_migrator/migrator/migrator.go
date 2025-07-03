@@ -151,16 +151,19 @@ func (m Migrator) processSchemaFields(migratorInfo migratorDto.MigratorInfo) dto
 				IsSafe: true,
 			},
 			dto.ValueMeta{
-				Value:  fullTableName,
+				Value:  fieldType,
 				Type:   db_schema.Varchar.String(),
 				IsSafe: true,
-			},
-
-			field.Name, fieldType)
+			})
 
 		if field.Size != 0 {
 			sqlField += "(?)"
-			sqlValues = append(sqlValues, strconv.Itoa(field.Size))
+			sqlValues = append(sqlValues,
+				dto.ValueMeta{
+					Value:  strconv.Itoa(field.Size),
+					Type:   db_schema.Int.String(),
+					IsSafe: true,
+				})
 		}
 
 		if field.PrimaryKey {
@@ -168,7 +171,13 @@ func (m Migrator) processSchemaFields(migratorInfo migratorDto.MigratorInfo) dto
 		}
 		if field.HasDefaultValue {
 			sqlField += "DEFAULT ?"
-			sqlValues = append(sqlValues, field.DefaultValue)
+			sqlValues = append(sqlValues,
+				dto.ValueMeta{
+					Value:  field.DefaultValue,
+					Type:   db_schema.Varchar.String(),
+					IsSafe: true,
+				})
+
 		}
 		if field.NotNull {
 			sqlField += " NOT NULL"
@@ -188,13 +197,6 @@ func (m Migrator) processSchemaFields(migratorInfo migratorDto.MigratorInfo) dto
 		}
 
 		sqlFieldList = append(sqlFieldList, sqlField)
-
-		//TODO: использовать как пример
-		//fieldMetas = append(fieldMetas, dto.ValueMeta{
-		//	Value:  field.Name,
-		//	Type:   fieldType,
-		//	IsSafe: true,
-		//})
 	}
 
 	return dto.Meta{
@@ -232,14 +234,17 @@ func (m Migrator) addMigratorFields(sqlMeta *dto.Meta) {
 	sqlMeta.SqlFieldList = append(sqlMeta.SqlFieldList, "\n);")
 }
 
-// TODO: сделать однообразно
+// TODO: сломано
 func (m Migrator) writeFixtureToSqlMeta(sqlMeta *dto.Meta) error {
 	var sqlFieldList []string
 	sqlFieldList = append(sqlFieldList, "INSERT INTO ? (")
 
-	var sqlValues []any
-
-	sqlValues = append(sqlValues, sqlMeta.TableName)
+	var sqlValues []dto.ValueMeta
+	sqlValues = append(sqlValues, dto.ValueMeta{
+		Value:  sqlMeta.TableName,
+		Type:   db_schema.Varchar.String(),
+		IsSafe: true,
+	})
 	processedCount := 0
 
 	for i, valueMeta := range sqlMeta.SqlValues {
@@ -260,7 +265,12 @@ func (m Migrator) writeFixtureToSqlMeta(sqlMeta *dto.Meta) error {
 			return err
 		}
 
-		sqlValues = append(sqlValues, fixtureValue)
+		sqlValues = append(sqlValues, dto.ValueMeta{
+			Value:  fixtureValue,
+			Type:   db_schema.Varchar.String(),
+			IsSafe: false,
+		})
+
 		sqlFieldList = append(sqlFieldList, sqlField)
 	}
 

@@ -38,14 +38,14 @@ func BuildRawSql(sql string, sqlMeta dto.Meta) string {
 
 	placeHolderIndex := 0
 	for i := 0; i < len(sql); i++ {
-		if sql[i] == '?' && placeHolderIndex < sqlMeta.FieldCount {
+		if sql[i] == '?' && placeHolderIndex < len(sqlMeta.SqlValues) {
 			fieldMeta := sqlMeta.SqlValues[placeHolderIndex]
 			if fieldMeta.IsSafe {
 				stringBuilder.WriteString(fieldMeta.Value)
 			} else {
 				stringBuilder.WriteString(escapeSQLValue(fieldMeta.Value))
-				placeHolderIndex++
 			}
+			placeHolderIndex++
 		} else {
 			stringBuilder.WriteByte(sql[i])
 		}
