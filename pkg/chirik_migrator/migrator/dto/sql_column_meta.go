@@ -1,6 +1,7 @@
 package dto
 
-type FieldMeta struct {
-	Name string
-	Type string
+type ValueMeta struct {
+	Value  string
+	Type   string
+	IsSafe bool //Требуется ли экранирование для значения?
 }

@@ -3,10 +3,9 @@ package dto
 type Meta struct {
 	TableName          string
 	SqlFieldList       []string
-	SqlValues          []any
+	SqlValues          []ValueMeta
 	FieldCommentList   []string
 	FieldCommentValues []string
-	FieldMetas         []FieldMeta
 	FieldCount         int
-	FilePostfix        string
+	MigrationPrefix    string
 }

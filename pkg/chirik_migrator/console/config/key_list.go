@@ -17,6 +17,7 @@ const (
 	EnableUpdatedAtColumn = "ENABLE_CREATED_AT_COLUMN"
 	EnableDeleteAtColumn  = "ENABLE_DELETE_AT_COLUMN"
 	EnableFixtures        = "ENABLE_FIXTURES"
+	FixturePrefix         = "FIXTURE_PREFIX"
 )
 
 // Ключи тегов мигратора

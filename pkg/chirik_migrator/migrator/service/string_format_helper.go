@@ -24,7 +24,7 @@ func AddSingleSPostfix(s string) string {
 			string(rs[sLen-2:]) == "ed" {
 			return s
 		}
-		if lastCharter != "s" {
+		if lastCharter != "s" && lastCharter != "y" {
 			s += "s"
 		}
 	}
