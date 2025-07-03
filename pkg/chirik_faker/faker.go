@@ -10,6 +10,8 @@ import (
 
 func FakeValue(fieldName string, dataType string) (string, error) {
 	switch fieldName {
+	case "id":
+		return fmt.Sprintf("%d", gofakeit.IntRange(1, 32767)), nil
 	case "name":
 		return gofakeit.Name(), nil
 	case "phone":
@@ -29,10 +31,10 @@ func FakeValue(fieldName string, dataType string) (string, error) {
 		return fmt.Sprintf("%v", gofakeit.Bool()), nil
 
 	case dbs.Smallint.String():
-		return fmt.Sprintf("%d", gofakeit.IntRange(-32768, 32767)), nil
+		return fmt.Sprintf("%d", gofakeit.IntRange(1, 32767)), nil
 
 	case dbs.Int.String():
-		return fmt.Sprintf("%d", gofakeit.IntRange(-2147483648, 2147483647)), nil
+		return fmt.Sprintf("%d", gofakeit.IntRange(1, 2147483647)), nil
 
 	case dbs.Bigint.String():
 		return fmt.Sprintf("%d", gofakeit.Int64()), nil
@@ -41,10 +43,10 @@ func FakeValue(fieldName string, dataType string) (string, error) {
 		return fmt.Sprintf("%d", gofakeit.IntRange(1, 9223372036854775807)), nil
 
 	case dbs.Real.String():
-		return fmt.Sprintf("%.4f", gofakeit.Float32Range(-1000, 1000)), nil
+		return fmt.Sprintf("%.4f", gofakeit.Float32Range(1, 1000)), nil
 
 	case dbs.DoublePrecision.String():
-		return fmt.Sprintf("%.6f", gofakeit.Float64Range(-1e6, 1e6)), nil
+		return fmt.Sprintf("%.6f", gofakeit.Float64Range(1, 1e6)), nil
 
 	case dbs.Varchar.String(), dbs.Text.String():
 		return fmt.Sprintf("'%s'", gofakeit.Sentence(5)), nil
