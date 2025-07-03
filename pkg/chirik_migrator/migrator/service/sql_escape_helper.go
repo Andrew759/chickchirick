@@ -3,34 +3,8 @@ package service
 import (
 	"chickChirick/pkg/chirik_migrator/migrator/dto"
 	"fmt"
-	"strconv"
 	"strings"
 )
-
-func AddQuotesToStringValInValueList(sql []string) []string {
-	for i, v := range sql {
-		sql[i] = AddQuotesToStringVal(v)
-	}
-
-	return sql
-}
-
-func AddQuotesToStringVal(sql string) string {
-	if isNumeric(sql) {
-		return sql
-	}
-	return "'" + sql + "'"
-}
-
-func isNumeric(s string) bool {
-	if _, err := strconv.Atoi(s); err == nil {
-		return true
-	}
-	if _, err := strconv.ParseFloat(s, 64); err == nil {
-		return true
-	}
-	return false
-}
 
 // BuildRawSql Заменяет ? в SQL-запросе на экранированные значения
 func BuildRawSql(sql string, sqlMeta dto.Meta) string {
@@ -52,18 +26,18 @@ func BuildRawSql(sql string, sqlMeta dto.Meta) string {
 	}
 
 	if placeHolderIndex != sqlMeta.FieldCount {
-		//TODO: выбрость здсь ошибку, что количество плейсхолдеров не соответствует числу обратанных значений
+		//TODO: выбросить здесь ошибку, что количество плейсхолдеров не соответствует числу обработанных значений
 	}
 
 	return stringBuilder.String()
 }
 
+// TODO: добавить тип из меты
 func escapeSQLValue(val interface{}) string {
 	switch v := val.(type) {
 	case nil:
 		return "NULL"
 	case string:
-		// Заменяем одиночные кавычки на двойные одиночные кавычки
 		escaped := strings.ReplaceAll(v, "'", "''")
 		return "'" + escaped + "'"
 	case bool:
