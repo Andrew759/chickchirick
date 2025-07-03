@@ -8,4 +8,5 @@ type Meta struct {
 	FieldCommentValues []string
 	FieldMetas         []FieldMeta
 	FieldCount         int
+	FilePostfix        string
 }

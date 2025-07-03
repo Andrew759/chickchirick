@@ -58,9 +58,14 @@ func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
 	}
 
 	if m.EnableFixtures {
-		m.setFixturesToSqlMeta(&sqlMeta)
+		err = m.addFixtureToSqlMeta(&sqlMeta)
+		if err != nil {
+			return err
+		}
+		return m.processSQLMeta(sqlMeta)
 	}
-	return m.processSQLMeta(sqlMeta)
+
+	return nil
 }
 
 func (m Migrator) processSQLMeta(sqlMeta dto.Meta) error {
@@ -81,7 +86,7 @@ func (m Migrator) processSQLMeta(sqlMeta dto.Meta) error {
 		return err
 	}
 
-	return file.WriteSQLToFile(resultSQL, sqlMeta.TableName, m.MigrationFilesPath)
+	return file.WriteSQLToFile(resultSQL, sqlMeta.FilePostfix, m.MigrationFilesPath)
 }
 
 func (m Migrator) validateMInfo(migratorInfo migratorDto.MigratorInfo) error {
@@ -188,6 +193,7 @@ func (m Migrator) processSchemaFields(migratorInfo migratorDto.MigratorInfo) dto
 		FieldCommentValues: fieldCommentValues,
 		FieldMetas:         fieldMetas,
 		FieldCount:         fieldCount,
+		FilePostfix:        fullTableName,
 	}
 }
 
@@ -215,7 +221,7 @@ func (m Migrator) addMigratorFields(sqlMeta *dto.Meta) {
 }
 
 // TODO: сделать однообразно
-func (m Migrator) setFixturesToSqlMeta(sqlMeta *dto.Meta) {
+func (m Migrator) addFixtureToSqlMeta(sqlMeta *dto.Meta) error {
 	var sqlFieldList []string
 	sqlFieldList = append(sqlFieldList, "INSERT INTO %s (")
 
@@ -233,24 +239,32 @@ func (m Migrator) setFixturesToSqlMeta(sqlMeta *dto.Meta) {
 		} else if processedCount == sqlMeta.FieldCount {
 			sqlField += ")"
 		}
-		sqlValues = append(sqlValues, chirik_faker.FakeValue(fieldMeta.Name, fieldMeta.Type))
+
+		fixtureValue, err := chirik_faker.FakeValue(fieldMeta.Name, fieldMeta.Type)
+		if err != nil {
+			return err
+		}
+		sqlValues = append(sqlValues, fixtureValue)
 		sqlFieldList = append(sqlFieldList, sqlField)
 	}
 
-	fixtureValuesHolder := " VALUES ("
+	fixtureValueHolder := " VALUES ("
 	for i := 1; i <= sqlMeta.FieldCount; i++ {
 		if i != sqlMeta.FieldCount {
-			fixtureValuesHolder += "%s, "
+			fixtureValueHolder += "%s, "
 		} else {
-			fixtureValuesHolder += "%s"
+			fixtureValueHolder += "%s"
 		}
 	}
-	fixtureValuesHolder += ");"
+	fixtureValueHolder += ");"
 
-	sqlFieldList = append(sqlFieldList, fixtureValuesHolder)
+	sqlFieldList = append(sqlFieldList, fixtureValueHolder)
 
 	sqlMeta.SqlFieldList = sqlFieldList
 	sqlMeta.SqlValues = sqlValues
 	sqlMeta.FieldCommentList = []string{}
 	sqlMeta.FieldCommentValues = []string{}
+	sqlMeta.FilePostfix = "fixture_" + sqlMeta.FilePostfix
+
+	return nil
 }

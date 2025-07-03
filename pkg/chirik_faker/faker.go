@@ -8,68 +8,68 @@ import (
 	"time"
 )
 
-func FakeValue(fieldName string, dataType string) string {
+func FakeValue(fieldName string, dataType string) (string, error) {
 	switch fieldName {
 	case "name":
-		return gofakeit.Name()
+		return gofakeit.Name(), nil
 	case "phone":
-		return gofakeit.Phone()
+		return gofakeit.Phone(), nil
 	case "email":
-		return gofakeit.Email()
+		return gofakeit.Email(), nil
 	case "password":
-		return gofakeit.Password(true, true, true, true, false, 20)
+		return gofakeit.Password(true, true, true, true, false, 20), nil
 	case "created_at", "updated_at", "deleted_at":
-		return gofakeit.TimeZoneFull()
+		return gofakeit.TimeZoneFull(), nil
 	case "token":
-		return gofakeit.UUID()
+		return gofakeit.UUID(), nil
 	}
 
 	switch dataType {
-	case string(dbs.Bool):
-		return fmt.Sprintf("%v", gofakeit.Bool())
+	case dbs.Bool.String():
+		return fmt.Sprintf("%v", gofakeit.Bool()), nil
 
-	case string(dbs.Smallint):
-		return fmt.Sprintf("%d", gofakeit.IntRange(-32768, 32767))
+	case dbs.Smallint.String():
+		return fmt.Sprintf("%d", gofakeit.IntRange(-32768, 32767)), nil
 
-	case string(dbs.Int):
-		return fmt.Sprintf("%d", gofakeit.IntRange(-2147483648, 2147483647))
+	case dbs.Int.String():
+		return fmt.Sprintf("%d", gofakeit.IntRange(-2147483648, 2147483647)), nil
 
-	case string(dbs.Bigint):
-		return fmt.Sprintf("%d", gofakeit.Int64())
+	case dbs.Bigint.String():
+		return fmt.Sprintf("%d", gofakeit.Int64()), nil
 
-	case string(dbs.BigSerial):
-		return fmt.Sprintf("%d", gofakeit.Int64())
+	case dbs.BigSerial.String():
+		return fmt.Sprintf("%d", gofakeit.IntRange(1, 9223372036854775807)), nil
 
-	case string(dbs.Real):
-		return fmt.Sprintf("%.4f", gofakeit.Float32Range(-1000, 1000))
+	case dbs.Real.String():
+		return fmt.Sprintf("%.4f", gofakeit.Float32Range(-1000, 1000)), nil
 
-	case string(dbs.DoublePrecision):
-		return fmt.Sprintf("%.6f", gofakeit.Float64Range(-1e6, 1e6))
+	case dbs.DoublePrecision.String():
+		return fmt.Sprintf("%.6f", gofakeit.Float64Range(-1e6, 1e6)), nil
 
-	case string(dbs.Varchar), string(dbs.Text):
-		return fmt.Sprintf("'%s'", gofakeit.Sentence(5))
+	case dbs.Varchar.String(), dbs.Text.String():
+		return fmt.Sprintf("'%s'", gofakeit.Sentence(5)), nil
 
-	case string(dbs.TimestampWithTimezone):
-		return fmt.Sprintf("'%s'", gofakeit.Date().Format(time.RFC3339))
+	case dbs.TimestampWithTimezone.String():
+		return fmt.Sprintf("'%s'", gofakeit.Date().Format(time.RFC3339)), nil
 
-	case string(dbs.TimestampWithoutTimezone):
-		return fmt.Sprintf("'%s'", gofakeit.Date().Format("2006-01-02 15:04:05"))
+	case dbs.TimestampWithoutTimezone.String():
+		return fmt.Sprintf("'%s'", gofakeit.Date().Format("2006-01-02 15:04:05")), nil
 
-	case string(dbs.Uuid):
-		return fmt.Sprintf("'%s'", gofakeit.UUID())
+	case dbs.Uuid.String():
+		return fmt.Sprintf("'%s'", gofakeit.UUID()), nil
 
-	case string(dbs.Json), string(dbs.Jsonb):
+	case dbs.Json.String(), dbs.Jsonb.String():
 		fakeMap := map[string]string{
 			"name":  gofakeit.FirstName(),
 			"email": gofakeit.Email(),
 		}
 		b, _ := json.Marshal(fakeMap)
-		return fmt.Sprintf("'%s'", string(b))
+		return fmt.Sprintf("'%s'", string(b)), nil
 
-	case string(dbs.Null):
-		return "NULL"
+	case dbs.Null.String():
+		return "NULL", nil
 
 	default:
-		return "'unsupported_type'"
+		return "", fmt.Errorf("unsupported type: %s", dataType)
 	}
 }
