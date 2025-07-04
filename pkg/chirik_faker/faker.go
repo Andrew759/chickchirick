@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func FakeValue(fieldName string, dataType string) (string, error) {
+func FakeValue(fieldName string) (string, error) {
 	switch fieldName {
 	case "id":
 		return fmt.Sprintf("%d", gofakeit.IntRange(1, 32767)), nil
