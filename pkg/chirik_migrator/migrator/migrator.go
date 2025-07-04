@@ -146,6 +146,7 @@ func (m Migrator) processSchemaFields(migratorInfo migratorDto.MigratorInfo) dto
 		sqlValues = append(sqlValues,
 			dto.ValueMeta{
 				Value:        field.Name,
+				Type:         fieldType,
 				IsSafe:       true,
 				IsValueStore: true,
 			},
@@ -159,6 +160,7 @@ func (m Migrator) processSchemaFields(migratorInfo migratorDto.MigratorInfo) dto
 			sqlValues = append(sqlValues,
 				dto.ValueMeta{
 					Value:  strconv.Itoa(field.Size),
+					Type:   fieldType,
 					IsSafe: true,
 				})
 		}
@@ -171,6 +173,7 @@ func (m Migrator) processSchemaFields(migratorInfo migratorDto.MigratorInfo) dto
 			sqlValues = append(sqlValues,
 				dto.ValueMeta{
 					Value:  field.DefaultValue,
+					Type:   fieldType,
 					IsSafe: true,
 				})
 
@@ -230,7 +233,6 @@ func (m Migrator) addMigratorFields(sqlMeta *dto.Meta) {
 	sqlMeta.SqlFieldList = append(sqlMeta.SqlFieldList, "\n);")
 }
 
-// TODO: сломано
 func (m Migrator) writeFixtureToSqlMeta(sqlMeta *dto.Meta) error {
 	var sqlFieldList []string
 	sqlFieldList = append(sqlFieldList, "INSERT INTO ? (")
@@ -242,16 +244,15 @@ func (m Migrator) writeFixtureToSqlMeta(sqlMeta *dto.Meta) error {
 	})
 	processedCount := 0
 
-	for i, valueMeta := range sqlMeta.SqlValues {
+	for _, valueMeta := range sqlMeta.SqlValues {
 		if !valueMeta.IsValueStore {
-			processedCount++
 			continue
 		}
 
 		//При установке фикстуры устанавливается флаг - не безопасно
 		valueMeta.IsSafe = false
-		sqlMeta.SqlValues[i] = valueMeta
 
+		sqlValues = append(sqlValues, valueMeta)
 		sqlFieldList = append(sqlFieldList, fmt.Sprintf("%v", valueMeta.Value))
 		processedCount++
 
@@ -261,7 +262,7 @@ func (m Migrator) writeFixtureToSqlMeta(sqlMeta *dto.Meta) error {
 			sqlFieldList = append(sqlFieldList, ")")
 		}
 
-		fixtureValue, err := chirik_faker.FakeValue(valueMeta.Value)
+		fixtureValue, err := chirik_faker.FakeValue(fmt.Sprintf("%v", valueMeta.Value), valueMeta.Type)
 		if err != nil {
 			return err
 		}
@@ -273,6 +274,7 @@ func (m Migrator) writeFixtureToSqlMeta(sqlMeta *dto.Meta) error {
 
 	}
 
+	//TODO: Отдельная строка для значений. В дальнейшем можно вынести в sqlFieldList
 	fixtureValueHolder := " VALUES ("
 	for i := 1; i <= sqlMeta.FieldCount; i++ {
 		if i != sqlMeta.FieldCount {

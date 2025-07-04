@@ -1,16 +1,17 @@
 package chirik_faker
 
 import (
+	dbs "chickChirick/pkg/chirik_migrator/db_schema"
+	"encoding/json"
 	"fmt"
 	"github.com/brianvoe/gofakeit/v6"
 	"time"
 )
 
-// FakeValue TODO: сейчас нет обработки json
-func FakeValue(fieldName any) (string, error) {
+func FakeValue(fieldName string, dataType string) (any, error) {
 	switch fieldName {
 	case "id":
-		return fmt.Sprintf("%d", gofakeit.IntRange(1, 32767)), nil
+		return gofakeit.IntRange(1, 32767), nil
 	case "name":
 		return gofakeit.Name(), nil
 	case "phone":
@@ -25,38 +26,53 @@ func FakeValue(fieldName any) (string, error) {
 		return gofakeit.UUID(), nil
 	}
 
-	switch fieldName.(type) {
-	case bool:
-		return fmt.Sprintf("%v", gofakeit.Bool()), nil
-	case int8:
-		return fmt.Sprintf("%d", gofakeit.Int8()), nil
-	case int16:
-		return fmt.Sprintf("%d", gofakeit.Int16()), nil
-	case int32:
-		return fmt.Sprintf("%d", gofakeit.Int32()), nil
-	case int64:
-		return fmt.Sprintf("%d", gofakeit.Int64()), nil
-	case int:
-		return fmt.Sprintf("%d", gofakeit.Int64()), nil
-	case uint8:
-		return fmt.Sprintf("%d", gofakeit.Uint8()), nil
-	case uint16:
-		return fmt.Sprintf("%d", gofakeit.Uint16()), nil
-	case uint32:
-		return fmt.Sprintf("%d", gofakeit.Uint32()), nil
-	case uint64:
-		return fmt.Sprintf("%d", gofakeit.Uint64()), nil
-	case uint:
-		return fmt.Sprintf("%d", gofakeit.Uint64()), nil
-	case float32:
-		return fmt.Sprintf("%f", gofakeit.Float32()), nil
-	case float64:
-		return fmt.Sprintf("%f", gofakeit.Float64()), nil
-	case string:
-		return fmt.Sprintf("'%s'", gofakeit.Sentence(5)), nil
-	case time.Time:
-		return fmt.Sprintf("'%s'", gofakeit.Date().Format(time.RFC3339)), nil
+	switch dataType {
+	case dbs.Bool.String():
+		return gofakeit.Bool(), nil
+
+	case dbs.Smallint.String():
+		return gofakeit.IntRange(1, 32767), nil
+
+	case dbs.Int.String():
+		return gofakeit.IntRange(1, 2147483647), nil
+
+	case dbs.Bigint.String():
+		return gofakeit.Int64(), nil
+
+	case dbs.BigSerial.String():
+		return gofakeit.IntRange(1, 9223372036854775807), nil
+
+	case dbs.Real.String():
+		return gofakeit.Float32Range(1, 1000), nil
+
+	case dbs.DoublePrecision.String():
+		return gofakeit.Float64Range(1, 1e6), nil
+
+	case dbs.Varchar.String(), dbs.Text.String():
+		return gofakeit.Sentence(5), nil
+
+	case dbs.TimestampWithTimezone.String():
+		return gofakeit.Date().Format(time.RFC3339), nil
+
+	case dbs.TimestampWithoutTimezone.String():
+		return gofakeit.Date().Format("2006-01-02 15:04:05"), nil
+
+	case dbs.Uuid.String():
+		return gofakeit.UUID(), nil
+
+	case dbs.Json.String(), dbs.Jsonb.String():
+		fakeMap := map[string]string{
+			"name":  gofakeit.FirstName(),
+			"email": gofakeit.Email(),
+		}
+		b, _ := json.Marshal(fakeMap)
+
+		return fmt.Sprintf("'%s'", string(b)), nil
+
+	case dbs.Null.String():
+		return nil, nil
+
 	default:
-		return "", fmt.Errorf("unsupported type")
+		return "", fmt.Errorf("unsupported type: %s", dataType)
 	}
 }
