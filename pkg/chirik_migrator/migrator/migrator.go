@@ -147,7 +147,7 @@ func (m Migrator) processSchemaFields(migratorInfo migratorDto.MigratorInfo) dto
 			dto.ValueMeta{
 				Value:        field.Name,
 				IsSafe:       true,
-				IsStoreValue: true,
+				IsValueStore: true,
 			},
 			dto.ValueMeta{
 				Value:  fieldType,
@@ -238,24 +238,27 @@ func (m Migrator) writeFixtureToSqlMeta(sqlMeta *dto.Meta) error {
 	var sqlValues []dto.ValueMeta
 	sqlValues = append(sqlValues, dto.ValueMeta{
 		Value:  sqlMeta.TableName,
-		Type:   db_schema.Varchar.String(),
 		IsSafe: true,
 	})
 	processedCount := 0
 
 	for i, valueMeta := range sqlMeta.SqlValues {
-		//Фикстурам требуется экранирование
-		if i > 0 {
-			valueMeta.IsSafe = false
-			sqlMeta.SqlValues[i] = valueMeta
+		if !valueMeta.IsValueStore {
+			processedCount++
+			continue
 		}
 
-		sqlField := valueMeta.Value
+		//При установке фикстуры устанавливается флаг - не безопасно
+		valueMeta.IsSafe = false
+		sqlMeta.SqlValues[i] = valueMeta
+
+		sqlFieldList = append(sqlFieldList, fmt.Sprintf("%v", valueMeta.Value))
 		processedCount++
+
 		if processedCount < sqlMeta.FieldCount {
-			sqlField += ", "
+			sqlFieldList = append(sqlFieldList, ", ")
 		} else if processedCount == sqlMeta.FieldCount {
-			sqlField += ")"
+			sqlFieldList = append(sqlFieldList, ")")
 		}
 
 		fixtureValue, err := chirik_faker.FakeValue(valueMeta.Value)
@@ -265,11 +268,9 @@ func (m Migrator) writeFixtureToSqlMeta(sqlMeta *dto.Meta) error {
 
 		sqlValues = append(sqlValues, dto.ValueMeta{
 			Value:  fixtureValue,
-			Type:   db_schema.Varchar.String(),
 			IsSafe: false,
 		})
 
-		sqlFieldList = append(sqlFieldList, sqlField)
 	}
 
 	fixtureValueHolder := " VALUES ("

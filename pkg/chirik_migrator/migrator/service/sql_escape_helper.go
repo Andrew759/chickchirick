@@ -13,11 +13,13 @@ func BuildRawSql(sql string, sqlMeta dto.Meta) string {
 	placeHolderIndex := 0
 	for i := 0; i < len(sql); i++ {
 		if sql[i] == '?' && placeHolderIndex < len(sqlMeta.SqlValues) {
-			fieldMeta := sqlMeta.SqlValues[placeHolderIndex]
-			if fieldMeta.IsSafe {
-				stringBuilder.WriteString(fieldMeta.Value)
+			valueMeta := sqlMeta.SqlValues[placeHolderIndex]
+			vMetaString := fmt.Sprintf("%v", valueMeta.Value)
+
+			if valueMeta.IsSafe {
+				stringBuilder.WriteString(vMetaString)
 			} else {
-				stringBuilder.WriteString(escapeSQLValue(fieldMeta.Value))
+				stringBuilder.WriteString(escapeSQLValue(valueMeta.Value))
 			}
 			placeHolderIndex++
 		} else {
@@ -32,7 +34,6 @@ func BuildRawSql(sql string, sqlMeta dto.Meta) string {
 	return stringBuilder.String()
 }
 
-// TODO: добавить тип из меты
 func escapeSQLValue(val interface{}) string {
 	switch v := val.(type) {
 	case nil:
