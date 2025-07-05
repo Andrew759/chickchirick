@@ -166,6 +166,7 @@ func (mInfo *MigratorInfo) FillByGormTagAndSchemaField(schemaField *db_schema.Fi
 		case "unique":
 			schemaField.Unique = true
 		case "default":
+			schemaField.HasDefaultValue = true
 			schemaField.DefaultValue = tValue
 		case "not null":
 			schemaField.NotNull = true

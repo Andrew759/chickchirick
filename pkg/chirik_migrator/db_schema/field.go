@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// TODO: требуется доработка Uuid
+// TODO: требуется вынести в отдельный пакет
 const (
 	Bool                     DataType = "BOOLEAN"
 	Smallint                 DataType = "SMALLINT"
@@ -24,6 +24,8 @@ const (
 	Jsonb                    DataType = "JSONB"
 	Null                     DataType = "NULL"
 )
+
+type DataType string
 
 type Field struct {
 	Name                   string
@@ -53,9 +55,6 @@ type FieldTypeError struct {
 func (e *FieldTypeError) Error() string {
 	return e.Msg
 }
-
-// DataType TODO: вынести отдельно
-type DataType string
 
 func (d DataType) String() string {
 	return string(d)

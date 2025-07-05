@@ -169,7 +169,7 @@ func (m Migrator) processSchemaFields(migratorInfo migratorDto.MigratorInfo) dto
 			sqlField += " PRIMARY KEY"
 		}
 		if field.HasDefaultValue {
-			sqlField += "DEFAULT ?"
+			sqlField += " DEFAULT ?"
 			sqlValues = append(sqlValues,
 				dto.ValueMeta{
 					Value:  field.DefaultValue,
