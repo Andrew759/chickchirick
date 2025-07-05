@@ -6,7 +6,7 @@ import (
 )
 
 type Group struct {
-	gorm.Model `c_migrator:"enabled" c_migrator_orm:"gorm"`
+	gorm.Model `c_migrator:"enabled"`
 	MessageId  int     `json:"message_id" gorm:"type:int"`
 	Message    Message `json:"message" gorm:"references:MessageId"`
 	//TODO: удалить автогенерацию и мок, когда будет реализован сервис групп

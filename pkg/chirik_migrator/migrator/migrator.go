@@ -186,7 +186,7 @@ func (m Migrator) processSchemaFields(migratorInfo migratorDto.MigratorInfo) dto
 		}
 		if field.Comment != "" {
 			fieldComment := "comment on column ?.? is '?';"
-			fieldCommentValues = append(fieldCommentValues, schema.Name, field.Name, field.Comment)
+			fieldCommentValues = append(fieldCommentValues, schema.Table, field.Name, field.Comment)
 			fieldCommentList = append(fieldCommentList, fieldComment)
 		}
 

@@ -6,7 +6,7 @@ import (
 )
 
 type Code struct {
-	gorm.Model `c_migrator:"enabled" c_migrator_orm:"gorm"`
+	gorm.Model `c_migrator:"enabled"`
 	Id         int       `json:"id" gorm:"type:int;unique;primaryKey;autoIncrement"`
 	Code       int8      `json:"code" gorm:"type:smallint"`
 	SessionId  int       `json:"session_id" gorm:"type:int"`

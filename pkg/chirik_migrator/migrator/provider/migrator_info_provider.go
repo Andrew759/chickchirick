@@ -75,9 +75,13 @@ func (mInfo *MigratorInfo) PrepareEmptySchema(structure chirik_ast.Structure) db
 	schema := db_schema.Schema{}
 	schema.Name = structure.Name()
 
-	tableName := service.AddSingleSPostfix(
-		service.ToSnakeCase(structure.Name()),
-	)
+	var tableName string
+	migratorTableNameTag := structure.Fields().Tag(config.MigratorTableName)
+	if migratorTableNameTag != nil && len(migratorTableNameTag.Values) > 0 {
+		tableName = migratorTableNameTag.Values[0]
+	} else {
+		tableName = service.AddSingleSPostfix(service.ToSnakeCase(structure.Name()))
+	}
 
 	schema.Table = tableName
 

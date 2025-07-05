@@ -5,7 +5,7 @@ import (
 )
 
 type Personal struct {
-	gorm.Model        `c_migrator:"enabled" c_migrator_orm:"gorm"`
+	gorm.Model        `c_migrator:"enabled"`
 	Id                int          `json:"id" gorm:"type:int;unique;primaryKey;autoIncrement"`
 	MessageId         int          `json:"message_id" gorm:"type:int"`
 	Message           Message      `json:"message" gorm:"references:MessageId"`

@@ -22,8 +22,9 @@ const (
 
 // Ключи тегов мигратора
 const (
-	MigratorTag      = "c_migrator"
-	MigratorEnabled  = "enabled"
-	MigratorDisabled = "disabled"
-	MigratorGormTag  = "gorm"
+	MigratorTag       = "c_migrator"
+	MigratorEnabled   = "enabled"
+	MigratorDisabled  = "disabled"
+	MigratorGormTag   = "gorm"
+	MigratorTableName = "c_migrator_t_name"
 )

@@ -6,7 +6,7 @@ import (
 )
 
 type Photo struct {
-	gorm.Model `c_migrator:"enabled" c_migrator_orm:"gorm"`
+	gorm.Model `c_migrator:"enabled"`
 	//TODO: удалить мок UUID, когда появится сервис файлов
 	FieUuid pgtype.UUID `gorm:"type:uuid;default:gen_random_uuid()"`
 	UserId  int         `json:"user_id" gorm:"type:int"`
