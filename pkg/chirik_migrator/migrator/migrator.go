@@ -242,8 +242,8 @@ func (m Migrator) writeFixtureToSqlMeta(sqlMeta *dto.Meta) error {
 		Value:  sqlMeta.TableName,
 		IsSafe: true,
 	})
-	processedCount := 0
 
+	processedCount := 0
 	for _, valueMeta := range sqlMeta.SqlValues {
 		if !valueMeta.IsValueStore {
 			continue
@@ -252,7 +252,7 @@ func (m Migrator) writeFixtureToSqlMeta(sqlMeta *dto.Meta) error {
 		//При установке фикстуры устанавливается флаг - не безопасно
 		valueMeta.IsSafe = false
 
-		sqlValues = append(sqlValues, valueMeta)
+		//sqlValues = append(sqlValues, valueMeta)
 		sqlFieldList = append(sqlFieldList, fmt.Sprintf("%v", valueMeta.Value))
 		processedCount++
 
@@ -274,18 +274,15 @@ func (m Migrator) writeFixtureToSqlMeta(sqlMeta *dto.Meta) error {
 
 	}
 
-	//TODO: Отдельная строка для значений. В дальнейшем можно вынести в sqlFieldList
-	fixtureValueHolder := " VALUES ("
+	sqlFieldList = append(sqlFieldList, " VALUES (")
 	for i := 1; i <= sqlMeta.FieldCount; i++ {
 		if i != sqlMeta.FieldCount {
-			fixtureValueHolder += "?, "
+			sqlFieldList = append(sqlFieldList, "?, ")
 		} else {
-			fixtureValueHolder += "?"
+			sqlFieldList = append(sqlFieldList, "?")
 		}
 	}
-	fixtureValueHolder += ");"
-
-	sqlFieldList = append(sqlFieldList, fixtureValueHolder)
+	sqlFieldList = append(sqlFieldList, ");")
 
 	sqlMeta.SqlFieldList = sqlFieldList
 	sqlMeta.SqlValues = sqlValues
