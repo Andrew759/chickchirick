@@ -4,6 +4,7 @@ import (
 	mainService "chickChirick/cmd/service"
 	"chickChirick/pkg/chirik_faker"
 	"chickChirick/pkg/chirik_migrator/db_schema"
+	"chickChirick/pkg/chirik_migrator/db_schema/data_type/postgres"
 	"chickChirick/pkg/chirik_migrator/file"
 	"chickChirick/pkg/chirik_migrator/migrator/dto"
 	migratorDto "chickChirick/pkg/chirik_migrator/migrator/provider"
@@ -132,16 +133,19 @@ func (m Migrator) processSchemaFields(migratorInfo migratorDto.MigratorInfo) dto
 	processedCount := 0
 
 	for _, field := range schema.Fields {
-		fieldType := field.DataType.String()
+		fieldType := field.DataType
+		if fieldType == nil {
+			continue
+		}
 		//Пропуск полей без типа
-		if fieldType == "" {
+		if !field.HasDataType() || fieldType.String() == "" {
 			continue
 		}
 
 		sqlField := "\n ? ?"
 
 		if field.AutoIncrement {
-			fieldType = string(db_schema.BigSerial)
+			fieldType = postgres.BigSerial
 		}
 		sqlValues = append(sqlValues,
 			dto.ValueMeta{
@@ -213,20 +217,20 @@ func (m Migrator) processSchemaFields(migratorInfo migratorDto.MigratorInfo) dto
 func (m Migrator) addMigratorFields(sqlMeta *dto.Meta) {
 	if m.EnableCreatedAtColumn {
 		sqlField := ",\n created_at " +
-			db_schema.TimestampWithTimezone.String() + " " +
-			db_schema.Null.String()
+			postgres.TimestampWithTimezone.String() + " " +
+			postgres.Null.String()
 		sqlMeta.SqlFieldList = append(sqlMeta.SqlFieldList, sqlField)
 	}
 	if m.EnableUpdatedAtColumn {
 		sqlField := ",\n updated_at " +
-			db_schema.TimestampWithTimezone.String() + " " +
-			db_schema.Null.String()
+			postgres.TimestampWithTimezone.String() + " " +
+			postgres.Null.String()
 		sqlMeta.SqlFieldList = append(sqlMeta.SqlFieldList, sqlField)
 	}
 	if m.EnableDeleteAtColumn {
 		sqlField := ",\n deleted_at " +
-			db_schema.TimestampWithTimezone.String() + " " +
-			db_schema.Null.String()
+			postgres.TimestampWithTimezone.String() + " " +
+			postgres.Null.String()
 		sqlMeta.SqlFieldList = append(sqlMeta.SqlFieldList, sqlField)
 	}
 

@@ -1,14 +1,15 @@
 package chirik_faker
 
 import (
-	dbs "chickChirick/pkg/chirik_migrator/db_schema"
+	"chickChirick/pkg/chirik_migrator/db_schema/data_type"
+	"chickChirick/pkg/chirik_migrator/db_schema/data_type/postgres"
 	"encoding/json"
 	"fmt"
 	"github.com/brianvoe/gofakeit/v6"
 	"time"
 )
 
-func FakeValue(fieldName string, dataType string) (any, error) {
+func FakeValue(fieldName string, dataType data_type.Type) (any, error) {
 	switch fieldName {
 	case "id":
 		return gofakeit.IntRange(1, 32767), nil
@@ -27,40 +28,40 @@ func FakeValue(fieldName string, dataType string) (any, error) {
 	}
 
 	switch dataType {
-	case dbs.Bool.String():
+	case postgres.Bool:
 		return gofakeit.Bool(), nil
 
-	case dbs.Smallint.String():
+	case postgres.Smallint:
 		return gofakeit.IntRange(1, 32767), nil
 
-	case dbs.Int.String():
+	case postgres.Int:
 		return gofakeit.IntRange(1, 2147483647), nil
 
-	case dbs.Bigint.String():
+	case postgres.Bigint:
 		return gofakeit.Int64(), nil
 
-	case dbs.BigSerial.String():
+	case postgres.BigSerial:
 		return gofakeit.IntRange(1, 9223372036854775807), nil
 
-	case dbs.Real.String():
+	case postgres.Real:
 		return gofakeit.Float32Range(1, 1000), nil
 
-	case dbs.DoublePrecision.String():
+	case postgres.DoublePrecision:
 		return gofakeit.Float64Range(1, 1e6), nil
 
-	case dbs.Varchar.String(), dbs.Text.String():
+	case postgres.Varchar, postgres.Text:
 		return gofakeit.Sentence(5), nil
 
-	case dbs.TimestampWithTimezone.String():
+	case postgres.TimestampWithTimezone:
 		return gofakeit.Date().Format(time.RFC3339), nil
 
-	case dbs.TimestampWithoutTimezone.String():
+	case postgres.TimestampWithoutTimezone:
 		return gofakeit.Date().Format("2006-01-02 15:04:05"), nil
 
-	case dbs.Uuid.String():
+	case postgres.Uuid:
 		return gofakeit.UUID(), nil
 
-	case dbs.Json.String(), dbs.Jsonb.String():
+	case postgres.Json, postgres.Jsonb:
 		fakeMap := map[string]string{
 			"name":  gofakeit.FirstName(),
 			"email": gofakeit.Email(),
@@ -69,7 +70,7 @@ func FakeValue(fieldName string, dataType string) (any, error) {
 
 		return fmt.Sprintf("'%s'", string(b)), nil
 
-	case dbs.Null.String():
+	case postgres.Null:
 		return nil, nil
 
 	default:
