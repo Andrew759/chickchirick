@@ -6,7 +6,7 @@ import (
 )
 
 type UserRelation struct {
-	gorm.Model `c_migrator:"enabled" c_migrator_orm:"gorm"`
+	gorm.Model `c_migrator:"enabled"`
 	UserId     int         `json:"id" gorm:"type:int;unique;primaryKey;autoIncrement"`
 	UserUuid   pgtype.UUID `json:"user_uuid" gorm:"type:uuid"`
 }

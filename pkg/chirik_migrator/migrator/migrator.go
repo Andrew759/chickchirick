@@ -2,7 +2,9 @@ package migrator
 
 import (
 	mainService "chickChirick/cmd/service"
+	"chickChirick/pkg/chirik_faker"
 	"chickChirick/pkg/chirik_migrator/db_schema"
+	"chickChirick/pkg/chirik_migrator/db_schema/data_type/postgres"
 	"chickChirick/pkg/chirik_migrator/file"
 	"chickChirick/pkg/chirik_migrator/migrator/dto"
 	migratorDto "chickChirick/pkg/chirik_migrator/migrator/provider"
@@ -11,8 +13,6 @@ import (
 	"fmt"
 	"strconv"
 )
-
-//TODO: согласовать с интерфейсом
 
 type Config struct {
 	//TOOD: CreateIndexAfterCreateTable сейчас не используется. Проверить необходимость
@@ -23,6 +23,8 @@ type Config struct {
 	EnableCreatedAtColumn bool
 	EnableUpdatedAtColumn bool
 	EnableDeleteAtColumn  bool
+	EnableFixtures        bool
+	FixturePrefix         string
 }
 
 type Migrator struct {
@@ -50,24 +52,40 @@ func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
 	sqlMeta := m.processSchemaFields(migratorInfo)
 	m.addMigratorFields(&sqlMeta)
 
-	//Предотвращение SQL инъекций по образу, как это делалось в PHP
-	for k, v := range sqlMeta.SqlValues {
-		sqlMeta.SqlValues[k] = service.Escape(v.(string))
+	err = m.processSQLMeta(sqlMeta)
+	if err != nil {
+		return err
 	}
 
+	if m.EnableFixtures {
+		err = m.writeFixtureToSqlMeta(&sqlMeta)
+		if err != nil {
+			return err
+		}
+		return m.processSQLMeta(sqlMeta)
+	}
+
+	return nil
+}
+
+func (m Migrator) processSQLMeta(sqlMeta dto.Meta) error {
 	var resultSQL string
 	for _, sqlField := range sqlMeta.SqlFieldList {
 		resultSQL += sqlField
 	}
 
-	resultSQL = fmt.Sprintf(resultSQL, sqlMeta.SqlValues...)
+	var err error
+	resultSQL, err = service.BuildRawSql(resultSQL, sqlMeta)
+	if err != nil {
+		return err
+	}
 
 	_, err = m.NativeDB().Exec(resultSQL)
 	if err != nil {
 		return err
 	}
 
-	return file.WriteSQLToFile(resultSQL, sqlMeta.TableName, m.MigrationFilesPath)
+	return file.WriteSQLToFile(resultSQL, sqlMeta.MigrationPrefix, m.MigrationFilesPath)
 }
 
 func (m Migrator) validateMInfo(migratorInfo migratorDto.MigratorInfo) error {
@@ -96,7 +114,7 @@ func (m Migrator) validateMInfo(migratorInfo migratorDto.MigratorInfo) error {
 
 func (m Migrator) processSchemaFields(migratorInfo migratorDto.MigratorInfo) dto.Meta {
 	var sqlFieldList []string
-	sqlFieldList = append(sqlFieldList, "CREATE TABLE IF NOT EXISTS %s \n(")
+	sqlFieldList = append(sqlFieldList, "CREATE TABLE IF NOT EXISTS ? \n(")
 
 	schema := &migratorInfo.Schema
 	fullTableName := schema.Table
@@ -104,44 +122,67 @@ func (m Migrator) processSchemaFields(migratorInfo migratorDto.MigratorInfo) dto
 		fullTableName = migratorInfo.EntityNamespace + "_" + schema.Table
 	}
 
-	var sqlValues []any
-	sqlValues = append(sqlValues, fullTableName)
+	var sqlValues []dto.ValueMeta
+	sqlValues = append(sqlValues, dto.ValueMeta{
+		Value:  fullTableName,
+		IsSafe: true,
+	})
 
+	//TODO: доработать наподобие с sqlValues
 	var fieldCommentList []string
 	var fieldCommentValues []string
-	var fieldNames []string
-	fieldsCount := len(schema.Fields)
+	fieldCount := len(schema.Fields)
 	processedCount := 0
 
 	for _, field := range schema.Fields {
-		fieldNames = append(fieldNames, field.Name)
-		fieldType := field.DataType.String()
+		fieldType := field.DataType
+		if fieldType == nil {
+			continue
+		}
 		//Пропуск полей без типа
-		if fieldType == "" {
+		if !field.HasDataType() || fieldType.String() == "" {
 			continue
 		}
 
-		sqlField := "\n %s %s"
+		sqlField := "\n ? ?"
 
-		//TODO: При установке типа необходимость в дальнейшем вынесении отдельного провайдера для
-		// postgres, т.к в разных БД реализация будет отличаться
 		if field.AutoIncrement {
-			sqlValues = append(sqlValues, field.Name, "BIGSERIAL")
-		} else {
-			sqlValues = append(sqlValues, field.Name, fieldType)
+			fieldType = postgres.BigSerial
 		}
+		sqlValues = append(sqlValues,
+			dto.ValueMeta{
+				Value:        field.Name,
+				Type:         fieldType,
+				IsSafe:       true,
+				IsValueStore: true,
+			},
+			dto.ValueMeta{
+				Value:  fieldType,
+				IsSafe: true,
+			})
 
 		if field.Size != 0 {
-			sqlField += "(%s)"
-			sqlValues = append(sqlValues, strconv.Itoa(field.Size))
+			sqlField += "(?)"
+			sqlValues = append(sqlValues,
+				dto.ValueMeta{
+					Value:  strconv.Itoa(field.Size),
+					Type:   fieldType,
+					IsSafe: true,
+				})
 		}
 
 		if field.PrimaryKey {
 			sqlField += " PRIMARY KEY"
 		}
 		if field.HasDefaultValue {
-			sqlField += "DEFAULT %s"
-			sqlValues = append(sqlValues, field.DefaultValue)
+			sqlField += " DEFAULT ?"
+			sqlValues = append(sqlValues,
+				dto.ValueMeta{
+					Value:  field.DefaultValue,
+					Type:   fieldType,
+					IsSafe: true,
+				})
+
 		}
 		if field.NotNull {
 			sqlField += " NOT NULL"
@@ -150,13 +191,13 @@ func (m Migrator) processSchemaFields(migratorInfo migratorDto.MigratorInfo) dto
 			sqlField += " UNIQUE"
 		}
 		if field.Comment != "" {
-			fieldComment := "comment on column %s.%s is '%s';"
-			fieldCommentValues = append(fieldCommentValues, schema.Name, field.Name, field.Comment)
+			fieldComment := "comment on column ?.? is '?';"
+			fieldCommentValues = append(fieldCommentValues, schema.Table, field.Name, field.Comment)
 			fieldCommentList = append(fieldCommentList, fieldComment)
 		}
 
 		processedCount++
-		if processedCount < fieldsCount {
+		if processedCount < fieldCount {
 			sqlField += ","
 		}
 
@@ -169,29 +210,119 @@ func (m Migrator) processSchemaFields(migratorInfo migratorDto.MigratorInfo) dto
 		SqlValues:          sqlValues,
 		FieldCommentList:   fieldCommentList,
 		FieldCommentValues: fieldCommentValues,
-		FieldNames:         fieldNames,
+		FieldCount:         fieldCount,
+		MigrationPrefix:    fullTableName,
 	}
 }
 
+// TODO: не попадают в фикстуры, доработать
 func (m Migrator) addMigratorFields(sqlMeta *dto.Meta) {
 	if m.EnableCreatedAtColumn {
 		sqlField := ",\n created_at " +
-			db_schema.TimestampWithTimezone.String() + " " +
-			db_schema.Null.String()
+			postgres.TimestampWithTimezone.String() + " " +
+			postgres.Null.String()
 		sqlMeta.SqlFieldList = append(sqlMeta.SqlFieldList, sqlField)
 	}
 	if m.EnableUpdatedAtColumn {
 		sqlField := ",\n updated_at " +
-			db_schema.TimestampWithTimezone.String() + " " +
-			db_schema.Null.String()
+			postgres.TimestampWithTimezone.String() + " " +
+			postgres.Null.String()
 		sqlMeta.SqlFieldList = append(sqlMeta.SqlFieldList, sqlField)
 	}
 	if m.EnableDeleteAtColumn {
 		sqlField := ",\n deleted_at " +
-			db_schema.TimestampWithTimezone.String() + " " +
-			db_schema.Null.String()
+			postgres.TimestampWithTimezone.String() + " " +
+			postgres.Null.String()
 		sqlMeta.SqlFieldList = append(sqlMeta.SqlFieldList, sqlField)
 	}
 
 	sqlMeta.SqlFieldList = append(sqlMeta.SqlFieldList, "\n);")
+}
+
+func (m Migrator) writeFixtureToSqlMeta(sqlMeta *dto.Meta) error {
+	var sqlFieldList []string
+	sqlFieldList = append(sqlFieldList, "INSERT INTO ? (")
+
+	var sqlValues []dto.ValueMeta
+	sqlValues = append(sqlValues, dto.ValueMeta{
+		Value:  sqlMeta.TableName,
+		IsSafe: true,
+	})
+
+	processedCount := 0
+	for _, valueMeta := range sqlMeta.SqlValues {
+		if !valueMeta.IsValueStore {
+			continue
+		}
+
+		//При установке фикстуры устанавливается флаг - не безопасно
+		valueMeta.IsSafe = false
+
+		//sqlValues = append(sqlValues, valueMeta)
+		sqlFieldList = append(sqlFieldList, fmt.Sprintf("%v", valueMeta.Value))
+		processedCount++
+
+		if processedCount < sqlMeta.FieldCount {
+			sqlFieldList = append(sqlFieldList, ", ")
+		} else if processedCount == sqlMeta.FieldCount {
+			sqlFieldList = append(sqlFieldList, ")")
+		}
+
+		fixtureValue, err := chirik_faker.FakeValue(fmt.Sprintf("%v", valueMeta.Value), valueMeta.Type)
+		if err != nil {
+			return err
+		}
+
+		sqlValues = append(sqlValues, dto.ValueMeta{
+			Value:  fixtureValue,
+			IsSafe: false,
+		})
+
+	}
+
+	sqlFieldList = append(sqlFieldList, " VALUES (")
+	for i := 1; i <= sqlMeta.FieldCount; i++ {
+		if i != sqlMeta.FieldCount {
+			sqlFieldList = append(sqlFieldList, "?, ")
+		} else {
+			sqlFieldList = append(sqlFieldList, "?")
+		}
+	}
+	sqlFieldList = append(sqlFieldList, ");")
+
+	sqlMeta.SqlFieldList = sqlFieldList
+	sqlMeta.SqlValues = sqlValues
+	sqlMeta.FieldCommentList = []string{}
+	sqlMeta.FieldCommentValues = []string{}
+
+	if m.FixturePrefix != "" {
+		sqlMeta.MigrationPrefix = m.FixturePrefix + "_" + sqlMeta.MigrationPrefix
+	}
+
+	return nil
+}
+
+// DropTable TODO: implement this
+func (m Migrator) DropTable(entity migratorDto.MigratorInfo) error {
+	return nil
+}
+
+// CreateConstraint TODO: implement this
+func (m Migrator) CreateConstraint(entity migratorDto.MigratorInfo, name string) error {
+	return nil
+}
+
+// DropConstraint TODO: implement this
+func (m Migrator) DropConstraint(entity migratorDto.MigratorInfo, name string) error {
+	return nil
+}
+
+// CreateIndex TODO: implement this
+func (m Migrator) CreateIndex(entity migratorDto.MigratorInfo, name string) error {
+	return nil
+}
+
+// DropIndex TODO: implement this
+func (m Migrator) DropIndex(entity migratorDto.MigratorInfo, name string) error {
+	return nil
 }
