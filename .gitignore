@@ -1,6 +1,4 @@
 .idea
-redis_data
-db_data
 .env
 pkg/chirik_migrator/migration.yaml
 pkg/chirik_migrator/sql

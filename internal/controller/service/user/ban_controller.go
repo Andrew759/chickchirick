@@ -5,11 +5,10 @@ import (
 	ban "chickChirick/internal/model/user"
 	"encoding/json"
 	"net/http"
-	"strconv"
 )
 
 type BanController struct {
-	MainController abstraction.Controller
+	Controller abstraction.Controller
 }
 
 func (bc *BanController) HandleRequest() {
@@ -37,7 +36,7 @@ func (bc *BanController) HandleRequest() {
 }
 
 func (bc *BanController) GetBans(w http.ResponseWriter) {
-	bans, err := ban.GetBans(bc.MainController.Dependencies.DBDecorator.GDB())
+	bans, err := ban.GetBans(bc.Controller.Dependencies.DBDecorator.GDB())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -51,21 +50,14 @@ func (bc *BanController) GetBans(w http.ResponseWriter) {
 }
 
 func (bc *BanController) GetBan(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	idVal := r.URL.Query().Get("id")
-	if idVal == "" {
-		http.Error(w, "Missing ban ID", http.StatusBadRequest)
-		return
-	}
-	id, _ := strconv.Atoi(idVal)
-
-	u, err := ban.GetBanById(bc.MainController.Dependencies.DBDecorator.GDB(), id)
+	id := bc.Controller.GETId(w, r)
+	b, err := ban.GetBanById(bc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		http.Error(w, "Ban not found: "+err.Error(), http.StatusNotFound)
 		return
 	}
 
-	if err := json.NewEncoder(w).Encode(u); err != nil {
+	if err := json.NewEncoder(w).Encode(b); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -79,7 +71,7 @@ func (bc *BanController) Ban(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := ban.CreateBan(bc.MainController.Dependencies.DBDecorator.GDB(), &b); err != nil {
+	if err := ban.CreateBan(bc.Controller.Dependencies.DBDecorator.GDB(), &b); err != nil {
 		http.Error(w, "Failed to create ban: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -91,9 +83,8 @@ func (bc *BanController) Ban(w http.ResponseWriter, r *http.Request) {
 }
 
 func (bc *BanController) DeleteBan(w http.ResponseWriter, r *http.Request) {
-	id := bc.MainController.GETId(w, r)
-
-	err := ban.DeleteBanById(bc.MainController.Dependencies.DBDecorator.GDB(), id)
+	id := bc.Controller.GETId(w, r)
+	err := ban.DeleteBanById(bc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		http.Error(w, "Failed to delete ban: "+err.Error(), http.StatusInternalServerError)
 		return

@@ -1,32 +1,15 @@
 package db_schema
 
 import (
+	"chickChirick/pkg/chirik_migrator/db_schema/data_type"
+	"chickChirick/pkg/chirik_migrator/db_schema/data_type/postgres"
 	"fmt"
 	"strings"
 )
 
-// TODO: требуется доработка Uuid
-const (
-	Bool                     DataType = "BOOLEAN"
-	Smallint                 DataType = "SMALLINT"
-	Int                      DataType = "INTEGER"
-	Bigint                   DataType = "BIGINT"
-	Real                     DataType = "REAL"
-	DoublePrecision          DataType = "DOUBLE PRECISION"
-	Varchar                  DataType = "VARCHAR"
-	Text                     DataType = "TEXT"
-	TimestampWithTimezone    DataType = "TIMESTAMP WITH TIME ZONE"
-	TimestampWithoutTimezone DataType = "TIMESTAMP WITHOUT TIME ZONE"
-	Bytes                    DataType = "SMALLINT"
-	Uuid                     DataType = "UUID"
-	Json                     DataType = "JSON"
-	Jsonb                    DataType = "JSONB"
-	Null                     DataType = "NULL"
-)
-
 type Field struct {
 	Name                   string
-	DataType               DataType
+	DataType               data_type.Type
 	PrimaryKey             bool
 	AutoIncrement          bool
 	AutoIncrementIncrement int64
@@ -53,51 +36,53 @@ func (e *FieldTypeError) Error() string {
 	return e.Msg
 }
 
-type DataType string
-
-func (d DataType) String() string {
-	return string(d)
-}
-
 func (f Field) FillPgDataTypeByString(fieldType string) (Field, error) {
 	fieldType = strings.ToLower(fieldType)
 
 	switch fieldType {
 	case "smallint", "int8", "int16", "uint8", "uint16":
-		f.DataType = Smallint
+		f.DataType = postgres.Smallint
 		break
 	case "int32", "uint32":
-		f.DataType = Int
+		f.DataType = postgres.Int
 		break
 	case "int", "int64", "bigint", "uint", "uint64":
-		f.DataType = Bigint
+		f.DataType = postgres.Bigint
+		break
+	case "bigserial":
+		f.DataType = postgres.BigSerial
 		break
 	case "float32", "real":
-		f.DataType = Real
+		f.DataType = postgres.Real
+		break
 	case "float", "float64", "double precision":
-		f.DataType = DoublePrecision
+		f.DataType = postgres.DoublePrecision
+		break
 	case "string", "varchar":
-		f.DataType = Varchar
+		f.DataType = postgres.Varchar
 		break
 	case "text":
-		f.DataType = Text
+		f.DataType = postgres.Text
 	case "bool", "boolean":
-		f.DataType = Bool
+		f.DataType = postgres.Bool
 		break
 	case "byte", "rune":
-		f.DataType = Bytes
+		f.DataType = postgres.Bytes
 		break
 	case "timestamp without time zone":
-		f.DataType = TimestampWithoutTimezone
+		f.DataType = postgres.TimestampWithoutTimezone
+		break
 	case "time", "time.time", "timestamp with time zone":
-		f.DataType = TimestampWithTimezone
+		f.DataType = postgres.TimestampWithTimezone
 		break
 	case "uuid", "pgtype.uuid":
-		f.DataType = Uuid
+		f.DataType = postgres.Uuid
+		break
 	case "json":
-		f.DataType = Json
+		f.DataType = postgres.Json
+		break
 	case "jsonb", "pgtype.jsonbcodec":
-		f.DataType = Jsonb
+		f.DataType = postgres.Jsonb
 		break
 	default:
 		return f, &FieldTypeError{fmt.Sprintf("unknown type: %s", fieldType)}
@@ -111,7 +96,7 @@ func (f Field) HasName() bool {
 }
 
 func (f Field) HasDataType() bool {
-	return f.DataType != ""
+	return f.DataType != nil
 }
 
 func (f Field) HasSize() bool {

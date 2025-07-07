@@ -39,7 +39,7 @@ func (mInfo *MigratorInfo) FillByEntity(structure chirik_ast.Structure) {
 		//Пропуск незначащих полей: могут иметь побочные действия, но при непосредственной
 		// миграции использоваться не могут
 		if schemaField.Name == "" ||
-			schemaField.DataType.String() == "" ||
+			!schemaField.HasDataType() ||
 			schemaField.IgnoreMigration {
 			continue
 		}
@@ -75,9 +75,13 @@ func (mInfo *MigratorInfo) PrepareEmptySchema(structure chirik_ast.Structure) db
 	schema := db_schema.Schema{}
 	schema.Name = structure.Name()
 
-	tableName := service.AddSingleSPostfix(
-		service.ToSnakeCase(structure.Name()),
-	)
+	var tableName string
+	migratorTableNameTag := structure.Fields().Tag(config.MigratorTableName)
+	if migratorTableNameTag != nil && len(migratorTableNameTag.Values) > 0 {
+		tableName = migratorTableNameTag.Values[0]
+	} else {
+		tableName = service.AddSingleSPostfix(service.ToSnakeCase(structure.Name()))
+	}
 
 	schema.Table = tableName
 
@@ -166,6 +170,7 @@ func (mInfo *MigratorInfo) FillByGormTagAndSchemaField(schemaField *db_schema.Fi
 		case "unique":
 			schemaField.Unique = true
 		case "default":
+			schemaField.HasDefaultValue = true
 			schemaField.DefaultValue = tValue
 		case "not null":
 			schemaField.NotNull = true

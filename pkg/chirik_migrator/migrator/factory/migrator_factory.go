@@ -34,6 +34,8 @@ func InitMigrator(dBDecorator service.DBDecorator, opts ...MigratorOption) migra
 			EnableCreatedAtColumn:       viper.GetBool(config.EnableCreatedAtColumn),
 			EnableUpdatedAtColumn:       viper.GetBool(config.EnableUpdatedAtColumn),
 			EnableDeleteAtColumn:        viper.GetBool(config.EnableDeleteAtColumn),
+			EnableFixtures:              viper.GetBool(config.EnableFixtures),
+			FixturePrefix:               viper.GetString(config.FixturePrefix),
 		},
 	}
 }

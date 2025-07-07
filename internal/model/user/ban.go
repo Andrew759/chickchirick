@@ -3,7 +3,7 @@ package user
 import "gorm.io/gorm"
 
 type Ban struct {
-	gorm.Model `c_migrator:"enabled" c_migrator_orm:"gorm"`
+	gorm.Model `c_migrator:"enabled"`
 	Id         int `json:"id" gorm:"type:int;unique;primaryKey;autoIncrement"`
 	UserId     int `json:"user_id" gorm:"type:int"`
 	//User         User `json:"user" gorm:"references:UserId"`

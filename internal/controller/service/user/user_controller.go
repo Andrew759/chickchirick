@@ -8,7 +8,7 @@ import (
 )
 
 type UserController struct {
-	MainController abstraction.Controller
+	Controller abstraction.Controller
 }
 
 func (uc *UserController) HandleRequest() {
@@ -36,7 +36,7 @@ func (uc *UserController) HandleRequest() {
 }
 
 func (uc *UserController) GetUsers(w http.ResponseWriter) {
-	users, err := user.GetAllUsers(uc.MainController.Dependencies.DBDecorator.GDB())
+	users, err := user.GetAllUsers(uc.Controller.Dependencies.DBDecorator.GDB())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -50,8 +50,8 @@ func (uc *UserController) GetUsers(w http.ResponseWriter) {
 }
 
 func (uc *UserController) GetUser(w http.ResponseWriter, r *http.Request) {
-	id := uc.MainController.GETId(w, r)
-	u, err := user.GetUserById(uc.MainController.Dependencies.DBDecorator.GDB(), id)
+	id := uc.Controller.GETId(w, r)
+	u, err := user.GetUserById(uc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		http.Error(w, "User not found: "+err.Error(), http.StatusNotFound)
 		return
@@ -71,7 +71,7 @@ func (uc *UserController) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := user.CreateUser(uc.MainController.Dependencies.DBDecorator.GDB(), &u); err != nil {
+	if err := user.CreateUser(uc.Controller.Dependencies.DBDecorator.GDB(), &u); err != nil {
 		http.Error(w, "Failed to create user: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -83,9 +83,8 @@ func (uc *UserController) CreateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (uc *UserController) DeleteUser(w http.ResponseWriter, r *http.Request) {
-	id := uc.MainController.GETId(w, r)
-
-	err := user.DeleteUserById(uc.MainController.Dependencies.DBDecorator.GDB(), id)
+	id := uc.Controller.GETId(w, r)
+	err := user.DeleteUserById(uc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		http.Error(w, "Failed to delete user: "+err.Error(), http.StatusInternalServerError)
 		return

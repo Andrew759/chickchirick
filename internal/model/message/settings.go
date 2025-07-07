@@ -6,7 +6,7 @@ import (
 )
 
 type Settings struct {
-	gorm.Model            `c_migrator:"enabled" c_migrator_orm:"gorm"`
+	gorm.Model            `c_migrator:"enabled"`
 	RuleInstallerId       int               `json:"rule_installer_id" gorm:"type:int"`
 	RuleInstallerRelation UserRelation      `json:"read_user_relation" gorm:"references:RuleInstallerId"`
 	RuleUserId            int               `json:"rule_user_id" gorm:"type:int"`

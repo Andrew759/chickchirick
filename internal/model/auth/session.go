@@ -7,7 +7,7 @@ import (
 )
 
 type Session struct {
-	gorm.Model `c_migrator:"enabled" c_migrator_orm:"gorm"`
+	gorm.Model `c_migrator:"enabled"`
 	Id         int         `json:"id" gorm:"type:int;unique;primaryKey;autoIncrement"`
 	UserUuid   pgtype.UUID `json:"user_uuid" gorm:"type:uuid"`
 	Status     bool        `json:"status" gorm:"type:boolean"`
