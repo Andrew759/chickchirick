@@ -4,7 +4,6 @@ import (
 	mainService "chickChirick/cmd/service"
 	"chickChirick/pkg/chirik_faker"
 	"chickChirick/pkg/chirik_migrator/db_schema"
-	"chickChirick/pkg/chirik_migrator/db_schema/data_type/postgres"
 	"chickChirick/pkg/chirik_migrator/file"
 	"chickChirick/pkg/chirik_migrator/migrator/dto"
 	migratorDto "chickChirick/pkg/chirik_migrator/migrator/provider"
@@ -50,7 +49,7 @@ func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
 	}
 
 	sqlMeta := m.processSchemaFields(migratorInfo)
-	m.addMigratorFields(&sqlMeta)
+	//m.addMigratorFields(&sqlMeta)
 
 	err = m.processSQLMeta(sqlMeta)
 	if err != nil {
@@ -140,14 +139,15 @@ func (m Migrator) processSchemaFields(migratorInfo migratorDto.MigratorInfo) dto
 			continue
 		}
 		//Пропуск полей без типа
-		if !field.HasDataType() || fieldType.String() == "" {
+		if !field.HasDataType() {
 			continue
 		}
 
 		sqlField := "\n ? ?"
 
+		//TODO: работает только для постгры
 		if field.AutoIncrement {
-			fieldType = postgres.BigSerial
+			fieldType = field.DataType.BigSerial()
 		}
 		sqlValues = append(sqlValues,
 			dto.ValueMeta{
@@ -204,6 +204,8 @@ func (m Migrator) processSchemaFields(migratorInfo migratorDto.MigratorInfo) dto
 		sqlFieldList = append(sqlFieldList, sqlField)
 	}
 
+	sqlFieldList = append(sqlFieldList, "\n);")
+
 	return dto.Meta{
 		TableName:          fullTableName,
 		SqlFieldList:       sqlFieldList,
@@ -215,29 +217,29 @@ func (m Migrator) processSchemaFields(migratorInfo migratorDto.MigratorInfo) dto
 	}
 }
 
-// TODO: не попадают в фикстуры, доработать
-func (m Migrator) addMigratorFields(sqlMeta *dto.Meta) {
-	if m.EnableCreatedAtColumn {
-		sqlField := ",\n created_at " +
-			postgres.TimestampWithTimezone.String() + " " +
-			postgres.Null.String()
-		sqlMeta.SqlFieldList = append(sqlMeta.SqlFieldList, sqlField)
-	}
-	if m.EnableUpdatedAtColumn {
-		sqlField := ",\n updated_at " +
-			postgres.TimestampWithTimezone.String() + " " +
-			postgres.Null.String()
-		sqlMeta.SqlFieldList = append(sqlMeta.SqlFieldList, sqlField)
-	}
-	if m.EnableDeleteAtColumn {
-		sqlField := ",\n deleted_at " +
-			postgres.TimestampWithTimezone.String() + " " +
-			postgres.Null.String()
-		sqlMeta.SqlFieldList = append(sqlMeta.SqlFieldList, sqlField)
-	}
-
-	sqlMeta.SqlFieldList = append(sqlMeta.SqlFieldList, "\n);")
-}
+// TODO: @deprecated не попадают в фикстуры, доработать
+//func (m Migrator) addMigratorFields(sqlMeta *dto.Meta) {
+//	if m.EnableCreatedAtColumn {
+//		sqlField := ",\n created_at " +
+//			postgres.TimestampWithTimezone.String() + " " +
+//			postgres.Null.String()
+//		sqlMeta.SqlFieldList = append(sqlMeta.SqlFieldList, sqlField)
+//	}
+//	if m.EnableUpdatedAtColumn {
+//		sqlField := ",\n updated_at " +
+//			postgres.TimestampWithTimezone.String() + " " +
+//			postgres.Null.String()
+//		sqlMeta.SqlFieldList = append(sqlMeta.SqlFieldList, sqlField)
+//	}
+//	if m.EnableDeleteAtColumn {
+//		sqlField := ",\n deleted_at " +
+//			postgres.TimestampWithTimezone.String() + " " +
+//			postgres.Null.String()
+//		sqlMeta.SqlFieldList = append(sqlMeta.SqlFieldList, sqlField)
+//	}
+//
+//	sqlMeta.SqlFieldList = append(sqlMeta.SqlFieldList, "\n);")
+//}
 
 func (m Migrator) writeFixtureToSqlMeta(sqlMeta *dto.Meta) error {
 	var sqlFieldList []string

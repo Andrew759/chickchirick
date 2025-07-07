@@ -2,7 +2,6 @@ package db_schema
 
 import (
 	"chickChirick/pkg/chirik_migrator/db_schema/data_type"
-	"chickChirick/pkg/chirik_migrator/db_schema/data_type/postgres"
 	"fmt"
 	"strings"
 )
@@ -36,53 +35,53 @@ func (e *FieldTypeError) Error() string {
 	return e.Msg
 }
 
-func (f Field) FillPgDataTypeByString(fieldType string) (Field, error) {
+func (f Field) FillDataTypeByString(fieldType string) (Field, error) {
 	fieldType = strings.ToLower(fieldType)
 
 	switch fieldType {
 	case "smallint", "int8", "int16", "uint8", "uint16":
-		f.DataType = postgres.Smallint
+		f.DataType = f.DataType.SmallInt()
 		break
 	case "int32", "uint32":
-		f.DataType = postgres.Int
+		f.DataType = f.DataType.Int()
 		break
 	case "int", "int64", "bigint", "uint", "uint64":
-		f.DataType = postgres.Bigint
+		f.DataType = f.DataType.Int()
 		break
 	case "bigserial":
-		f.DataType = postgres.BigSerial
+		f.DataType = f.DataType.BigInt()
 		break
 	case "float32", "real":
-		f.DataType = postgres.Real
+		f.DataType = f.DataType.Real()
 		break
 	case "float", "float64", "double precision":
-		f.DataType = postgres.DoublePrecision
+		f.DataType = f.DataType.DoublePrecision()
 		break
 	case "string", "varchar":
-		f.DataType = postgres.Varchar
+		f.DataType = f.DataType.Varchar()
 		break
 	case "text":
-		f.DataType = postgres.Text
+		f.DataType = f.DataType.Text()
 	case "bool", "boolean":
-		f.DataType = postgres.Bool
+		f.DataType = f.DataType.Bool()
 		break
 	case "byte", "rune":
-		f.DataType = postgres.Bytes
+		f.DataType = f.DataType.Bytes()
 		break
 	case "timestamp without time zone":
-		f.DataType = postgres.TimestampWithoutTimezone
+		f.DataType = f.DataType.TimestampWithoutTimezone()
 		break
 	case "time", "time.time", "timestamp with time zone":
-		f.DataType = postgres.TimestampWithTimezone
+		f.DataType = f.DataType.TimestampWithTimezone()
 		break
 	case "uuid", "pgtype.uuid":
-		f.DataType = postgres.Uuid
+		f.DataType = f.DataType.Uuid()
 		break
 	case "json":
-		f.DataType = postgres.Json
+		f.DataType = f.DataType.Json()
 		break
 	case "jsonb", "pgtype.jsonbcodec":
-		f.DataType = postgres.Jsonb
+		f.DataType = f.DataType.Jsonb()
 		break
 	default:
 		return f, &FieldTypeError{fmt.Sprintf("unknown type: %s", fieldType)}
@@ -96,7 +95,7 @@ func (f Field) HasName() bool {
 }
 
 func (f Field) HasDataType() bool {
-	return f.DataType != nil
+	return f.DataType.IsHasSetValue()
 }
 
 func (f Field) HasSize() bool {

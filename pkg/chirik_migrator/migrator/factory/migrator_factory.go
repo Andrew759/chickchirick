@@ -2,7 +2,7 @@ package factory
 
 import (
 	"chickChirick/cmd/service"
-	"chickChirick/pkg/chirik_migrator/console/config"
+	"chickChirick/pkg/chirik_migrator/config"
 	"chickChirick/pkg/chirik_migrator/migrator"
 	"github.com/spf13/viper"
 )

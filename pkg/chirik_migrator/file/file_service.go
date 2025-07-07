@@ -2,7 +2,8 @@ package file
 
 import (
 	"chickChirick/pkg/chirik_ast"
-	"chickChirick/pkg/chirik_migrator/console/config"
+	"chickChirick/pkg/chirik_migrator/config"
+	cConfig "chickChirick/pkg/chirik_migrator/console/config"
 	migratorDto "chickChirick/pkg/chirik_migrator/migrator/provider"
 	"fmt"
 	"github.com/spf13/viper"
@@ -59,7 +60,7 @@ func ReadEntityFile(path string, entityNames []string) ([]migratorDto.MigratorIn
 
 	eCount := len(entityNames)
 	hasNameRestriction := eCount > 0
-	if eCount == 1 && entityNames[0] == "*" {
+	if eCount == 1 && entityNames[0] == cConfig.AllTables {
 		hasNameRestriction = false
 	}
 

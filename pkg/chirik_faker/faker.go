@@ -2,7 +2,6 @@ package chirik_faker
 
 import (
 	"chickChirick/pkg/chirik_migrator/db_schema/data_type"
-	"chickChirick/pkg/chirik_migrator/db_schema/data_type/postgres"
 	"encoding/json"
 	"fmt"
 	"github.com/brianvoe/gofakeit/v6"
@@ -28,40 +27,40 @@ func FakeValue(fieldName string, dataType data_type.Type) (any, error) {
 	}
 
 	switch dataType {
-	case postgres.Bool:
+	case dataType.Bool():
 		return gofakeit.Bool(), nil
 
-	case postgres.Smallint:
+	case dataType.SmallInt():
 		return gofakeit.IntRange(1, 32767), nil
 
-	case postgres.Int:
+	case dataType.Int():
 		return gofakeit.IntRange(1, 2147483647), nil
 
-	case postgres.Bigint:
+	case dataType.BigInt():
 		return gofakeit.Int64(), nil
 
-	case postgres.BigSerial:
+	case dataType.BigSerial():
 		return gofakeit.IntRange(1, 9223372036854775807), nil
 
-	case postgres.Real:
+	case dataType.Real():
 		return gofakeit.Float32Range(1, 1000), nil
 
-	case postgres.DoublePrecision:
+	case dataType.DoublePrecision():
 		return gofakeit.Float64Range(1, 1e6), nil
 
-	case postgres.Varchar, postgres.Text:
+	case dataType.Varchar(), dataType.Text():
 		return gofakeit.Sentence(5), nil
 
-	case postgres.TimestampWithTimezone:
+	case dataType.TimestampWithTimezone():
 		return gofakeit.Date().Format(time.RFC3339), nil
 
-	case postgres.TimestampWithoutTimezone:
+	case dataType.TimestampWithoutTimezone():
 		return gofakeit.Date().Format("2006-01-02 15:04:05"), nil
 
-	case postgres.Uuid:
+	case dataType.Uuid():
 		return gofakeit.UUID(), nil
 
-	case postgres.Json, postgres.Jsonb:
+	case dataType.Json(), dataType.Jsonb():
 		fakeMap := map[string]string{
 			"name":  gofakeit.FirstName(),
 			"email": gofakeit.Email(),
@@ -70,7 +69,7 @@ func FakeValue(fieldName string, dataType data_type.Type) (any, error) {
 
 		return fmt.Sprintf("%s", string(b)), nil
 
-	case postgres.Null:
+	case dataType.Null():
 		return nil, nil
 
 	default:
