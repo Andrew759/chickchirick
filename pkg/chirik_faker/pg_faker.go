@@ -68,7 +68,7 @@ func FakeValue(fieldName string, dataType data_type.Type) (any, error) {
 		}
 		b, _ := json.Marshal(fakeMap)
 
-		return fmt.Sprintf("'%s'", string(b)), nil
+		return fmt.Sprintf("%s", string(b)), nil
 
 	case postgres.Null:
 		return nil, nil

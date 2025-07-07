@@ -14,7 +14,6 @@ import (
 	"strconv"
 )
 
-// TODO: согласовать с интерфейсом abstraction/Migrator
 type Config struct {
 	//TOOD: CreateIndexAfterCreateTable сейчас не используется. Проверить необходимость
 	CreateIndexAfterCreateTable bool
@@ -75,9 +74,13 @@ func (m Migrator) processSQLMeta(sqlMeta dto.Meta) error {
 		resultSQL += sqlField
 	}
 
-	resultSQL = service.BuildRawSql(resultSQL, sqlMeta)
+	var err error
+	resultSQL, err = service.BuildRawSql(resultSQL, sqlMeta)
+	if err != nil {
+		return err
+	}
 
-	_, err := m.NativeDB().Exec(resultSQL)
+	_, err = m.NativeDB().Exec(resultSQL)
 	if err != nil {
 		return err
 	}
@@ -109,7 +112,6 @@ func (m Migrator) validateMInfo(migratorInfo migratorDto.MigratorInfo) error {
 	return nil
 }
 
-// TODO: реализовать отдельные провайдеры для разных БД. Сейчас работает только Postgres
 func (m Migrator) processSchemaFields(migratorInfo migratorDto.MigratorInfo) dto.Meta {
 	var sqlFieldList []string
 	sqlFieldList = append(sqlFieldList, "CREATE TABLE IF NOT EXISTS ? \n(")
@@ -297,5 +299,30 @@ func (m Migrator) writeFixtureToSqlMeta(sqlMeta *dto.Meta) error {
 		sqlMeta.MigrationPrefix = m.FixturePrefix + "_" + sqlMeta.MigrationPrefix
 	}
 
+	return nil
+}
+
+// DropTable TODO: implement this
+func (m Migrator) DropTable(entity migratorDto.MigratorInfo) error {
+	return nil
+}
+
+// CreateConstraint TODO: implement this
+func (m Migrator) CreateConstraint(entity migratorDto.MigratorInfo, name string) error {
+	return nil
+}
+
+// DropConstraint TODO: implement this
+func (m Migrator) DropConstraint(entity migratorDto.MigratorInfo, name string) error {
+	return nil
+}
+
+// CreateIndex TODO: implement this
+func (m Migrator) CreateIndex(entity migratorDto.MigratorInfo, name string) error {
+	return nil
+}
+
+// DropIndex TODO: implement this
+func (m Migrator) DropIndex(entity migratorDto.MigratorInfo, name string) error {
 	return nil
 }

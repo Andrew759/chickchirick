@@ -11,10 +11,10 @@ type Migrator interface {
 	DropTable(entity migratorDto.MigratorInfo) error
 
 	// Constraints
-	CreateConstraint(dst interface{}, name string) error
-	DropConstraint(dst interface{}, name string) error
+	CreateConstraint(entity migratorDto.MigratorInfo, name string) error
+	DropConstraint(entity migratorDto.MigratorInfo, name string) error
 
 	// Indexes
-	CreateIndex(dst interface{}, name string) error
-	DropIndex(dst interface{}, name string) error
+	CreateIndex(entity migratorDto.MigratorInfo, name string) error
+	DropIndex(entity migratorDto.MigratorInfo, name string) error
 }
