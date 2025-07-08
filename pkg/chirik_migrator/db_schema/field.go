@@ -42,14 +42,14 @@ func (f Field) FillDataTypeByString(fieldType string) (Field, error) {
 	case "smallint", "int8", "int16", "uint8", "uint16":
 		f.DataType = f.DataType.SmallInt()
 		break
-	case "int32", "uint32":
+	case "int32", "uint32", "int", "uint":
 		f.DataType = f.DataType.Int()
 		break
-	case "int", "int64", "bigint", "uint", "uint64":
-		f.DataType = f.DataType.Int()
+	case "int64", "uint64", "bigint":
+		f.DataType = f.DataType.BigInt()
 		break
 	case "bigserial":
-		f.DataType = f.DataType.BigInt()
+		f.DataType = f.DataType.BigSerial()
 		break
 	case "float32", "real":
 		f.DataType = f.DataType.Real()

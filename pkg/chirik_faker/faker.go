@@ -21,7 +21,7 @@ func FakeValue(fieldName string, dataType data_type.Type) (any, error) {
 	case "password":
 		return gofakeit.Password(true, true, true, true, false, 20), nil
 	case "created_at", "updated_at", "deleted_at":
-		return gofakeit.TimeZoneFull(), nil
+		return gofakeit.Date().Format(time.RFC3339), nil
 	case "token":
 		return gofakeit.UUID(), nil
 	}
