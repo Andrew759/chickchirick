@@ -1,8 +1,7 @@
 package chirik_ast
 
 import (
-	"chickChirick/pkg/chirik_migrator/console/config"
-	"fmt"
+	"chickChirick/pkg/chirik_migrator/config"
 	"go/ast"
 	"regexp"
 	"strings"
@@ -30,6 +29,7 @@ func (ts *Tags) List() []Tag {
 			values := strings.TrimLeft(strings.Trim(match[2], `"`), " ")
 
 			valueList := strings.Split(values, ",")
+			//TODO: нежелательная зависимость
 			if key == config.MigratorGormTag {
 				valueList = strings.Split(values, ";")
 			}
@@ -79,18 +79,4 @@ func (ts *Tags) String() string {
 	}
 
 	return ts.ast.Value
-}
-
-// TagsToString TODO: если и в дальнейшем не будет использоваться - удалить
-func TagsToString(tags []Tag) string {
-	if len(tags) == 0 {
-		return ""
-	}
-
-	tagStrings := make([]string, 0, len(tags))
-	for _, t := range tags {
-		tagStrings = append(tagStrings, fmt.Sprintf(`%s:"%s"`, t.Key, strings.Join(t.Values, ",")))
-	}
-
-	return fmt.Sprintf("`%s`", strings.Join(tagStrings, " "))
 }
