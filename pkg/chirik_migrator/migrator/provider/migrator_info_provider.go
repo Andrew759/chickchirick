@@ -2,10 +2,12 @@ package provider
 
 import (
 	"chickChirick/pkg/chirik_ast"
-	"chickChirick/pkg/chirik_migrator/console/config"
+	"chickChirick/pkg/chirik_migrator/config"
 	"chickChirick/pkg/chirik_migrator/db_schema"
+	"chickChirick/pkg/chirik_migrator/db_schema/data_type"
 	"chickChirick/pkg/chirik_migrator/migrator/service"
 	"fmt"
+	"github.com/spf13/viper"
 	"regexp"
 	"strconv"
 	"strings"
@@ -61,6 +63,7 @@ func (mInfo *MigratorInfo) FillByEntity(structure chirik_ast.Structure) {
 	}
 
 	mInfo.Schema = schema
+	mInfo.FillSchemaBySystemColumns()
 }
 
 func (mInfo *MigratorInfo) HasCriticalError() bool {
@@ -90,12 +93,13 @@ func (mInfo *MigratorInfo) PrepareEmptySchema(structure chirik_ast.Structure) db
 
 func (mInfo *MigratorInfo) PrepareSchemaField(field chirik_ast.Field, schema *db_schema.Schema) db_schema.Field {
 	schemaField := db_schema.Field{}
+	schemaField.DataType = data_type.PrepareTypeContainer(config.DBType)
 
 	schemaField.Name = service.ToSnakeCase(field.Name())
 	schemaField.Schema = schema
 
 	var infoErr error
-	schemaField, infoErr = schemaField.FillPgDataTypeByString(field.Type().Value())
+	schemaField, infoErr = schemaField.FillDataTypeByString(field.Type().Value())
 	if infoErr != nil {
 		mInfo.InfoErrList = append(mInfo.ErrList, infoErr)
 	}
@@ -161,7 +165,7 @@ func (mInfo *MigratorInfo) FillByGormTagAndSchemaField(schemaField *db_schema.Fi
 		case "column":
 			schemaField.Name = tValue
 		case "type":
-			_, typeErr := schemaField.FillPgDataTypeByString(tValue)
+			_, typeErr := schemaField.FillDataTypeByString(tValue)
 			mInfo.InfoErrList = append(mInfo.InfoErrList, typeErr)
 		case "size":
 			schemaField.Size, err = strconv.Atoi(tValue)
@@ -193,5 +197,32 @@ func (mInfo *MigratorInfo) FillByGormTagAndSchemaField(schemaField *db_schema.Fi
 			mInfo.ErrList = append(mInfo.ErrList, err)
 			break
 		}
+	}
+}
+
+func (mInfo *MigratorInfo) FillSchemaBySystemColumns() {
+	if viper.GetBool(config.EnableCreatedAtColumn) {
+		schemaField := db_schema.Field{
+			Name:     "created_at",
+			DataType: data_type.PrepareTypeContainer(config.DBType).TimestampWithTimezone(),
+			Schema:   &mInfo.Schema,
+		}
+		mInfo.Schema.Fields = append(mInfo.Schema.Fields, &schemaField)
+	}
+	if viper.GetBool(config.EnableUpdatedAtColumn) {
+		schemaField := db_schema.Field{
+			Name:     "updated_at",
+			DataType: data_type.PrepareTypeContainer(config.DBType).TimestampWithTimezone(),
+			Schema:   &mInfo.Schema,
+		}
+		mInfo.Schema.Fields = append(mInfo.Schema.Fields, &schemaField)
+	}
+	if viper.GetBool(config.EnableDeleteAtColumn) {
+		schemaField := db_schema.Field{
+			Name:     "deleted_at",
+			DataType: data_type.PrepareTypeContainer(config.DBType).TimestampWithTimezone(),
+			Schema:   &mInfo.Schema,
+		}
+		mInfo.Schema.Fields = append(mInfo.Schema.Fields, &schemaField)
 	}
 }

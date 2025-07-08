@@ -2,7 +2,7 @@ package factory
 
 import (
 	"chickChirick/cmd/service"
-	"chickChirick/pkg/chirik_migrator/console/config"
+	"chickChirick/pkg/chirik_migrator/config"
 	"chickChirick/pkg/chirik_migrator/migrator"
 	"github.com/spf13/viper"
 )
@@ -31,9 +31,6 @@ func InitMigrator(dBDecorator service.DBDecorator, opts ...MigratorOption) migra
 			DBDecorator:                 dBDecorator,
 			MigrationFilesPath:          viper.GetString(config.MigrationPath),
 			EnableTableNamespace:        viper.GetBool(config.EnableTableNamespace),
-			EnableCreatedAtColumn:       viper.GetBool(config.EnableCreatedAtColumn),
-			EnableUpdatedAtColumn:       viper.GetBool(config.EnableUpdatedAtColumn),
-			EnableDeleteAtColumn:        viper.GetBool(config.EnableDeleteAtColumn),
 			EnableFixtures:              viper.GetBool(config.EnableFixtures),
 			FixturePrefix:               viper.GetString(config.FixturePrefix),
 		},
