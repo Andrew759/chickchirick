@@ -17,13 +17,10 @@ type Config struct {
 	//TOOD: CreateIndexAfterCreateTable сейчас не используется. Проверить необходимость
 	CreateIndexAfterCreateTable bool
 	mainService.DBDecorator
-	MigrationFilesPath    string
-	EnableTableNamespace  bool
-	EnableCreatedAtColumn bool
-	EnableUpdatedAtColumn bool
-	EnableDeleteAtColumn  bool
-	EnableFixtures        bool
-	FixturePrefix         string
+	MigrationFilesPath   string
+	EnableTableNamespace bool
+	EnableFixtures       bool
+	FixturePrefix        string
 }
 
 type Migrator struct {
@@ -216,30 +213,6 @@ func (m Migrator) processSchemaFields(migratorInfo migratorDto.MigratorInfo) dto
 		MigrationPrefix:    fullTableName,
 	}
 }
-
-// TODO: @deprecated не попадают в фикстуры, доработать
-//func (m Migrator) addMigratorFields(sqlMeta *dto.Meta) {
-//	if m.EnableCreatedAtColumn {
-//		sqlField := ",\n created_at " +
-//			postgres.TimestampWithTimezone.String() + " " +
-//			postgres.Null.String()
-//		sqlMeta.SqlFieldList = append(sqlMeta.SqlFieldList, sqlField)
-//	}
-//	if m.EnableUpdatedAtColumn {
-//		sqlField := ",\n updated_at " +
-//			postgres.TimestampWithTimezone.String() + " " +
-//			postgres.Null.String()
-//		sqlMeta.SqlFieldList = append(sqlMeta.SqlFieldList, sqlField)
-//	}
-//	if m.EnableDeleteAtColumn {
-//		sqlField := ",\n deleted_at " +
-//			postgres.TimestampWithTimezone.String() + " " +
-//			postgres.Null.String()
-//		sqlMeta.SqlFieldList = append(sqlMeta.SqlFieldList, sqlField)
-//	}
-//
-//	sqlMeta.SqlFieldList = append(sqlMeta.SqlFieldList, "\n);")
-//}
 
 func (m Migrator) writeFixtureToSqlMeta(sqlMeta *dto.Meta) error {
 	var sqlFieldList []string

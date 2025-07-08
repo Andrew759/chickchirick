@@ -7,6 +7,7 @@ import (
 	"chickChirick/pkg/chirik_migrator/db_schema/data_type"
 	"chickChirick/pkg/chirik_migrator/migrator/service"
 	"fmt"
+	"github.com/spf13/viper"
 	"regexp"
 	"strconv"
 	"strings"
@@ -62,6 +63,7 @@ func (mInfo *MigratorInfo) FillByEntity(structure chirik_ast.Structure) {
 	}
 
 	mInfo.Schema = schema
+	mInfo.FillSchemaBySystemColumns()
 }
 
 func (mInfo *MigratorInfo) HasCriticalError() bool {
@@ -195,5 +197,32 @@ func (mInfo *MigratorInfo) FillByGormTagAndSchemaField(schemaField *db_schema.Fi
 			mInfo.ErrList = append(mInfo.ErrList, err)
 			break
 		}
+	}
+}
+
+func (mInfo *MigratorInfo) FillSchemaBySystemColumns() {
+	if viper.GetBool(config.EnableCreatedAtColumn) {
+		schemaField := db_schema.Field{
+			Name:     "created_at",
+			DataType: data_type.PrepareTypeContainer(config.DBType).TimestampWithTimezone(),
+			Schema:   &mInfo.Schema,
+		}
+		mInfo.Schema.Fields = append(mInfo.Schema.Fields, &schemaField)
+	}
+	if viper.GetBool(config.EnableUpdatedAtColumn) {
+		schemaField := db_schema.Field{
+			Name:     "updated_at",
+			DataType: data_type.PrepareTypeContainer(config.DBType).TimestampWithTimezone(),
+			Schema:   &mInfo.Schema,
+		}
+		mInfo.Schema.Fields = append(mInfo.Schema.Fields, &schemaField)
+	}
+	if viper.GetBool(config.EnableDeleteAtColumn) {
+		schemaField := db_schema.Field{
+			Name:     "deleted_at",
+			DataType: data_type.PrepareTypeContainer(config.DBType).TimestampWithTimezone(),
+			Schema:   &mInfo.Schema,
+		}
+		mInfo.Schema.Fields = append(mInfo.Schema.Fields, &schemaField)
 	}
 }
