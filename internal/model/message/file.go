@@ -13,3 +13,25 @@ type File struct {
 	//TODO: удалить автогенерацию и мок, когда будет реализован сервис файлов
 	FileUuid pgtype.UUID `json:"file_uuid" gorm:"type:uuid;default:gen_random_uuid()"`
 }
+
+func GetFiles(db *gorm.DB) ([]File, error) {
+	var files []File
+	result := db.Find(&files)
+
+	return files, result.Error
+}
+
+func GetFileById(db *gorm.DB, id int) (File, error) {
+	var file File
+	result := db.First(&file, id)
+
+	return file, result.Error
+}
+
+func CreateFile(db *gorm.DB, f *File) error {
+	return db.Create(f).Error
+}
+
+func DeleteFileById(db *gorm.DB, id int) error {
+	return db.Delete(&File{}, id).Error
+}
