@@ -24,6 +24,10 @@ func CreateMeta(db *gorm.DB, m *Meta) error {
 	return db.Create(m).Error
 }
 
+func UpdateMeta(db *gorm.DB, m *Meta) error {
+	return db.Save(m).Error
+}
+
 func GetMetas(db *gorm.DB) ([]Meta, error) {
 	var meta []Meta
 	result := db.Find(&meta)

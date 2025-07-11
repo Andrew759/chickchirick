@@ -18,6 +18,10 @@ func CreateSettings(db *gorm.DB, s *Settings) error {
 	return db.Create(s).Error
 }
 
+func UpdateSettings(db *gorm.DB, s *Settings) error {
+	return db.Save(s).Error
+}
+
 func GetSettings(db *gorm.DB) ([]Settings, error) {
 	var settings []Settings
 	result := db.Find(&settings)

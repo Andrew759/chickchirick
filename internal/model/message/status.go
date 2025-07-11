@@ -26,6 +26,10 @@ func GetStatus(db *gorm.DB) ([]Status, error) {
 	return status, result.Error
 }
 
+func UpdateStatus(db *gorm.DB, s *Status) error {
+	return db.Save(s).Error
+}
+
 func GetStatusById(db *gorm.DB, id int) (Status, error) {
 	var status Status
 	result := db.First(&status, id)

@@ -27,6 +27,8 @@ func (fc *FileController) HandleRequest() {
 			fc.GetFile(w, r)
 		case http.MethodPost:
 			fc.CreateFile(w, r)
+		case http.MethodPut:
+			fc.UpdateFile(w, r)
 		case http.MethodDelete:
 			fc.DeleteFile(w, r)
 		default:
@@ -77,6 +79,26 @@ func (fc *FileController) CreateFile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
+	if err := json.NewEncoder(w).Encode(f); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func (fc *FileController) UpdateFile(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var f file.File
+	if err := json.NewDecoder(r.Body).Decode(&f); err != nil {
+		http.Error(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err := file.UpdateFile(fc.Controller.Dependencies.DBDecorator.GDB(), &f)
+	if err != nil {
+		http.Error(w, "Failed to update file: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	if err := json.NewEncoder(w).Encode(f); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}

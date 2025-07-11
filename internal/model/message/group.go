@@ -17,6 +17,10 @@ func CreateGroup(db *gorm.DB, g *Group) error {
 	return db.Create(g).Error
 }
 
+func UpdateGroup(db *gorm.DB, g *Group) error {
+	return db.Save(g).Error
+}
+
 func GetGroups(db *gorm.DB) ([]Group, error) {
 	var groups []Group
 	result := db.Find(&groups)

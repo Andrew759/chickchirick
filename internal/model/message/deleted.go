@@ -16,6 +16,10 @@ func CreateDeleted(db *gorm.DB, d *Deleted) error {
 	return db.Create(d).Error
 }
 
+func UpdateDeleted(db *gorm.DB, d *Deleted) error {
+	return db.Save(d).Error
+}
+
 func GetDeleted(db *gorm.DB) ([]Deleted, error) {
 	var deleted []Deleted
 	result := db.Find(&deleted)

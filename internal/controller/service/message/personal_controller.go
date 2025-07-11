@@ -27,6 +27,8 @@ func (pc *PersonalController) HandleRequest() {
 			pc.GetPersonal(w, r)
 		case http.MethodPost:
 			pc.CreatePersonal(w, r)
+		case http.MethodPut:
+			pc.UpdatePersonal(w, r)
 		case http.MethodDelete:
 			pc.DeletePersonal(w, r)
 		default:
@@ -77,6 +79,26 @@ func (pc *PersonalController) CreatePersonal(w http.ResponseWriter, r *http.Requ
 	}
 
 	w.WriteHeader(http.StatusCreated)
+	if err := json.NewEncoder(w).Encode(p); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func (pc *PersonalController) UpdatePersonal(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var p personal.Personal
+	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+		http.Error(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err := personal.UpdatePersonal(pc.Controller.Dependencies.DBDecorator.GDB(), &p)
+	if err != nil {
+		http.Error(w, "Failed to update personal: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	if err := json.NewEncoder(w).Encode(p); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}

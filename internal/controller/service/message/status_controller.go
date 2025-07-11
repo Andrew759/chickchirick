@@ -27,6 +27,8 @@ func (sc *StatusController) HandleRequest() {
 			sc.GetStatus(w, r)
 		case http.MethodPost:
 			sc.CreateStatus(w, r)
+		case http.MethodPut:
+			sc.UpdateStatus(w, r)
 		case http.MethodDelete:
 			sc.DeleteStatus(w, r)
 		default:
@@ -77,6 +79,26 @@ func (sc *StatusController) CreateStatus(w http.ResponseWriter, r *http.Request)
 	}
 
 	w.WriteHeader(http.StatusCreated)
+	if err := json.NewEncoder(w).Encode(s); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func (sc *StatusController) UpdateStatus(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var s status.Status
+	if err := json.NewDecoder(r.Body).Decode(&s); err != nil {
+		http.Error(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err := status.UpdateStatus(sc.Controller.Dependencies.DBDecorator.GDB(), &s)
+	if err != nil {
+		http.Error(w, "Failed to update status: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	if err := json.NewEncoder(w).Encode(s); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}

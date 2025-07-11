@@ -29,6 +29,8 @@ func (dc *DeletedController) HandleRequest() {
 			dc.CreateDeleted(w, r)
 		case http.MethodDelete:
 			dc.DeleteDeleted(w, r)
+		case http.MethodPut:
+			dc.UpdateDeleted(w, r)
 		default:
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
@@ -77,6 +79,26 @@ func (dc *DeletedController) CreateDeleted(w http.ResponseWriter, r *http.Reques
 	}
 
 	w.WriteHeader(http.StatusCreated)
+	if err := json.NewEncoder(w).Encode(d); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func (dc *DeletedController) UpdateDeleted(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var d deleted.Deleted
+	if err := json.NewDecoder(r.Body).Decode(&d); err != nil {
+		http.Error(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err := deleted.UpdateDeleted(dc.Controller.Dependencies.DBDecorator.GDB(), &d)
+	if err != nil {
+		http.Error(w, "Failed to update deleted: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	if err := json.NewEncoder(w).Encode(d); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}

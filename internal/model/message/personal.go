@@ -19,6 +19,10 @@ func CreatePersonal(db *gorm.DB, p *Personal) error {
 	return db.Create(p).Error
 }
 
+func UpdatePersonal(db *gorm.DB, p *Personal) error {
+	return db.Save(p).Error
+}
+
 func GetPersonal(db *gorm.DB) ([]Personal, error) {
 	var personal []Personal
 	result := db.Find(&personal)

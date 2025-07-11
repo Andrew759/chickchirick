@@ -27,6 +27,8 @@ func (gc *GroupController) HandleRequest() {
 			gc.GetGroup(w, r)
 		case http.MethodPost:
 			gc.CreateGroup(w, r)
+		case http.MethodPut:
+			gc.UpdateGroup(w, r)
 		case http.MethodDelete:
 			gc.DeleteGroup(w, r)
 		default:
@@ -77,6 +79,26 @@ func (gc *GroupController) CreateGroup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
+	if err := json.NewEncoder(w).Encode(g); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func (gc *GroupController) UpdateGroup(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var g group.Group
+	if err := json.NewDecoder(r.Body).Decode(&g); err != nil {
+		http.Error(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err := group.UpdateGroup(gc.Controller.Dependencies.DBDecorator.GDB(), &g)
+	if err != nil {
+		http.Error(w, "Failed to update group: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	if err := json.NewEncoder(w).Encode(g); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}

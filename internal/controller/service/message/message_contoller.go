@@ -27,6 +27,8 @@ func (mc *MessagesController) HandleRequest() {
 			mc.GetMessage(w, r)
 		case http.MethodPost:
 			mc.CreateMessage(w, r)
+		case http.MethodPut:
+			mc.UpdateMessage(w, r)
 		case http.MethodDelete:
 			mc.DeleteMessage(w, r)
 		default:
@@ -77,6 +79,26 @@ func (mc *MessagesController) CreateMessage(w http.ResponseWriter, r *http.Reque
 	}
 
 	w.WriteHeader(http.StatusCreated)
+	if err := json.NewEncoder(w).Encode(m); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func (mc *MessagesController) UpdateMessage(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var m message.Message
+	if err := json.NewDecoder(r.Body).Decode(&m); err != nil {
+		http.Error(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err := message.UpdateMessage(mc.Controller.Dependencies.DBDecorator.GDB(), &m)
+	if err != nil {
+		http.Error(w, "Failed to update message: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	if err := json.NewEncoder(w).Encode(m); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}

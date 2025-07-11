@@ -17,6 +17,10 @@ func CreateMessage(db *gorm.DB, m *Message) error {
 	return db.Create(m).Error
 }
 
+func UpdateMessage(db *gorm.DB, m *Message) error {
+	return db.Save(m).Error
+}
+
 func GetMessages(db *gorm.DB) ([]Message, error) {
 	var messages []Message
 	result := db.Find(&messages)

@@ -27,6 +27,8 @@ func (urc *UserRelationController) HandleRequest() {
 			urc.GetUserRelation(w, r)
 		case http.MethodPost:
 			urc.CreateUserRelation(w, r)
+		case http.MethodPut:
+			urc.UpdateUserRelation(w, r)
 		case http.MethodDelete:
 			urc.DeleteUserRelation(w, r)
 		default:
@@ -36,7 +38,7 @@ func (urc *UserRelationController) HandleRequest() {
 }
 
 func (urc *UserRelationController) GetUserRelations(w http.ResponseWriter) {
-	userRelations, err := userRelation.GetStatus(urc.Controller.Dependencies.DBDecorator.GDB())
+	userRelations, err := userRelation.GetUserRelation(urc.Controller.Dependencies.DBDecorator.GDB())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -77,6 +79,26 @@ func (urc *UserRelationController) CreateUserRelation(w http.ResponseWriter, r *
 	}
 
 	w.WriteHeader(http.StatusCreated)
+	if err := json.NewEncoder(w).Encode(ur); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func (urc *UserRelationController) UpdateUserRelation(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var ur userRelation.UserRelation
+	if err := json.NewDecoder(r.Body).Decode(&ur); err != nil {
+		http.Error(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err := userRelation.UpdateUserRelation(urc.Controller.Dependencies.DBDecorator.GDB(), &ur)
+	if err != nil {
+		http.Error(w, "Failed to update user relation: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	if err := json.NewEncoder(w).Encode(ur); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}

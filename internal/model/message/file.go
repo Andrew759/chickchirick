@@ -14,6 +14,14 @@ type File struct {
 	FileUuid pgtype.UUID `json:"file_uuid" gorm:"type:uuid;default:gen_random_uuid()"`
 }
 
+func CreateFile(db *gorm.DB, f *File) error {
+	return db.Create(f).Error
+}
+
+func UpdateFile(db *gorm.DB, f *File) error {
+	return db.Save(f).Error
+}
+
 func GetFiles(db *gorm.DB) ([]File, error) {
 	var files []File
 	result := db.Find(&files)
@@ -26,10 +34,6 @@ func GetFileById(db *gorm.DB, id int) (File, error) {
 	result := db.First(&file, id)
 
 	return file, result.Error
-}
-
-func CreateFile(db *gorm.DB, f *File) error {
-	return db.Create(f).Error
 }
 
 func DeleteFileById(db *gorm.DB, id int) error {

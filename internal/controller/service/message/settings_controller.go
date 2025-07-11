@@ -27,6 +27,8 @@ func (sc *SettingsController) HandleRequest() {
 			sc.GetSetting(w, r)
 		case http.MethodPost:
 			sc.CreateSetting(w, r)
+		case http.MethodPut:
+			sc.UpdateSetting(w, r)
 		case http.MethodDelete:
 			sc.DeleteSetting(w, r)
 		default:
@@ -77,6 +79,26 @@ func (sc *SettingsController) CreateSetting(w http.ResponseWriter, r *http.Reque
 	}
 
 	w.WriteHeader(http.StatusCreated)
+	if err := json.NewEncoder(w).Encode(s); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func (sc *SettingsController) UpdateSetting(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var s settings.Settings
+	if err := json.NewDecoder(r.Body).Decode(&s); err != nil {
+		http.Error(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err := settings.UpdateSettings(sc.Controller.Dependencies.DBDecorator.GDB(), &s)
+	if err != nil {
+		http.Error(w, "Failed to update setting: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	if err := json.NewEncoder(w).Encode(s); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
