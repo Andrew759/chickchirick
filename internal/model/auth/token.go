@@ -13,3 +13,29 @@ type Token struct {
 	Token      string    `json:"token" gorm:"type:varchar(256)"`
 	ExpiresAt  time.Time `json:"expires_at" gorm:"type:timestamp without time zone"`
 }
+
+func CreateToken(db *gorm.DB, t *Token) error {
+	return db.Create(t).Error
+}
+
+func UpdateToken(db *gorm.DB, t *Token) error {
+	return db.Save(t).Error
+}
+
+func GetTokens(db *gorm.DB) ([]Token, error) {
+	var tokens []Token
+	result := db.Find(&tokens)
+
+	return tokens, result.Error
+}
+
+func GetTokenById(db *gorm.DB, id int) (Token, error) {
+	var token Token
+	result := db.First(&token, id)
+
+	return token, result.Error
+}
+
+func DeleteTokenById(db *gorm.DB, id int) error {
+	return db.Delete(&Token{}, id).Error
+}
