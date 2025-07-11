@@ -27,6 +27,8 @@ func (pc *PhotoController) HandleRequest() {
 			pc.GetPhoto(w, r)
 		case http.MethodPost:
 			pc.CreatePhoto(w, r)
+		case http.MethodPut:
+			pc.UpdatePhoto(w, r)
 		case http.MethodDelete:
 			pc.DeletePhoto(w, r)
 		default:
@@ -77,6 +79,26 @@ func (pc *PhotoController) CreatePhoto(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
+	if err := json.NewEncoder(w).Encode(p); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func (pc *PhotoController) UpdatePhoto(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var p photo.Photo
+	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+		http.Error(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err := photo.UpdatePhoto(pc.Controller.Dependencies.DBDecorator.GDB(), &p)
+	if err != nil {
+		http.Error(w, "Failed to update photo: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	if err := json.NewEncoder(w).Encode(p); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}

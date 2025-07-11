@@ -15,6 +15,10 @@ func CreateUser(db *gorm.DB, u *User) error {
 	return db.Create(u).Error
 }
 
+func UpdateUser(db *gorm.DB, u *User) error {
+	return db.Save(u).Error
+}
+
 func GetAllUsers(db *gorm.DB) ([]User, error) {
 	var users []User
 	result := db.Find(&users)

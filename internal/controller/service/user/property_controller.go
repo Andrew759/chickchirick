@@ -27,6 +27,8 @@ func (pc *PropertyController) HandleRequest() {
 			pc.GetProperty(w, r)
 		case http.MethodPost:
 			pc.CreateProperty(w, r)
+		case http.MethodPut:
+			pc.UpdateProperty(w, r)
 		case http.MethodDelete:
 			pc.DeleteProperty(w, r)
 		default:
@@ -77,6 +79,26 @@ func (pc *PropertyController) CreateProperty(w http.ResponseWriter, r *http.Requ
 	}
 
 	w.WriteHeader(http.StatusCreated)
+	if err := json.NewEncoder(w).Encode(p); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func (pc *PropertyController) UpdateProperty(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var p property.Property
+	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+		http.Error(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err := property.UpdateProperty(pc.Controller.Dependencies.DBDecorator.GDB(), &p)
+	if err != nil {
+		http.Error(w, "Failed to update property: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	if err := json.NewEncoder(w).Encode(p); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}

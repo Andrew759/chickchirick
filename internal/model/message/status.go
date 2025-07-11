@@ -19,15 +19,15 @@ func CreateStatus(db *gorm.DB, s *Status) error {
 	return db.Create(s).Error
 }
 
+func UpdateStatus(db *gorm.DB, s *Status) error {
+	return db.Save(s).Error
+}
+
 func GetStatus(db *gorm.DB) ([]Status, error) {
 	var status []Status
 	result := db.Find(&status)
 
 	return status, result.Error
-}
-
-func UpdateStatus(db *gorm.DB, s *Status) error {
-	return db.Save(s).Error
 }
 
 func GetStatusById(db *gorm.DB, id int) (Status, error) {

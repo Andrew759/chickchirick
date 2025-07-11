@@ -14,6 +14,10 @@ func CreateProperty(db *gorm.DB, b *Property) error {
 	return db.Create(b).Error
 }
 
+func UpdateProperty(db *gorm.DB, p *Property) error {
+	return db.Save(p).Error
+}
+
 func GetProperties(db *gorm.DB) ([]Property, error) {
 	var properties []Property
 	result := db.Find(&properties)

@@ -15,6 +15,10 @@ func CreateBan(db *gorm.DB, b *Ban) error {
 	return db.Create(b).Error
 }
 
+func UpdateBan(db *gorm.DB, b *Ban) error {
+	return db.Save(b).Error
+}
+
 func GetBans(db *gorm.DB) ([]Ban, error) {
 	var bans []Ban
 	result := db.Find(&bans)

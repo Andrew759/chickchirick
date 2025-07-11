@@ -27,6 +27,8 @@ func (mc *MetaController) HandleRequest() {
 			mc.GetMeta(w, r)
 		case http.MethodPost:
 			mc.CreateMeta(w, r)
+		case http.MethodPut:
+			mc.UpdateMeta(w, r)
 		case http.MethodDelete:
 			mc.DeleteMeta(w, r)
 		default:
@@ -77,6 +79,26 @@ func (mc *MetaController) CreateMeta(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
+	if err := json.NewEncoder(w).Encode(m); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func (mc *MetaController) UpdateMeta(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var m meta.Meta
+	if err := json.NewDecoder(r.Body).Decode(&m); err != nil {
+		http.Error(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err := meta.UpdateMeta(mc.Controller.Dependencies.DBDecorator.GDB(), &m)
+	if err != nil {
+		http.Error(w, "Failed to update meta: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	if err := json.NewEncoder(w).Encode(m); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}

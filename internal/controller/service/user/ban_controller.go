@@ -27,6 +27,8 @@ func (bc *BanController) HandleRequest() {
 			bc.GetBan(w, r)
 		case http.MethodPost:
 			bc.Ban(w, r)
+		case http.MethodPut:
+			bc.UpdateBan(w, r)
 		case http.MethodDelete:
 			bc.DeleteBan(w, r)
 		default:
@@ -77,6 +79,26 @@ func (bc *BanController) Ban(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
+	if err := json.NewEncoder(w).Encode(b); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func (bc *BanController) UpdateBan(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var b ban.Ban
+	if err := json.NewDecoder(r.Body).Decode(&b); err != nil {
+		http.Error(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err := ban.UpdateBan(bc.Controller.Dependencies.DBDecorator.GDB(), &b)
+	if err != nil {
+		http.Error(w, "Failed to update ban: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	if err := json.NewEncoder(w).Encode(b); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}

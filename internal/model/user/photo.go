@@ -17,6 +17,10 @@ func CreatePhoto(db *gorm.DB, b *Photo) error {
 	return db.Create(b).Error
 }
 
+func UpdatePhoto(db *gorm.DB, p *Photo) error {
+	return db.Save(p).Error
+}
+
 func GetPhotos(db *gorm.DB) ([]Photo, error) {
 	var photos []Photo
 	result := db.Find(&photos)

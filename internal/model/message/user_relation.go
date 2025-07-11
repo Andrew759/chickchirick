@@ -15,15 +15,15 @@ func CreateUserRelation(db *gorm.DB, ur *UserRelation) error {
 	return db.Create(ur).Error
 }
 
+func UpdateUserRelation(db *gorm.DB, ur *UserRelation) error {
+	return db.Save(ur).Error
+}
+
 func GetUserRelation(db *gorm.DB) ([]UserRelation, error) {
 	var userRelation []UserRelation
 	result := db.Find(&userRelation)
 
 	return userRelation, result.Error
-}
-
-func UpdateUserRelation(db *gorm.DB, ur *UserRelation) error {
-	return db.Save(ur).Error
 }
 
 func GetUserRelationById(db *gorm.DB, id int) (UserRelation, error) {

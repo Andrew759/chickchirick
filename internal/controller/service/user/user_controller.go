@@ -82,6 +82,26 @@ func (uc *UserController) CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (pc *PropertyController) UpdateUser(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var u user.User
+	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
+		http.Error(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err := user.UpdateUser(pc.Controller.Dependencies.DBDecorator.GDB(), &u)
+	if err != nil {
+		http.Error(w, "Failed to update user: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := json.NewEncoder(w).Encode(u); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
 func (uc *UserController) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	id := uc.Controller.GETId(w, r)
 	err := user.DeleteUserById(uc.Controller.Dependencies.DBDecorator.GDB(), id)
