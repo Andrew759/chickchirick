@@ -11,6 +11,10 @@ type Ban struct {
 	//BannedUser   User `json:"banned_user" gorm:"references:UserId"`
 }
 
+func CreateBan(db *gorm.DB, b *Ban) error {
+	return db.Create(b).Error
+}
+
 func GetBans(db *gorm.DB) ([]Ban, error) {
 	var bans []Ban
 	result := db.Find(&bans)
@@ -23,10 +27,6 @@ func GetBanById(db *gorm.DB, id int) (Ban, error) {
 	result := db.First(&ban, id)
 
 	return ban, result.Error
-}
-
-func CreateBan(db *gorm.DB, b *Ban) error {
-	return db.Create(b).Error
 }
 
 func DeleteBanById(db *gorm.DB, id int) error {

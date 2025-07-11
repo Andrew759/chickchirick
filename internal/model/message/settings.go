@@ -13,3 +13,25 @@ type Settings struct {
 	RuleUserRelation      UserRelation      `json:"rule_user_relation" gorm:"references:RuleUserId"`
 	Rule                  pgtype.JSONBCodec `json:"rule" gorm:"type:jsonb;default:'[]';not null"`
 }
+
+func CreateSettings(db *gorm.DB, s *Settings) error {
+	return db.Create(s).Error
+}
+
+func GetSettings(db *gorm.DB) ([]Settings, error) {
+	var settings []Settings
+	result := db.Find(&settings)
+
+	return settings, result.Error
+}
+
+func GetSettingsById(db *gorm.DB, id int) (Settings, error) {
+	var settings Settings
+	result := db.First(&settings, id)
+
+	return settings, result.Error
+}
+
+func DeleteSettingsById(db *gorm.DB, id int) error {
+	return db.Delete(&Settings{}, id).Error
+}

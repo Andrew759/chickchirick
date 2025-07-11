@@ -51,13 +51,13 @@ func (fc *FileController) GetFiles(w http.ResponseWriter) {
 
 func (fc *FileController) GetFile(w http.ResponseWriter, r *http.Request) {
 	id := fc.Controller.GETId(w, r)
-	b, err := file.GetFileById(fc.Controller.Dependencies.DBDecorator.GDB(), id)
+	f, err := file.GetFileById(fc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		http.Error(w, "File not found: "+err.Error(), http.StatusNotFound)
 		return
 	}
 
-	if err := json.NewEncoder(w).Encode(b); err != nil {
+	if err := json.NewEncoder(w).Encode(f); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }

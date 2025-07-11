@@ -19,3 +19,25 @@ type Meta struct {
 func (Meta) TableName() string {
 	return "message_meta"
 }
+
+func CreateMeta(db *gorm.DB, m *Meta) error {
+	return db.Create(m).Error
+}
+
+func GetMetas(db *gorm.DB) ([]Meta, error) {
+	var meta []Meta
+	result := db.Find(&meta)
+
+	return meta, result.Error
+}
+
+func GetMetaById(db *gorm.DB, id int) (Meta, error) {
+	var meta Meta
+	result := db.First(&meta, id)
+
+	return meta, result.Error
+}
+
+func DeleteMetaById(db *gorm.DB, id int) error {
+	return db.Delete(&Meta{}, id).Error
+}

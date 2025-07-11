@@ -15,15 +15,17 @@ type Controller struct {
 	Dependencies DIContainer
 }
 
-type ControllerInterface interface {
-	initController(container DIContainer)
+type MainControllerInterface interface {
+	InitController(container DIContainer)
 	HandleRequest()
-	GETId() int
+	GETId(w http.ResponseWriter, r *http.Request) int
 }
 
-func (c *Controller) initController(diContainer DIContainer) {
-	c.Dependencies = diContainer
+func (c *Controller) InitController(container DIContainer) {
+	c.Dependencies = container
 }
+
+func (c *Controller) HandleRequest() {}
 
 func (c *Controller) GETId(w http.ResponseWriter, r *http.Request) int {
 	w.Header().Set("Content-Type", "application/json")

@@ -10,3 +10,25 @@ type UserRelation struct {
 	UserId     int         `json:"id" gorm:"type:int;unique;primaryKey;autoIncrement"`
 	UserUuid   pgtype.UUID `json:"user_uuid" gorm:"type:uuid"`
 }
+
+func CreateUserRelation(db *gorm.DB, ur *UserRelation) error {
+	return db.Create(ur).Error
+}
+
+func GetUserRelation(db *gorm.DB) ([]UserRelation, error) {
+	var userRelation []UserRelation
+	result := db.Find(&userRelation)
+
+	return userRelation, result.Error
+}
+
+func GetUserRelationById(db *gorm.DB, id int) (UserRelation, error) {
+	var userRelation UserRelation
+	result := db.First(&userRelation, id)
+
+	return userRelation, result.Error
+}
+
+func DeleteUserRelationById(db *gorm.DB, id int) error {
+	return db.Delete(&UserRelation{}, id).Error
+}

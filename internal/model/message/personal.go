@@ -14,3 +14,25 @@ type Personal struct {
 	RecipientId       int          `json:"recipient_id" gorm:"type:int"`
 	RecipientRelation UserRelation `json:"recipient_relation" gorm:"references:RecipientId"`
 }
+
+func CreatePersonal(db *gorm.DB, p *Personal) error {
+	return db.Create(p).Error
+}
+
+func GetPersonal(db *gorm.DB) ([]Personal, error) {
+	var personal []Personal
+	result := db.Find(&personal)
+
+	return personal, result.Error
+}
+
+func GetPersonalById(db *gorm.DB, id int) (Personal, error) {
+	var personal Personal
+	result := db.First(&personal, id)
+
+	return personal, result.Error
+}
+
+func DeletePersonalById(db *gorm.DB, id int) error {
+	return db.Delete(&Personal{}, id).Error
+}
