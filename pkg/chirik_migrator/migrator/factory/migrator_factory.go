@@ -31,7 +31,7 @@ func InitMigrator(dBDecorator service.DBDecorator, opts ...MigratorOption) migra
 			DBDecorator:                 dBDecorator,
 			MigrationFilesPath:          viper.GetString(config.MigrationPath),
 			EnableTableNamespace:        viper.GetBool(config.EnableTableNamespace),
-			EnableFixtures:              viper.GetBool(config.EnableFixtures),
+			FixtureCount:                viper.GetInt(config.FixtureCount),
 			FixturePrefix:               viper.GetString(config.FixturePrefix),
 		},
 	}

@@ -60,7 +60,7 @@ func ReadEntityFile(path string, entityNames []string) ([]migratorDto.MigratorIn
 
 	eCount := len(entityNames)
 	hasNameRestriction := eCount > 0
-	if eCount == 1 && entityNames[0] == cConfig.AllTables {
+	if eCount == 1 && entityNames[0] == cConfig.AllKey {
 		hasNameRestriction = false
 	}
 

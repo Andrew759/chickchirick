@@ -19,7 +19,7 @@ type Config struct {
 	mainService.DBDecorator
 	MigrationFilesPath   string
 	EnableTableNamespace bool
-	EnableFixtures       bool
+	FixtureCount         int
 	FixturePrefix        string
 }
 
@@ -51,12 +51,29 @@ func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
 		return err
 	}
 
-	if m.EnableFixtures {
-		err = m.writeFixtureToSqlMeta(&sqlMeta)
+	if m.FixtureCount > 0 {
+		return m.InsertFixtures(sqlMeta)
+	}
+
+	return nil
+}
+
+func (m Migrator) InsertFixtures(sqlMeta dto.Meta) error {
+	var errList []error
+	for i := 0; i < m.FixtureCount; i++ {
+		sqlMetaIterationCopy := sqlMeta
+		err := m.writeFixtureToSqlMeta(&sqlMetaIterationCopy)
 		if err != nil {
-			return err
+			errList = append(errList, err)
 		}
-		return m.processSQLMeta(sqlMeta)
+		err = m.processSQLMeta(sqlMetaIterationCopy)
+		if err != nil {
+			errList = append(errList, err)
+		}
+	}
+	if len(errList) > 0 {
+		//TODO: доработать
+		return fmt.Errorf("%s", errList)
 	}
 
 	return nil

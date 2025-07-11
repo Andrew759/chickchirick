@@ -2,7 +2,6 @@ module chickChirick
 
 go 1.24.4
 
-//TODO: поправить и актуализировать зависимости
 require (
 	github.com/redis/go-redis/v9 v9.7.0
 	github.com/spf13/viper v1.20.1
