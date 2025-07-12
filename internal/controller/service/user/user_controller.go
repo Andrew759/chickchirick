@@ -27,6 +27,8 @@ func (uc *UserController) HandleRequest() {
 			uc.GetUser(w, r)
 		case http.MethodPost:
 			uc.CreateUser(w, r)
+		case http.MethodPut:
+			uc.UpdateUser(w, r)
 		case http.MethodDelete:
 			uc.DeleteUser(w, r)
 		default:
@@ -82,7 +84,7 @@ func (uc *UserController) CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (pc *PropertyController) UpdateUser(w http.ResponseWriter, r *http.Request) {
+func (uc *UserController) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	var u user.User
@@ -91,7 +93,7 @@ func (pc *PropertyController) UpdateUser(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	err := user.UpdateUser(pc.Controller.Dependencies.DBDecorator.GDB(), &u)
+	err := user.UpdateUser(uc.Controller.Dependencies.DBDecorator.GDB(), &u)
 	if err != nil {
 		http.Error(w, "Failed to update user: "+err.Error(), http.StatusInternalServerError)
 		return
