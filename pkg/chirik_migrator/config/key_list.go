@@ -11,6 +11,7 @@ const (
 	EnableDeleteAtColumn  = "ENABLE_DELETE_AT_COLUMN"
 	FixtureCount          = "FIXTURE_COUNT"
 	FixturePrefix         = "FIXTURE_PREFIX"
+	FixtureNilColumns     = "FIXTURE_NIL_COLUMNS"
 )
 
 // Ключи тегов мигратора

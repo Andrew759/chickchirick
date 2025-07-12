@@ -2,6 +2,7 @@ package factory
 
 import (
 	"chickChirick/cmd/service"
+	fakerService "chickChirick/pkg/chirik_faker/service"
 	"chickChirick/pkg/chirik_migrator/config"
 	"chickChirick/pkg/chirik_migrator/migrator"
 	"github.com/spf13/viper"
@@ -33,6 +34,7 @@ func InitMigrator(dBDecorator service.DBDecorator, opts ...MigratorOption) migra
 			EnableTableNamespace:        viper.GetBool(config.EnableTableNamespace),
 			FixtureCount:                viper.GetInt(config.FixtureCount),
 			FixturePrefix:               viper.GetString(config.FixturePrefix),
+			FixtureNilColumns:           fakerService.ParseExcludeString(viper.GetString(config.FixtureNilColumns)),
 		},
 	}
 }

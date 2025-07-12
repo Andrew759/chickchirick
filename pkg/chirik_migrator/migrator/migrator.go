@@ -21,6 +21,7 @@ type Config struct {
 	EnableTableNamespace bool
 	FixtureCount         int
 	FixturePrefix        string
+	FixtureNilColumns    map[string]struct{}
 }
 
 type Migrator struct {
@@ -244,7 +245,7 @@ func (m Migrator) writeFixtureToSqlMeta(sqlMeta *dto.Meta) error {
 		if !valueMeta.IsValueStore {
 			continue
 		}
-
+		valName := fmt.Sprintf("%v", valueMeta.Value)
 		//При установке фикстуры устанавливается флаг - не безопасно
 		valueMeta.IsSafe = false
 
@@ -258,9 +259,14 @@ func (m Migrator) writeFixtureToSqlMeta(sqlMeta *dto.Meta) error {
 			sqlFieldList = append(sqlFieldList, ")")
 		}
 
-		fixtureValue, err := chirik_faker.FakeValue(fmt.Sprintf("%v", valueMeta.Value), valueMeta.Type)
+		fixtureValue, err := chirik_faker.FakeValue(valName, valueMeta.Type)
 		if err != nil {
 			return err
+		}
+
+		//Если поле сконфигурировано так, чтобы игнорировать фикстуры - в качестве значения устанавливается nil
+		if _, hasValue := m.FixtureNilColumns[valName]; hasValue {
+			fixtureValue = nil
 		}
 
 		sqlValues = append(sqlValues, dto.ValueMeta{
