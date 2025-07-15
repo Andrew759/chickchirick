@@ -15,10 +15,14 @@ type Code struct {
 }
 
 func CreateCode(db *gorm.DB, c *Code) error {
+	c.CreatedAt = time.Now()
+
 	return db.Create(c).Error
 }
 
 func UpdateCode(db *gorm.DB, c *Code) error {
+	c.UpdatedAt = time.Now()
+
 	return db.Save(c).Error
 }
 

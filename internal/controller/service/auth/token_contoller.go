@@ -12,7 +12,7 @@ type TokenController struct {
 }
 
 func (tc *TokenController) HandleRequest() {
-	http.HandleFunc("/tokens", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/auth/tokens", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			tc.GetTokens(w)
@@ -21,7 +21,7 @@ func (tc *TokenController) HandleRequest() {
 		}
 	})
 
-	http.HandleFunc("/token", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/auth/token", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			tc.GetToken(w, r)

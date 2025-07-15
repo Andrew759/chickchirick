@@ -12,7 +12,7 @@ type BanController struct {
 }
 
 func (bc *BanController) HandleRequest() {
-	http.HandleFunc("/bans", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/user/bans", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			bc.GetBans(w)
@@ -21,7 +21,7 @@ func (bc *BanController) HandleRequest() {
 		}
 	})
 
-	http.HandleFunc("/ban", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/user/ban", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			bc.GetBan(w, r)

@@ -12,7 +12,7 @@ type CodeController struct {
 }
 
 func (cc *CodeController) HandleRequest() {
-	http.HandleFunc("/codes", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/auth/codes", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			cc.GetCodes(w)
@@ -21,7 +21,7 @@ func (cc *CodeController) HandleRequest() {
 		}
 	})
 
-	http.HandleFunc("/code", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/auth/code", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			cc.GetCode(w, r)

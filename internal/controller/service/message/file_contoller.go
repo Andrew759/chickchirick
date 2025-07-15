@@ -12,7 +12,7 @@ type FileController struct {
 }
 
 func (fc *FileController) HandleRequest() {
-	http.HandleFunc("/files", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/message/files", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			fc.GetFiles(w)
@@ -21,7 +21,7 @@ func (fc *FileController) HandleRequest() {
 		}
 	})
 
-	http.HandleFunc("/file", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/message/file", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			fc.GetFile(w, r)

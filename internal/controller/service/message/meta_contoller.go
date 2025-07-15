@@ -12,7 +12,7 @@ type MetaController struct {
 }
 
 func (mc *MetaController) HandleRequest() {
-	http.HandleFunc("/metas", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/message/metas", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			mc.GetMetas(w)
@@ -21,7 +21,7 @@ func (mc *MetaController) HandleRequest() {
 		}
 	})
 
-	http.HandleFunc("/meta", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/message/meta", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			mc.GetMeta(w, r)

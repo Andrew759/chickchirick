@@ -12,7 +12,7 @@ type GroupController struct {
 }
 
 func (gc *GroupController) HandleRequest() {
-	http.HandleFunc("/groups", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/message/groups", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			gc.GetGroups(w)
@@ -21,7 +21,7 @@ func (gc *GroupController) HandleRequest() {
 		}
 	})
 
-	http.HandleFunc("/deleted", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/message/group", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			gc.GetGroup(w, r)

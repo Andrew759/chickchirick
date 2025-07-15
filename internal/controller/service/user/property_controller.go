@@ -15,7 +15,7 @@ type PropertyController struct {
 }
 
 func (pc *PropertyController) HandleRequest() {
-	http.HandleFunc("/properties", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/user/properties", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			pc.GetProperties(w)
@@ -24,7 +24,7 @@ func (pc *PropertyController) HandleRequest() {
 		}
 	})
 
-	http.HandleFunc("/property", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/user/property", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			pc.GetProperty(w, r)

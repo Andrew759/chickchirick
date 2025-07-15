@@ -12,7 +12,7 @@ type SettingsController struct {
 }
 
 func (sc *SettingsController) HandleRequest() {
-	http.HandleFunc("/settings", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/message/settings", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			sc.GetSettings(w)
@@ -21,7 +21,7 @@ func (sc *SettingsController) HandleRequest() {
 		}
 	})
 
-	http.HandleFunc("/setting", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/message/setting", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			sc.GetSetting(w, r)

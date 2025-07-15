@@ -12,7 +12,7 @@ type StatusController struct {
 }
 
 func (sc *StatusController) HandleRequest() {
-	http.HandleFunc("/statuses", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/message/statuses", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			sc.GetStatuses(w)
@@ -21,7 +21,7 @@ func (sc *StatusController) HandleRequest() {
 		}
 	})
 
-	http.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/message/status", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			sc.GetStatus(w, r)

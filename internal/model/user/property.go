@@ -4,10 +4,15 @@ import "gorm.io/gorm"
 
 type Property struct {
 	gorm.Model `c_migrator:"enabled"`
-	UserId     int    `json:"user_id" gorm:"type:int"`
-	User       User   `json:"user" gorm:"references:UserId"`
-	Timezone   int8   `json:"timezone" gorm:"type:smallint;default:3"`
-	Email      string `json:"email" gorm:"type:varchar(256)"`
+	UserId     int     `json:"user_id" gorm:"type:int"`
+	User       User    `json:"user" gorm:"references:UserId"`
+	Timezone   int8    `json:"timezone" gorm:"type:smallint;default:3"`
+	Email      string  `json:"email" gorm:"type:varchar(256)"`
+	Password   *string `json:"password" gorm:"type:varchar(1024)"`
+}
+
+func (Property) TableName() string {
+	return "properties"
 }
 
 func CreateProperty(db *gorm.DB, b *Property) error {

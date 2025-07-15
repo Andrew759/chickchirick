@@ -12,7 +12,7 @@ type DeletedController struct {
 }
 
 func (dc *DeletedController) HandleRequest() {
-	http.HandleFunc("/deleted-list", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/message/deleted-list", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			dc.GetDeletedList(w)

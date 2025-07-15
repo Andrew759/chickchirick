@@ -1,17 +1,17 @@
 package message
 
 import (
-	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"time"
 )
 
 type File struct {
 	gorm.Model `c_migrator:"enabled"`
-	Id         int     `json:"id" gorm:"type:int;unique;primaryKey;autoIncrement"`
-	MessageId  int     `json:"message_id" gorm:"type:int"`
-	Message    Message `json:"message" gorm:"references:MessageId"`
-	//TODO: удалить автогенерацию и мок, когда будет реализован сервис файлов
-	FileUuid pgtype.UUID `json:"file_uuid" gorm:"type:uuid;default:gen_random_uuid()"`
+	Id         int       `json:"id" gorm:"type:int;unique;primaryKey;autoIncrement"`
+	MessageId  int       `json:"message_id" gorm:"type:int"`
+	Message    Message   `json:"message" gorm:"references:MessageId"`
+	FileUuid   uuid.UUID `json:"file_uuid" gorm:"type:uuid"`
 }
 
 func CreateFile(db *gorm.DB, f *File) error {
@@ -19,6 +19,8 @@ func CreateFile(db *gorm.DB, f *File) error {
 }
 
 func UpdateFile(db *gorm.DB, f *File) error {
+	f.UpdatedAt = time.Now()
+
 	return db.Save(f).Error
 }
 

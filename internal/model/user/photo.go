@@ -1,16 +1,15 @@
 package user
 
 import (
-	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 type Photo struct {
 	gorm.Model `c_migrator:"enabled"`
-	//TODO: удалить мок UUID, когда появится сервис файлов
-	FieUuid pgtype.UUID `gorm:"type:uuid;default:gen_random_uuid()"`
-	UserId  int         `json:"user_id" gorm:"type:int"`
-	User    User        `json:"user" gorm:"references:UserId"`
+	FieUuid    uuid.UUID `gorm:"type:uuid"`
+	UserId     int       `json:"user_id" gorm:"type:int"`
+	User       User      `json:"user" gorm:"references:UserId"`
 }
 
 func CreatePhoto(db *gorm.DB, b *Photo) error {

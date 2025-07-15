@@ -12,7 +12,7 @@ type SessionController struct {
 }
 
 func (sc *SessionController) HandleRequest() {
-	http.HandleFunc("/sessions", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/auth/sessions", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			sc.GetSessions(w)
@@ -21,7 +21,7 @@ func (sc *SessionController) HandleRequest() {
 		}
 	})
 
-	http.HandleFunc("/session", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/auth/session", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			sc.GetSession(w, r)

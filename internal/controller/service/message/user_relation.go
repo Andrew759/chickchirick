@@ -12,7 +12,7 @@ type UserRelationController struct {
 }
 
 func (urc *UserRelationController) HandleRequest() {
-	http.HandleFunc("/user-relations", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/message/user-relations", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			urc.GetUserRelations(w)
@@ -21,7 +21,7 @@ func (urc *UserRelationController) HandleRequest() {
 		}
 	})
 
-	http.HandleFunc("/user-relation", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/message/user-relation", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			urc.GetUserRelation(w, r)

@@ -36,6 +36,9 @@ func validateProperty(p user.Property) error {
 	if strings.TrimSpace(p.Email) != "" && !service.IsEmail(p.Email) {
 		return errors.New("invalid email")
 	}
+	if p.Password != nil || !service.IsHasCorrectLength(*p.Password, 1024) {
+		return errors.New("invalid password")
+	}
 	//TODO: валидация таймзон
 
 	return nil

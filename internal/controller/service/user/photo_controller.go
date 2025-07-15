@@ -12,7 +12,7 @@ type PhotoController struct {
 }
 
 func (pc *PhotoController) HandleRequest() {
-	http.HandleFunc("/photos", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/user/photos", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			pc.GetPhotos(w)
@@ -21,7 +21,7 @@ func (pc *PhotoController) HandleRequest() {
 		}
 	})
 
-	http.HandleFunc("/photo", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/user/photo", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			pc.GetPhoto(w, r)

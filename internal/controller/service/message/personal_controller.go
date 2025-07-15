@@ -12,7 +12,7 @@ type PersonalController struct {
 }
 
 func (pc *PersonalController) HandleRequest() {
-	http.HandleFunc("/personals", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/message/personals", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			pc.GetPersonals(w)
@@ -21,7 +21,7 @@ func (pc *PersonalController) HandleRequest() {
 		}
 	})
 
-	http.HandleFunc("/personal", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/message/personal", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			pc.GetPersonal(w, r)
