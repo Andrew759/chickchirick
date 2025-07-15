@@ -2,6 +2,8 @@ package user
 
 import (
 	"chickChirick/internal/controller/abstraction"
+	"chickChirick/internal/middleware/config"
+	userMiddleware "chickChirick/internal/middleware/validators/user"
 	"chickChirick/internal/model/user"
 	"encoding/json"
 	"net/http"
@@ -9,6 +11,7 @@ import (
 
 type UserController struct {
 	Controller abstraction.Controller
+	userMiddleware.UserValidator
 }
 
 func (uc *UserController) HandleRequest() {
@@ -26,9 +29,9 @@ func (uc *UserController) HandleRequest() {
 		case http.MethodGet:
 			uc.GetUser(w, r)
 		case http.MethodPost:
-			uc.CreateUser(w, r)
+			uc.Validate(uc.CreateUser)(w, r)
 		case http.MethodPut:
-			uc.UpdateUser(w, r)
+			uc.Validate(uc.UpdateUser)(w, r)
 		case http.MethodDelete:
 			uc.DeleteUser(w, r)
 		default:
@@ -67,13 +70,9 @@ func (uc *UserController) GetUser(w http.ResponseWriter, r *http.Request) {
 func (uc *UserController) CreateUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	var u user.User
-	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
-		http.Error(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
-		return
-	}
+	u := r.Context().Value(config.UserUserKey).(*user.User)
 
-	if err := user.CreateUser(uc.Controller.Dependencies.DBDecorator.GDB(), &u); err != nil {
+	if err := user.CreateUser(uc.Controller.Dependencies.DBDecorator.GDB(), u); err != nil {
 		http.Error(w, "Failed to create user: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -87,13 +86,9 @@ func (uc *UserController) CreateUser(w http.ResponseWriter, r *http.Request) {
 func (uc *UserController) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	var u user.User
-	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
-		http.Error(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
-		return
-	}
+	u := r.Context().Value(config.UserUserKey).(*user.User)
 
-	err := user.UpdateUser(uc.Controller.Dependencies.DBDecorator.GDB(), &u)
+	err := user.UpdateUser(uc.Controller.Dependencies.DBDecorator.GDB(), u)
 	if err != nil {
 		http.Error(w, "Failed to update user: "+err.Error(), http.StatusInternalServerError)
 		return

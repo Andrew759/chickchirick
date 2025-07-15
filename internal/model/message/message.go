@@ -9,7 +9,7 @@ import (
 type Message struct {
 	gorm.Model `c_migrator:"enabled"`
 	Id         int         `json:"id" gorm:"type:int;unique;primaryKey;autoIncrement"`
-	Text       pgtype.UUID `json:"text" gorm:"type:uuid"`
+	Text       pgtype.UUID `json:"text" gorm:"type:text;not null"`
 	Date       time.Time   `json:"start_date" gorm:"type:timestamp without time zone"`
 }
 

@@ -8,6 +8,7 @@ type Ban struct {
 	UserId     int `json:"user_id" gorm:"type:int"`
 	//User         User `json:"user" gorm:"references:UserId"`
 	BannedUserId int `json:"banned_user_id" gorm:"type:int"`
+	Type         int `json:"type" gorm:"type:int, notnull"`
 	//BannedUser   User `json:"banned_user" gorm:"references:UserId"`
 }
 

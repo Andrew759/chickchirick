@@ -2,6 +2,8 @@ package user
 
 import (
 	"chickChirick/internal/controller/abstraction"
+	"chickChirick/internal/middleware/config"
+	userMiddleware "chickChirick/internal/middleware/validators/user"
 	property "chickChirick/internal/model/user"
 	"encoding/json"
 	"net/http"
@@ -9,6 +11,7 @@ import (
 
 type PropertyController struct {
 	Controller abstraction.Controller
+	userMiddleware.PropertyValidator
 }
 
 func (pc *PropertyController) HandleRequest() {
@@ -26,9 +29,9 @@ func (pc *PropertyController) HandleRequest() {
 		case http.MethodGet:
 			pc.GetProperty(w, r)
 		case http.MethodPost:
-			pc.CreateProperty(w, r)
+			pc.Validate(pc.CreateProperty)(w, r)
 		case http.MethodPut:
-			pc.UpdateProperty(w, r)
+			pc.Validate(pc.UpdateProperty)(w, r)
 		case http.MethodDelete:
 			pc.DeleteProperty(w, r)
 		default:
@@ -67,13 +70,9 @@ func (pc *PropertyController) GetProperty(w http.ResponseWriter, r *http.Request
 func (pc *PropertyController) CreateProperty(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	var p property.Property
-	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
-		http.Error(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
-		return
-	}
+	p := r.Context().Value(config.UserPropertyKey).(*property.Property)
 
-	if err := property.CreateProperty(pc.Controller.Dependencies.DBDecorator.GDB(), &p); err != nil {
+	if err := property.CreateProperty(pc.Controller.Dependencies.DBDecorator.GDB(), p); err != nil {
 		http.Error(w, "Failed to create property: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -87,13 +86,9 @@ func (pc *PropertyController) CreateProperty(w http.ResponseWriter, r *http.Requ
 func (pc *PropertyController) UpdateProperty(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	var p property.Property
-	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
-		http.Error(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
-		return
-	}
+	p := r.Context().Value(config.UserPropertyKey).(*property.Property)
 
-	err := property.UpdateProperty(pc.Controller.Dependencies.DBDecorator.GDB(), &p)
+	err := property.UpdateProperty(pc.Controller.Dependencies.DBDecorator.GDB(), p)
 	if err != nil {
 		http.Error(w, "Failed to update property: "+err.Error(), http.StatusInternalServerError)
 		return

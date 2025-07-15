@@ -15,14 +15,15 @@ type Controller struct {
 	Dependencies DIContainer
 }
 
-type MainControllerInterface interface {
-	InitController(container DIContainer)
+type ControllerInterface interface {
 	HandleRequest()
-	GETId(w http.ResponseWriter, r *http.Request) int
 }
 
-func (c *Controller) InitController(container DIContainer) {
+// Init @deprecated
+func (c *Controller) Init(container DIContainer) *Controller {
 	c.Dependencies = container
+
+	return c
 }
 
 func (c *Controller) HandleRequest() {}

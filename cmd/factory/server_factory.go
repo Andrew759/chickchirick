@@ -3,7 +3,6 @@ package factory
 import (
 	mainService "chickChirick/cmd/service"
 	"chickChirick/internal/controller/abstraction"
-	internalService "chickChirick/internal/controller/service/user"
 	"net/http"
 )
 
@@ -23,34 +22,13 @@ func InitServer(dbDecorator mainService.DBDecorator, redisDecorator mainService.
 		RedisDecorator: redisDecorator,
 	}
 
-	_ = initUserService(abstractDiContainer)
-	_ = initBanService(abstractDiContainer)
+	InitUserServer(abstractDiContainer)
+	InitMessageServer(abstractDiContainer)
+	InitAuthServer(abstractDiContainer)
 
 	// Запуск сервера
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
 		return
 	}
-}
-
-func initUserService(abstractDiContainer abstraction.DIContainer) internalService.UserController {
-	userService := internalService.UserController{
-		Controller: abstraction.Controller{
-			Dependencies: abstractDiContainer,
-		},
-	}
-	userService.HandleRequest()
-
-	return userService
-}
-
-func initBanService(abstractDiContainer abstraction.DIContainer) internalService.BanController {
-	banService := internalService.BanController{
-		Controller: abstraction.Controller{
-			Dependencies: abstractDiContainer,
-		},
-	}
-	banService.HandleRequest()
-
-	return banService
 }

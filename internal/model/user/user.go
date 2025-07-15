@@ -5,8 +5,9 @@ import "gorm.io/gorm"
 type User struct {
 	gorm.Model `c_migrator:"enabled"`
 	Id         int     `json:"id" gorm:"type:int;unique;primaryKey;autoIncrement"`
-	Phone      int64   `json:"phone" gorm:"type:bigint"`
+	Phone      string  `json:"phone" gorm:"type:varchar(30)"`
 	Name       string  `json:"name" gorm:"type:varchar(256)"`
+	Login      string  `json:"login" gorm:"type:varchar(256)"`
 	Surname    string  `json:"surname" gorm:"type:varchar(256)"`
 	Password   *string `json:"password" gorm:"type:varchar(1024)"`
 }
