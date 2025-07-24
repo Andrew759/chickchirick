@@ -11,10 +11,13 @@ type Migrator interface {
 	DropTable(entity migratorDto.MigratorInfo) error
 
 	// Constraints
-	CreateConstraint(entity migratorDto.MigratorInfo, name string) error
-	DropConstraint(entity migratorDto.MigratorInfo, name string) error
+	CreateConstraint(entity migratorDto.MigratorInfo, constraintName string) error
+	DropConstraint(entity migratorDto.MigratorInfo, constraintName string) error
 
 	// Indexes
-	CreateIndex(entity migratorDto.MigratorInfo, name string) error
-	DropIndex(entity migratorDto.MigratorInfo, name string) error
+	CreateIndex(entity migratorDto.MigratorInfo, indexName string) error
+	DropIndex(entity migratorDto.MigratorInfo, indexName string) error
+
+	// Schema
+	DropSchema(schemaName string) error
 }

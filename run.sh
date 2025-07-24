@@ -9,13 +9,15 @@ echo "Выберите окружение:"
 echo "1) prod"
 echo "2) dev"
 echo "3) stage"
+echo "4) automated"
 
-read -p "Введите соответствующий ему номер (1-3): " choice
+read -p "Введите соответствующий ему номер (1-4): " choice
 
 case $choice in
   1) C_FILE_PATH="build/prod/docker-compose.yml" ;;
   2) C_FILE_PATH="build/dev/docker-compose.yml" ;;
   3) C_FILE_PATH="build/stage/docker-compose.yml" ;;
+  4) C_FILE_PATH="build/automated/docker-compose.yml" ;;
   *) echo "Неверный номер окружения"; exit 1 ;;
 esac
 

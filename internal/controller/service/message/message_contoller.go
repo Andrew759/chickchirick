@@ -2,7 +2,7 @@ package message
 
 import (
 	"chickChirick/internal/controller/abstraction"
-	message "chickChirick/internal/model/message"
+	"chickChirick/internal/model/message"
 	"encoding/json"
 	"net/http"
 )

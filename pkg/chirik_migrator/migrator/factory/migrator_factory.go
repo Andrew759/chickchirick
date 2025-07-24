@@ -1,10 +1,12 @@
 package factory
 
 import (
-	"chickChirick/cmd/service"
+	mainService "chickChirick/cmd/service"
 	fakerService "chickChirick/pkg/chirik_faker/service"
 	"chickChirick/pkg/chirik_migrator/config"
 	"chickChirick/pkg/chirik_migrator/migrator"
+	"chickChirick/pkg/chirik_migrator/migrator/dto"
+	migratorService "chickChirick/pkg/chirik_migrator/migrator/service"
 	"github.com/spf13/viper"
 )
 
@@ -20,21 +22,35 @@ func WithCreateIndexAfterCreateTable() MigratorOption { //Функция кон�
 	}
 }
 
-func InitMigrator(dBDecorator service.DBDecorator, opts ...MigratorOption) migrator.Migrator {
+func InitMigrator(dBDecorator mainService.DBDecorator, opts ...MigratorOption) migrator.Migrator {
 	var mOptions migratorOptions
 	for _, opt := range opts {
 		opt(&mOptions)
 	}
 
+	mConfig := dto.MConfig{
+		CreateIndexAfterCreateTable: mOptions.createIndexAfterCreateTable,
+		MigrationFilesPath:          viper.GetString(config.MigrationPath),
+		EnableTableNamespace:        viper.GetBool(config.EnableTableNamespace),
+		FixtureCount:                viper.GetInt(config.FixtureCount),
+		FixturePrefix:               viper.GetString(config.FixturePrefix),
+		FixtureNilColumns:           fakerService.ParseExcludeString(viper.GetString(config.FixtureNilColumns)),
+	}
+
+	mDiContainer := dto.MigratorDiContainer{
+		MConfig:     mConfig,
+		DBDecorator: dBDecorator,
+	}
+
+	tCreator := migratorService.TableCreator{
+		SqlProcessor: migratorService.SqlProcessor{MigratorDiContainer: mDiContainer},
+	}
+	fCreator := migratorService.FixtureCreator{
+		SqlProcessor: migratorService.SqlProcessor{MigratorDiContainer: mDiContainer},
+	}
+
 	return migrator.Migrator{
-		Config: migrator.Config{
-			CreateIndexAfterCreateTable: mOptions.createIndexAfterCreateTable,
-			DBDecorator:                 dBDecorator,
-			MigrationFilesPath:          viper.GetString(config.MigrationPath),
-			EnableTableNamespace:        viper.GetBool(config.EnableTableNamespace),
-			FixtureCount:                viper.GetInt(config.FixtureCount),
-			FixturePrefix:               viper.GetString(config.FixturePrefix),
-			FixtureNilColumns:           fakerService.ParseExcludeString(viper.GetString(config.FixtureNilColumns)),
-		},
+		TableCreator:   tCreator,
+		FixtureCreator: fCreator,
 	}
 }

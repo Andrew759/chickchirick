@@ -5,7 +5,7 @@ import (
 	"chickChirick/pkg/chirik_migrator/config"
 	"chickChirick/pkg/chirik_migrator/db_schema"
 	"chickChirick/pkg/chirik_migrator/db_schema/data_type"
-	"chickChirick/pkg/chirik_migrator/migrator/service"
+	"chickChirick/pkg/chirik_migrator/migrator/helper"
 	"fmt"
 	"github.com/spf13/viper"
 	"regexp"
@@ -83,7 +83,7 @@ func (mInfo *MigratorInfo) PrepareEmptySchema(structure chirik_ast.Structure) db
 	if migratorTableNameTag != nil && len(migratorTableNameTag.Values) > 0 {
 		tableName = migratorTableNameTag.Values[0]
 	} else {
-		tableName = service.AddSingleSPostfix(service.ToSnakeCase(structure.Name()))
+		tableName = helper.AddSingleSPostfix(helper.ToSnakeCase(structure.Name()))
 	}
 
 	schema.Table = tableName
@@ -95,7 +95,7 @@ func (mInfo *MigratorInfo) PrepareSchemaField(field chirik_ast.Field, schema *db
 	schemaField := db_schema.Field{}
 	schemaField.DataType = data_type.PrepareTypeContainer(config.DBType)
 
-	schemaField.Name = service.ToSnakeCase(field.Name())
+	schemaField.Name = helper.ToSnakeCase(field.Name())
 	schemaField.Schema = schema
 
 	var infoErr error
