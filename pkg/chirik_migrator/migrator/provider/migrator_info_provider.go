@@ -66,7 +66,7 @@ func (mInfo *MigratorInfo) FillByEntity(structure chirik_ast.Structure) {
 	mInfo.FillSchemaBySystemColumns()
 }
 
-func (mInfo *MigratorInfo) HasCriticalError() bool {
+func (mInfo *MigratorInfo) HasError() bool {
 	return mInfo.ErrList != nil
 }
 
@@ -108,7 +108,7 @@ func (mInfo *MigratorInfo) PrepareSchemaField(field chirik_ast.Field, schema *db
 	if fTags != nil {
 		for _, tag := range fTags.List() {
 			mInfo.FillByTagAndSchemaField(tag, &schemaField)
-			if mInfo.HasCriticalError() {
+			if mInfo.HasError() {
 				break
 			}
 		}

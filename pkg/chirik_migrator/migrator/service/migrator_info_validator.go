@@ -12,7 +12,7 @@ func ValidateMInfo(migratorInfo migratorDto.MigratorInfo) error {
 		return fmt.Errorf("can't process entity with disabled migrator: %s", migratorInfo.Schema.Name)
 	}
 
-	if migratorInfo.HasCriticalError() {
+	if migratorInfo.HasError() {
 		return fmt.Errorf("can't process entity with errors at prepare stage: %s : %s",
 			migratorInfo.Schema.Name,
 			migratorInfo.ErrList,
