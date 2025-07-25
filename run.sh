@@ -10,6 +10,7 @@ echo "1) prod"
 echo "2) dev"
 echo "3) stage"
 echo "4) automated"
+echo "5) automated-cache-only"
 
 read -p "Введите соответствующий ему номер (1-4): " choice
 
@@ -18,6 +19,7 @@ case $choice in
   2) C_FILE_PATH="build/dev/docker-compose.yml" ;;
   3) C_FILE_PATH="build/stage/docker-compose.yml" ;;
   4) C_FILE_PATH="build/automated/docker-compose.yml" ;;
+  5) C_FILE_PATH="build/automated/docker-compose-cache.yml" ;;
   *) echo "Неверный номер окружения"; exit 1 ;;
 esac
 
@@ -41,8 +43,10 @@ esac
 
 if [ "$COMMAND" = "build (no cache)" ]; then
   docker-compose -f docker-compose.yml -f "$C_FILE_PATH" build --no-cache
-elif [ "$COMMAND" = "build (with cache)" ]; then
+elif [ "$COMMAND" = "build (with cache)" ] && [ "$C_FILE_PATH" != "build/automated/docker-compose-cache.yml" ]; then
   docker-compose -f docker-compose.yml -f "$C_FILE_PATH" build
+elif [ "$COMMAND" = "build (with cache)" ] && [ "$C_FILE_PATH" = "build/automated/docker-compose-cache.yml" ]; then
+    COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1  docker-compose -f docker-compose.yml -f "$C_FILE_PATH" build
 elif [ "$COMMAND" = "up" ]; then
   docker-compose -f docker-compose.yml -f "$C_FILE_PATH" up
 elif [ "$COMMAND" = "down" ]; then
