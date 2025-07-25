@@ -19,7 +19,10 @@ func (m Migrator) CreateTables(migratorEntities map[string][]migratorDto.Migrato
 	if m.FixtureCreator.FixtureCount > 0 {
 		for _, processedSqlMetas := range processedTablesSqlMeta {
 			for _, processedSqlMeta := range processedSqlMetas {
-				return m.FixtureCreator.InsertFixtures(processedSqlMeta)
+				err = m.FixtureCreator.InsertFixtures(processedSqlMeta)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -34,7 +37,10 @@ func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
 	}
 	if m.FixtureCreator.FixtureCount > 0 {
 		for _, processedSqlMeta := range processedSqlMetas {
-			return m.FixtureCreator.InsertFixtures(processedSqlMeta)
+			err = m.FixtureCreator.InsertFixtures(processedSqlMeta)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
