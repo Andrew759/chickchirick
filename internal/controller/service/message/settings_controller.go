@@ -11,8 +11,8 @@ type SettingsController struct {
 	Controller abstraction.Controller
 }
 
-func (sc *SettingsController) HandleRequest() {
-	http.HandleFunc("/message/settings", func(w http.ResponseWriter, r *http.Request) {
+func (sc *SettingsController) HandleRequest(mux *http.ServeMux) {
+	mux.HandleFunc("/message/settings", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			sc.GetSettings(w)
@@ -21,7 +21,7 @@ func (sc *SettingsController) HandleRequest() {
 		}
 	})
 
-	http.HandleFunc("/message/setting", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/message/setting", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			sc.GetSetting(w, r)

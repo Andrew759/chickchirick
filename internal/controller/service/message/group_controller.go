@@ -11,8 +11,8 @@ type GroupController struct {
 	Controller abstraction.Controller
 }
 
-func (gc *GroupController) HandleRequest() {
-	http.HandleFunc("/message/groups", func(w http.ResponseWriter, r *http.Request) {
+func (gc *GroupController) HandleRequest(mux *http.ServeMux) {
+	mux.HandleFunc("/message/groups", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			gc.GetGroups(w)
@@ -21,7 +21,7 @@ func (gc *GroupController) HandleRequest() {
 		}
 	})
 
-	http.HandleFunc("/message/group", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/message/group", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			gc.GetGroup(w, r)

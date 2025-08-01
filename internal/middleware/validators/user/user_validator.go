@@ -34,12 +34,12 @@ func (uv UserValidator) Validate(next http.HandlerFunc) http.HandlerFunc {
 
 func validateUser(u user.User) error {
 	if strings.TrimSpace(u.Name) == "" || !service.IsHasCorrectLength(u.Name, 256) {
-		return errors.New("name is required")
+		return errors.New("invalid name")
 	}
-	if strings.TrimSpace(u.Surname) == "" || service.IsHasCorrectLength(u.Surname, 256) {
-		return errors.New("surname is required")
+	if strings.TrimSpace(u.Surname) == "" || !service.IsHasCorrectLength(u.Surname, 256) {
+		return errors.New("invalid surname")
 	}
-	if strings.TrimSpace(u.Login) == "" || !service.IsLatinSymbolOnly(u.Login) || service.IsHasCorrectLength(u.Login, 256) {
+	if strings.TrimSpace(u.Login) == "" || !service.IsLogin(u.Login) || !service.IsHasCorrectLength(u.Login, 256) {
 		return errors.New("invalid login")
 	}
 	if strings.TrimSpace(u.Phone) == "" || !service.IsPhoneNumber(u.Phone) {

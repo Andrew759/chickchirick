@@ -1,4 +1,4 @@
-package service
+package helper
 
 import (
 	"chickChirick/pkg/chirik_migrator/migrator/dto"

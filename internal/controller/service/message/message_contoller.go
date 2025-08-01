@@ -2,7 +2,7 @@ package message
 
 import (
 	"chickChirick/internal/controller/abstraction"
-	message "chickChirick/internal/model/message"
+	"chickChirick/internal/model/message"
 	"encoding/json"
 	"net/http"
 )
@@ -11,8 +11,8 @@ type MessagesController struct {
 	Controller abstraction.Controller
 }
 
-func (mc *MessagesController) HandleRequest() {
-	http.HandleFunc("/messages", func(w http.ResponseWriter, r *http.Request) {
+func (mc *MessagesController) HandleRequest(mux *http.ServeMux) {
+	mux.HandleFunc("/messages", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			mc.GetMessages(w)
@@ -21,7 +21,7 @@ func (mc *MessagesController) HandleRequest() {
 		}
 	})
 
-	http.HandleFunc("/message", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/message", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			mc.GetMessage(w, r)

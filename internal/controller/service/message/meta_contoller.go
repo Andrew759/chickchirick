@@ -11,8 +11,8 @@ type MetaController struct {
 	Controller abstraction.Controller
 }
 
-func (mc *MetaController) HandleRequest() {
-	http.HandleFunc("/message/metas", func(w http.ResponseWriter, r *http.Request) {
+func (mc *MetaController) HandleRequest(mux *http.ServeMux) {
+	mux.HandleFunc("/message/metas", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			mc.GetMetas(w)
@@ -21,7 +21,7 @@ func (mc *MetaController) HandleRequest() {
 		}
 	})
 
-	http.HandleFunc("/message/meta", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/message/meta", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			mc.GetMeta(w, r)
