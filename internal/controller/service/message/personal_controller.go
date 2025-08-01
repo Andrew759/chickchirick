@@ -11,8 +11,8 @@ type PersonalController struct {
 	Controller abstraction.Controller
 }
 
-func (pc *PersonalController) HandleRequest(mux *http.ServeMux) {
-	mux.HandleFunc("/message/personals", func(w http.ResponseWriter, r *http.Request) {
+func (pc *PersonalController) HandleRequest() {
+	pc.Controller.ServeMux.HandleFunc("/message/personals", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			pc.GetPersonals(w)
@@ -21,7 +21,7 @@ func (pc *PersonalController) HandleRequest(mux *http.ServeMux) {
 		}
 	})
 
-	mux.HandleFunc("/message/personal", func(w http.ResponseWriter, r *http.Request) {
+	pc.Controller.ServeMux.HandleFunc("/message/personal", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			pc.GetPersonal(w, r)

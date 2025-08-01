@@ -11,8 +11,8 @@ type TokenController struct {
 	Controller abstraction.Controller
 }
 
-func (tc *TokenController) HandleRequest(mux *http.ServeMux) {
-	mux.HandleFunc("/auth/tokens", func(w http.ResponseWriter, r *http.Request) {
+func (tc *TokenController) HandleRequest() {
+	tc.Controller.ServeMux.HandleFunc("/auth/tokens", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			tc.GetTokens(w)
@@ -21,7 +21,7 @@ func (tc *TokenController) HandleRequest(mux *http.ServeMux) {
 		}
 	})
 
-	mux.HandleFunc("/auth/token", func(w http.ResponseWriter, r *http.Request) {
+	tc.Controller.ServeMux.HandleFunc("/auth/token", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			tc.GetToken(w, r)
