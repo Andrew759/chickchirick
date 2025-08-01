@@ -1,7 +1,7 @@
 package factory
 
 import (
-	mainService "chickChirick/cmd/service"
+	"chickChirick/cmd/service"
 	"chickChirick/internal/controller/abstraction"
 	"net/http"
 )
@@ -13,22 +13,29 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func InitServer(dbDecorator mainService.DBDecorator, redisDecorator mainService.RedisDecorator) {
-	//Регистрация обработчиков для конечных точек
-	http.HandleFunc("/ping", pingHandler)
+func BuildServer(dbDecorator service.DBDecorator, redisDecorator service.RedisDecorator) *http.ServeMux {
+	mux := http.NewServeMux()
 
-	abstractDiContainer := abstraction.DIContainer{
+	//Регистрация обработчиков для конечных точек
+	mux.HandleFunc("/ping", pingHandler)
+
+	container := abstraction.DIContainer{
 		DBDecorator:    dbDecorator,
 		RedisDecorator: redisDecorator,
 	}
 
-	InitUserServer(abstractDiContainer)
-	InitMessageServer(abstractDiContainer)
-	InitAuthServer(abstractDiContainer)
+	InitUserServer(mux, container)
+	InitMessageServer(mux, container)
+	InitAuthServer(mux, container)
 
-	// Запуск сервера
-	err := http.ListenAndServe(":8080", nil)
+	return mux
+}
+
+func BuildAndServe(dbDecorator service.DBDecorator, redisDecorator service.RedisDecorator) {
+	mux := BuildServer(dbDecorator, redisDecorator)
+
+	err := http.ListenAndServe(":8080", mux)
 	if err != nil {
-		return
+		panic(err)
 	}
 }

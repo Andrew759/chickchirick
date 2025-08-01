@@ -3,43 +3,44 @@ package factory
 import (
 	"chickChirick/internal/controller/abstraction"
 	internalService "chickChirick/internal/controller/service/auth"
+	"net/http"
 )
 
-func InitAuthServer(abstractDiContainer abstraction.DIContainer) {
-	_ = initCodeService(abstractDiContainer)
-	_ = initSessionService(abstractDiContainer)
-	_ = initTokenService(abstractDiContainer)
+func InitAuthServer(mux *http.ServeMux, abstractDiContainer abstraction.DIContainer) {
+	initCodeService(mux, abstractDiContainer)
+	initSessionService(mux, abstractDiContainer)
+	initTokenService(mux, abstractDiContainer)
 }
 
-func initCodeService(abstractDiContainer abstraction.DIContainer) internalService.CodeController {
+func initCodeService(mux *http.ServeMux, abstractDiContainer abstraction.DIContainer) internalService.CodeController {
 	codeService := internalService.CodeController{
 		Controller: abstraction.Controller{
 			Dependencies: abstractDiContainer,
 		},
 	}
-	codeService.HandleRequest()
+	codeService.HandleRequest(mux)
 
 	return codeService
 }
 
-func initSessionService(abstractDiContainer abstraction.DIContainer) internalService.SessionController {
+func initSessionService(mux *http.ServeMux, abstractDiContainer abstraction.DIContainer) internalService.SessionController {
 	sessionService := internalService.SessionController{
 		Controller: abstraction.Controller{
 			Dependencies: abstractDiContainer,
 		},
 	}
-	sessionService.HandleRequest()
+	sessionService.HandleRequest(mux)
 
 	return sessionService
 }
 
-func initTokenService(abstractDiContainer abstraction.DIContainer) internalService.TokenController {
+func initTokenService(mux *http.ServeMux, abstractDiContainer abstraction.DIContainer) internalService.TokenController {
 	tokenService := internalService.TokenController{
 		Controller: abstraction.Controller{
 			Dependencies: abstractDiContainer,
 		},
 	}
-	tokenService.HandleRequest()
+	tokenService.HandleRequest(mux)
 
 	return tokenService
 }

@@ -11,8 +11,8 @@ type SessionController struct {
 	Controller abstraction.Controller
 }
 
-func (sc *SessionController) HandleRequest() {
-	http.HandleFunc("/auth/sessions", func(w http.ResponseWriter, r *http.Request) {
+func (sc *SessionController) HandleRequest(mux *http.ServeMux) {
+	mux.HandleFunc("/auth/sessions", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			sc.GetSessions(w)
@@ -21,7 +21,7 @@ func (sc *SessionController) HandleRequest() {
 		}
 	})
 
-	http.HandleFunc("/auth/session", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/auth/session", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			sc.GetSession(w, r)

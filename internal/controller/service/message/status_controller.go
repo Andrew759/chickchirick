@@ -11,8 +11,8 @@ type StatusController struct {
 	Controller abstraction.Controller
 }
 
-func (sc *StatusController) HandleRequest() {
-	http.HandleFunc("/message/statuses", func(w http.ResponseWriter, r *http.Request) {
+func (sc *StatusController) HandleRequest(mux *http.ServeMux) {
+	mux.HandleFunc("/message/statuses", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			sc.GetStatuses(w)
@@ -21,7 +21,7 @@ func (sc *StatusController) HandleRequest() {
 		}
 	})
 
-	http.HandleFunc("/message/status", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/message/status", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			sc.GetStatus(w, r)

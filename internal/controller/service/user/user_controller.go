@@ -14,8 +14,8 @@ type UserController struct {
 	userMiddleware.UserValidator
 }
 
-func (uc *UserController) HandleRequest() {
-	http.HandleFunc("/users", func(w http.ResponseWriter, r *http.Request) {
+func (uc *UserController) HandleRequest(mux *http.ServeMux) {
+	mux.HandleFunc("/users", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			uc.GetUsers(w)
@@ -24,7 +24,7 @@ func (uc *UserController) HandleRequest() {
 		}
 	})
 
-	http.HandleFunc("/user", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/user", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			uc.GetUser(w, r)

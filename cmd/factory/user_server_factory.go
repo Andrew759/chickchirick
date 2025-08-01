@@ -3,68 +3,63 @@ package factory
 import (
 	"chickChirick/internal/controller/abstraction"
 	internalService "chickChirick/internal/controller/service/user"
+	"net/http"
 )
 
-func InitUserServer(abstractDiContainer abstraction.DIContainer) {
-	_ = initUserService(abstractDiContainer)
-	_ = initBanService(abstractDiContainer)
-	_ = initUserMetaService(abstractDiContainer)
-	_ = initPhotoService(abstractDiContainer)
-	_ = initPropertyService(abstractDiContainer)
+func InitUserServer(mux *http.ServeMux, abstractDiContainer abstraction.DIContainer) {
+	initUserService(mux, abstractDiContainer)
+	initBanService(mux, abstractDiContainer)
+	initUserMetaService(mux, abstractDiContainer)
+	initPhotoService(mux, abstractDiContainer)
+	initPropertyService(mux, abstractDiContainer)
 }
 
-func initUserService(abstractDiContainer abstraction.DIContainer) internalService.UserController {
+func initUserService(mux *http.ServeMux, abstractDiContainer abstraction.DIContainer) internalService.UserController {
 	userService := internalService.UserController{
 		Controller: abstraction.Controller{
 			Dependencies: abstractDiContainer,
 		},
 	}
-	userService.HandleRequest()
-
+	userService.HandleRequest(mux)
 	return userService
 }
 
-func initBanService(abstractDiContainer abstraction.DIContainer) internalService.BanController {
+func initBanService(mux *http.ServeMux, abstractDiContainer abstraction.DIContainer) internalService.BanController {
 	banService := internalService.BanController{
 		Controller: abstraction.Controller{
 			Dependencies: abstractDiContainer,
 		},
 	}
-	banService.HandleRequest()
-
+	banService.HandleRequest(mux)
 	return banService
 }
 
-// InitUserMetaService TODO: переименовать при разбиении на микросервисы
-func initUserMetaService(abstractDiContainer abstraction.DIContainer) internalService.MetaController {
+func initUserMetaService(mux *http.ServeMux, abstractDiContainer abstraction.DIContainer) internalService.MetaController {
 	metaService := internalService.MetaController{
 		Controller: abstraction.Controller{
 			Dependencies: abstractDiContainer,
 		},
 	}
-	metaService.HandleRequest()
-
+	metaService.HandleRequest(mux)
 	return metaService
 }
 
-func initPhotoService(abstractDiContainer abstraction.DIContainer) internalService.PhotoController {
+func initPhotoService(mux *http.ServeMux, abstractDiContainer abstraction.DIContainer) internalService.PhotoController {
 	photoService := internalService.PhotoController{
 		Controller: abstraction.Controller{
 			Dependencies: abstractDiContainer,
 		},
 	}
-	photoService.HandleRequest()
-
+	photoService.HandleRequest(mux)
 	return photoService
 }
 
-func initPropertyService(abstractDiContainer abstraction.DIContainer) internalService.PropertyController {
+func initPropertyService(mux *http.ServeMux, abstractDiContainer abstraction.DIContainer) internalService.PropertyController {
 	propertyService := internalService.PropertyController{
 		Controller: abstraction.Controller{
 			Dependencies: abstractDiContainer,
 		},
 	}
-	propertyService.HandleRequest()
-
+	propertyService.HandleRequest(mux)
 	return propertyService
 }

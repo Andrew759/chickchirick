@@ -14,6 +14,7 @@ import (
 	"encoding/json"
 	"github.com/stretchr/testify/assert"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 )
 
@@ -29,11 +30,12 @@ type ExternalServices struct {
 
 type UCContainer struct {
 	ExternalServices
+	HttpServer *httptest.Server
 	HttpClient *http.Client
 	*user.UserController
 }
 
-func initUCContainer() UCContainer {
+func initUCContainer(t *testing.T) UCContainer {
 	factory.InitViper()
 
 	appConfig := appCongig.AppConfiguration{}.NewAppConfiguration()
@@ -51,14 +53,18 @@ func initUCContainer() UCContainer {
 	}
 	uv := userMiddleware.UserValidator{}
 
+	//создание таблицы пользователя
 	createUserTable(dbDecorator)
-	factory.InitServer(dbDecorator, redisDecorator)
+
+	//старт тестового сервера
+	httpServer := startTestServer(t, dbDecorator, redisDecorator)
 
 	return UCContainer{
 		ExternalServices: ExternalServices{
 			DBDecorator:    dbDecorator,
 			RedisDecorator: redisDecorator,
 		},
+		HttpServer: httpServer,
 		HttpClient: factory.InitHttpClient(),
 		UserController: &user.UserController{
 			Controller:    ac,
@@ -74,8 +80,21 @@ func createUserTable(dbDecorator service.DBDecorator) {
 	}
 }
 
+func startTestServer(t *testing.T, db service.DBDecorator, redis service.RedisDecorator) *httptest.Server {
+	t.Helper()
+
+	mux := factory.BuildServer(db, redis)
+	server := httptest.NewServer(mux)
+
+	t.Cleanup(func() {
+		server.Close()
+	})
+
+	return server
+}
+
 func TestCreateSuccess(t *testing.T) {
-	ucc := initUCContainer()
+	ucc := initUCContainer(t)
 
 	newUser := userModels.User{
 		Name:    "Andrey",
@@ -98,7 +117,7 @@ func TestCreateSuccess(t *testing.T) {
 }
 
 func TestCreateAndGetSuccess(t *testing.T) {
-	ucc := initUCContainer()
+	ucc := initUCContainer(t)
 
 	newUser := userModels.User{
 		Name:    "Andrey",

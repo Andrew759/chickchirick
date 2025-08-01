@@ -11,8 +11,8 @@ type BanController struct {
 	Controller abstraction.Controller
 }
 
-func (bc *BanController) HandleRequest() {
-	http.HandleFunc("/user/bans", func(w http.ResponseWriter, r *http.Request) {
+func (bc *BanController) HandleRequest(mux *http.ServeMux) {
+	mux.HandleFunc("/user/bans", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			bc.GetBans(w)
@@ -21,7 +21,7 @@ func (bc *BanController) HandleRequest() {
 		}
 	})
 
-	http.HandleFunc("/user/ban", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/user/ban", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			bc.GetBan(w, r)

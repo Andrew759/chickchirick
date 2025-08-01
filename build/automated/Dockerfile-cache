@@ -10,6 +10,7 @@ WORKDIR /app
 # Копируется go.mod и go.sum из корневой директории
 COPY ./go.mod ./go.sum ./
 
+# Загружаются зависимости go. Кэши используются даже для пакетов Go
 RUN --mount=type=cache,target=/go/pkg/mod \
  go mod download
 
