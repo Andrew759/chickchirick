@@ -75,8 +75,9 @@ func ReadEntityFile(path string, entityNames []string) ([]migratorDto.MigratorIn
 		mInfo.EntityNamespace = entityNamespace
 
 		mInfo.FillByEntity(*structure)
-
-		mInfoList = append(mInfoList, mInfo)
+		if !mInfo.HasError() {
+			mInfoList = append(mInfoList, mInfo)
+		}
 	}
 
 	return mInfoList, nil

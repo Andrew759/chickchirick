@@ -14,8 +14,8 @@ type PropertyController struct {
 	userMiddleware.PropertyValidator
 }
 
-func (pc *PropertyController) HandleRequest() {
-	http.HandleFunc("/user/properties", func(w http.ResponseWriter, r *http.Request) {
+func (pc *PropertyController) HandleRequest(mux *http.ServeMux) {
+	mux.HandleFunc("/user/properties", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			pc.GetProperties(w)
@@ -24,7 +24,7 @@ func (pc *PropertyController) HandleRequest() {
 		}
 	})
 
-	http.HandleFunc("/user/property", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/user/property", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			pc.GetProperty(w, r)

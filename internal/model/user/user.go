@@ -8,7 +8,7 @@ type User struct {
 	Phone      string `json:"phone" gorm:"type:varchar(30)"`
 	Name       string `json:"name" gorm:"type:varchar(256)"`
 	Surname    string `json:"surname" gorm:"type:varchar(256)"`
-	Login      string `json:"login" gorm:"type:varchar(256)"`
+	Login      string `json:"login" gorm:"type:varchar(256);unique"`
 }
 
 func CreateUser(db *gorm.DB, u *User) error {

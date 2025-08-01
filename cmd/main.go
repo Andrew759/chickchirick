@@ -20,5 +20,5 @@ func main() {
 
 	//TODO: если не потребуется - удалить
 	//httpClient := factory.InitHttpClient()
-	factory.InitServer(dbDecorator, redisDecorator)
+	factory.BuildAndServe(dbDecorator, redisDecorator)
 }

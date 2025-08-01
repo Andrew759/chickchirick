@@ -11,8 +11,8 @@ type CodeController struct {
 	Controller abstraction.Controller
 }
 
-func (cc *CodeController) HandleRequest() {
-	http.HandleFunc("/auth/codes", func(w http.ResponseWriter, r *http.Request) {
+func (cc *CodeController) HandleRequest(mux *http.ServeMux) {
+	mux.HandleFunc("/auth/codes", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			cc.GetCodes(w)
@@ -21,7 +21,7 @@ func (cc *CodeController) HandleRequest() {
 		}
 	})
 
-	http.HandleFunc("/auth/code", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/auth/code", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			cc.GetCode(w, r)

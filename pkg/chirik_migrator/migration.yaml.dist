@@ -7,4 +7,5 @@ ENABLE_UPDATED_AT_COLUMN: true
 ENABLE_DELETE_AT_COLUMN: true
 FIXTURE_COUNT: 5
 FIXTURE_PREFIX: fixture
+#Пример заполнения FIXTURE_NIL_COLUMNS: deleted_at, created_at, updated
 FIXTURE_NIL_COLUMNS: deleted_at
