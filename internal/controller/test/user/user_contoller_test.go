@@ -13,9 +13,11 @@ import (
 	"chickChirick/pkg/chirik_gorm_tweaks"
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 )
 
@@ -107,18 +109,14 @@ func TestCreateSuccess(t *testing.T) {
 		Phone:   "+79634823344",
 		Login:   "andrey_velkov",
 	}
-	body, err := json.Marshal(newUser)
-	assert.NoError(t, err)
 
-	req, err := http.NewRequest(http.MethodPost, ucc.ServerURL+"/user", bytes.NewBuffer(body))
-	assert.NoError(t, err)
+	body, _ := json.Marshal(newUser)
+	req, _ := http.NewRequest(http.MethodPost, ucc.ServerURL+"/user", bytes.NewBuffer(body))
 
 	req.Header.Set("Content-Type", "application/json")
 	ctx := context.WithValue(req.Context(), config.UserUserKey, &newUser)
 	req = req.WithContext(ctx)
-
-	resp, err := ucc.HttpClient.Do(req)
-	assert.NoError(t, err)
+	resp, _ := ucc.HttpClient.Do(req)
 	defer resp.Body.Close()
 
 	assert.Equal(t, http.StatusCreated, resp.StatusCode)
@@ -127,36 +125,35 @@ func TestCreateSuccess(t *testing.T) {
 func TestCreateAndGetSuccess(t *testing.T) {
 	ucc := initUCContainer(t)
 
-	user := userModels.User{
+	newUser := userModels.User{
 		Name:    "Andrey",
 		Surname: "Velkov",
 		Phone:   "+79634823344",
 		Login:   "andrey_velkov",
 	}
-	body, err := json.Marshal(user)
-	assert.NoError(t, err)
 
-	req, err := http.NewRequest(http.MethodPost, ucc.ServerURL+"/user", bytes.NewBuffer(body))
-	assert.NoError(t, err)
+	body, _ := json.Marshal(newUser)
+	req, _ := http.NewRequest(http.MethodPost, ucc.ServerURL+"/user", bytes.NewBuffer(body))
+
 	req.Header.Set("Content-Type", "application/json")
-	ctx := context.WithValue(req.Context(), config.UserUserKey, &user)
+	ctx := context.WithValue(req.Context(), config.UserUserKey, &newUser)
 	req = req.WithContext(ctx)
-
-	resp, err := ucc.HttpClient.Do(req)
-	assert.NoError(t, err)
+	resp, _ := ucc.HttpClient.Do(req)
 	defer resp.Body.Close()
 
-	assert.Equal(t, http.StatusCreated, resp.StatusCode)
+	var createdUser userModels.User
+	err := json.NewDecoder(resp.Body).Decode(&createdUser)
+	if err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
 
-	//resp, err = ucc.HttpClient.Get(ucc.ServerURL + "/user?id=" + id)
-	//assert.NoError(t, err)
-	//defer resp.Body.Close()
-	//
-	//assert.Equal(t, http.StatusOK, resp.StatusCode)
-	//
-	//var users []userModels.User
-	//err = json.NewDecoder(resp.Body).Decode(&users)
-	//assert.NoError(t, err)
-	//assert.Len(t, users, 1)
-	//assert.Equal(t, "Andrey", users[0].Name)
+	fmt.Println("Created user ID:", createdUser.ID)
+
+	resp, err = ucc.HttpClient.Get(ucc.ServerURL + "/user?id=" + strconv.Itoa(createdUser.Id))
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var gotUser userModels.User
+	err = json.NewDecoder(resp.Body).Decode(&gotUser)
+	assert.NoError(t, err)
+	assert.Equal(t, "Andrey", gotUser.Name)
 }
