@@ -1,6 +1,10 @@
 package user
 
-import "gorm.io/gorm"
+import (
+	"errors"
+	"fmt"
+	"gorm.io/gorm"
+)
 
 type User struct {
 	gorm.Model `c_migrator:"enabled"`
@@ -11,8 +15,34 @@ type User struct {
 	Login      string `json:"login" gorm:"type:varchar(256);unique"`
 }
 
+type UserAlreadyExistErr struct {
+	Field string
+	Value string
+}
+
+func (e *UserAlreadyExistErr) Error() string {
+	return fmt.Sprintf("user with %s '%s' already exists", e.Field, e.Value)
+}
+
+var UserNotFoundErr = errors.New("user not found")
+
 func CreateUser(db *gorm.DB, u *User) error {
+	var existing User
+	err := db.Where("login = ? OR phone = ?", u.Login, u.Phone).First(&existing).Error
+
+	if err == nil {
+		if existing.Login == u.Login {
+			return &UserAlreadyExistErr{Field: "login", Value: u.Login}
+		}
+		if existing.Phone == u.Phone {
+			return &UserAlreadyExistErr{Field: "phone", Value: u.Phone}
+		}
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return err
+	}
+
 	return db.Create(u).Error
+
 }
 
 func UpdateUser(db *gorm.DB, u *User) error {
@@ -29,6 +59,10 @@ func GetAllUsers(db *gorm.DB) ([]User, error) {
 func GetUserById(db *gorm.DB, id int) (User, error) {
 	var user User
 	result := db.First(&user, id)
+
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return User{}, UserNotFoundErr
+	}
 
 	return user, result.Error
 }
