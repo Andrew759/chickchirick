@@ -15,7 +15,7 @@ func IsLogin(s string) bool {
 }
 
 func IsPhoneNumber(s string) bool {
-	return regexp.MustCompile(`^\+?[0-9\s\-\(\)]{7,20}$`).MatchString(s)
+	return regexp.MustCompile(`^\+?[1-9]\d{6,14}$`).MatchString(s)
 }
 
 func IsEmail(s string) bool {

@@ -102,6 +102,7 @@ func startTestServer(t *testing.T, db service.DBDecorator, redis service.RedisDe
 	return httptest.NewServer(mux)
 }
 
+// TODO doCreateUserRequest удалить t *testing.T, если не будет использоваться
 func doCreateUserRequest(t *testing.T, uctc UserControllerTestContainer, newUser userModels.User) (
 	*http.Response,
 	http_transaction.Response,
@@ -251,9 +252,125 @@ func TestCreateWithToLongSurnameFail(t *testing.T) {
 	assert.Equal(t, "invalid surname", result.FirstError().Error())
 }
 
-func TestCreateWithWrongPhoneFail(t *testing.T) {}
+func TestCreateWithEmptyPhoneFail(t *testing.T) {
+	uctc := initUCContainer(t)
 
-func TestCreateWithWrongLoginFail(t *testing.T) {}
+	newUser := userModels.User{
+		Name:    "Andrey",
+		Surname: "Velkov",
+		Phone:   "",
+		Login:   "andrey_velkov",
+	}
+	resp, result := doCreateUserRequest(t, uctc, newUser)
+
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	assert.Equal(t, "invalid phone", result.FirstError().Error())
+}
+
+func TestCreateWithToLongPhoneFail(t *testing.T) {
+	uctc := initUCContainer(t)
+
+	newUser := userModels.User{
+		Name:    "Andrey",
+		Surname: "Velkov",
+		Phone:   "99999999999999999",
+		Login:   "andrey_velkov",
+	}
+	resp, result := doCreateUserRequest(t, uctc, newUser)
+
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	assert.Equal(t, "invalid phone", result.FirstError().Error())
+}
+
+func TestCreateWithToShortPhoneFail(t *testing.T) {
+	uctc := initUCContainer(t)
+
+	newUser := userModels.User{
+		Name:    "Andrey",
+		Surname: "Velkov",
+		Phone:   "95144",
+		Login:   "andrey_velkov",
+	}
+	resp, result := doCreateUserRequest(t, uctc, newUser)
+
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	assert.Equal(t, "invalid phone", result.FirstError().Error())
+}
+
+func TestCreateWithInvalidPhoneFormatFail(t *testing.T) {
+	uctc := initUCContainer(t)
+
+	newUser := userModels.User{
+		Name:    "Andrey",
+		Surname: "Velkov",
+		Phone:   "+79634823344_",
+		Login:   "andrey_velkov",
+	}
+	resp, result := doCreateUserRequest(t, uctc, newUser)
+
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	assert.Equal(t, "invalid phone", result.FirstError().Error())
+}
+
+func TestCreateWithEmptyLoginFail(t *testing.T) {
+	uctc := initUCContainer(t)
+
+	newUser := userModels.User{
+		Name:    "Andrey",
+		Surname: "Velkov",
+		Phone:   "+79634823344",
+		Login:   "",
+	}
+	resp, result := doCreateUserRequest(t, uctc, newUser)
+
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	assert.Equal(t, "invalid login", result.FirstError().Error())
+}
+
+func TestCreateWithToShortLoginFail(t *testing.T) {
+	uctc := initUCContainer(t)
+
+	newUser := userModels.User{
+		Name:    "Andrey",
+		Surname: "Velkov",
+		Phone:   "+79634823344",
+		Login:   "s",
+	}
+	resp, result := doCreateUserRequest(t, uctc, newUser)
+
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	assert.Equal(t, "invalid login", result.FirstError().Error())
+}
+
+func TestCreateWithToLongLoginFail(t *testing.T) {
+	uctc := initUCContainer(t)
+
+	newUser := userModels.User{
+		Name:    "Andrey",
+		Surname: "Velkov",
+		Phone:   "+79634823344",
+		Login:   chirik_faker.FakeStringWithLength(257),
+	}
+	resp, result := doCreateUserRequest(t, uctc, newUser)
+
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	assert.Equal(t, "invalid login", result.FirstError().Error())
+}
+
+func TestCreateWithInvalidLoginFail(t *testing.T) {
+	uctc := initUCContainer(t)
+
+	newUser := userModels.User{
+		Name:    "Andrey",
+		Surname: "Velkov",
+		Phone:   "+79634823344",
+		Login:   "@ll_names_are_coo!_",
+	}
+	resp, result := doCreateUserRequest(t, uctc, newUser)
+
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	assert.Equal(t, "invalid login", result.FirstError().Error())
+}
 
 func TestCreateAndGetSuccess(t *testing.T) {
 	uctc := initUCContainer(t)
@@ -339,6 +456,7 @@ func TestCreateTwoUsersAndGetAll(t *testing.T) {
 
 	assert.NoError(t, err)
 
+	//TODO: удалить. Также доработать автотест. Сейчас он ничего не проверяет!
 	fmt.Println(firstUserResult, secondUserResult)
 }
 
