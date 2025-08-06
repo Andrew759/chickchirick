@@ -11,9 +11,11 @@ import (
 	"chickChirick/internal/middleware/config"
 	userMiddleware "chickChirick/internal/middleware/validators/user"
 	userModels "chickChirick/internal/model/user"
+	"chickChirick/pkg/chirik_faker"
 	"chickChirick/pkg/chirik_gorm_tweaks"
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
@@ -100,8 +102,27 @@ func startTestServer(t *testing.T, db service.DBDecorator, redis service.RedisDe
 	return httptest.NewServer(mux)
 }
 
+func doCreateUserRequest(t *testing.T, uctc UserControllerTestContainer, newUser userModels.User) (
+	*http.Response,
+	http_transaction.Response,
+) {
+	body, _ := json.Marshal(newUser)
+	req, _ := http.NewRequest(http.MethodPost, uctc.ServerURL+"/user", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	ctx := context.WithValue(req.Context(), config.UserUserKey, &newUser)
+	req = req.WithContext(ctx)
+
+	resp, _ := uctc.HttpClient.Do(req)
+	defer resp.Body.Close()
+
+	var result http_transaction.Response
+	json.NewDecoder(resp.Body).Decode(&result)
+
+	return resp, result
+}
+
 func TestCreateSuccess(t *testing.T) {
-	ucc := initUCContainer(t)
+	uctc := initUCContainer(t)
 
 	newUser := userModels.User{
 		Name:    "Andrey",
@@ -109,18 +130,7 @@ func TestCreateSuccess(t *testing.T) {
 		Phone:   "+79634823344",
 		Login:   "andrey_velkov",
 	}
-
-	body, _ := json.Marshal(newUser)
-	req, _ := http.NewRequest(http.MethodPost, ucc.ServerURL+"/user", bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
-	ctx := context.WithValue(req.Context(), config.UserUserKey, &newUser)
-	req = req.WithContext(ctx)
-
-	resp, _ := ucc.HttpClient.Do(req)
-	defer resp.Body.Close()
-
-	var result http_transaction.Response
-	json.NewDecoder(resp.Body).Decode(&result)
+	resp, result := doCreateUserRequest(t, uctc, newUser)
 
 	var createdUser userModels.User
 	json.NewDecoder(result.ResultContainer).Decode(&createdUser)
@@ -134,7 +144,7 @@ func TestCreateSuccess(t *testing.T) {
 }
 
 func TestCreateRepeatLoginFail(t *testing.T) {
-	ucc := initUCContainer(t)
+	uctc := initUCContainer(t)
 
 	newUser := userModels.User{
 		Name:    "Andrey",
@@ -142,17 +152,7 @@ func TestCreateRepeatLoginFail(t *testing.T) {
 		Phone:   "+79634823344",
 		Login:   "andrey_velkov",
 	}
-
-	body, _ := json.Marshal(newUser)
-	req, _ := http.NewRequest(http.MethodPost, ucc.ServerURL+"/user", bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
-	ctx := context.WithValue(req.Context(), config.UserUserKey, &newUser)
-	req = req.WithContext(ctx)
-
-	resp, _ := ucc.HttpClient.Do(req)
-	defer resp.Body.Close()
-
-	assert.Equal(t, http.StatusCreated, resp.StatusCode)
+	firstUserWithSameLoginResp, _ := doCreateUserRequest(t, uctc, newUser)
 
 	secondNewUser := userModels.User{
 		Name:    "Andrey",
@@ -160,25 +160,15 @@ func TestCreateRepeatLoginFail(t *testing.T) {
 		Phone:   "+79634823343",
 		Login:   "andrey_velkov",
 	}
+	secondUserWithSameLoginResp, secondUserResult := doCreateUserRequest(t, uctc, secondNewUser)
 
-	body, _ = json.Marshal(secondNewUser)
-	req, _ = http.NewRequest(http.MethodPost, ucc.ServerURL+"/user", bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
-	ctx = context.WithValue(req.Context(), config.UserUserKey, &newUser)
-	req = req.WithContext(ctx)
-
-	resp, _ = ucc.HttpClient.Do(req)
-	defer resp.Body.Close()
-
-	var result http_transaction.Response
-	json.NewDecoder(resp.Body).Decode(&result)
-
-	assert.Equal(t, http.StatusConflict, resp.StatusCode)
-	assert.Equal(t, "user with login 'andrey_velkov' already exists", result.ErrorContainer.Message)
+	assert.Equal(t, http.StatusCreated, firstUserWithSameLoginResp.StatusCode)
+	assert.Equal(t, http.StatusConflict, secondUserWithSameLoginResp.StatusCode)
+	assert.Equal(t, "user with login 'andrey_velkov' already exists", secondUserResult.FirstError().Error())
 }
 
 func TestCreateRepeatPhoneFail(t *testing.T) {
-	ucc := initUCContainer(t)
+	uctc := initUCContainer(t)
 
 	newUser := userModels.User{
 		Name:    "Andrey",
@@ -186,17 +176,7 @@ func TestCreateRepeatPhoneFail(t *testing.T) {
 		Phone:   "+79634823344",
 		Login:   "andrey_velkov",
 	}
-
-	body, _ := json.Marshal(newUser)
-	req, _ := http.NewRequest(http.MethodPost, ucc.ServerURL+"/user", bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
-	ctx := context.WithValue(req.Context(), config.UserUserKey, &newUser)
-	req = req.WithContext(ctx)
-
-	resp, _ := ucc.HttpClient.Do(req)
-	defer resp.Body.Close()
-
-	assert.Equal(t, http.StatusCreated, resp.StatusCode)
+	firstUserWithSamePhoneResp, _ := doCreateUserRequest(t, uctc, newUser)
 
 	secondNewUser := userModels.User{
 		Name:    "Andrey",
@@ -204,25 +184,79 @@ func TestCreateRepeatPhoneFail(t *testing.T) {
 		Phone:   "+79634823344",
 		Login:   "andrey_velkov2",
 	}
+	secondUserWithSamePhoneResp, secondUserResult := doCreateUserRequest(t, uctc, secondNewUser)
 
-	body, _ = json.Marshal(secondNewUser)
-	req, _ = http.NewRequest(http.MethodPost, ucc.ServerURL+"/user", bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
-	ctx = context.WithValue(req.Context(), config.UserUserKey, &newUser)
-	req = req.WithContext(ctx)
-
-	resp, _ = ucc.HttpClient.Do(req)
-	defer resp.Body.Close()
-
-	var result http_transaction.Response
-	json.NewDecoder(resp.Body).Decode(&result)
-
-	assert.Equal(t, http.StatusConflict, resp.StatusCode)
-	assert.Equal(t, "user with phone '+79634823344' already exists", result.ErrorContainer.Message)
+	assert.Equal(t, http.StatusCreated, firstUserWithSamePhoneResp.StatusCode)
+	assert.Equal(t, http.StatusConflict, secondUserWithSamePhoneResp.StatusCode)
+	assert.Equal(t, "user with phone '+79634823344' already exists", secondUserResult.FirstError().Error())
 }
 
+func TestCreateWithEmptyNameFail(t *testing.T) {
+	uctc := initUCContainer(t)
+
+	newUser := userModels.User{
+		Name:    "",
+		Surname: "Velkov",
+		Phone:   "+79634823344",
+		Login:   "andrey_velkov",
+	}
+	resp, result := doCreateUserRequest(t, uctc, newUser)
+
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	assert.Equal(t, "invalid name", result.FirstError().Error())
+}
+
+func TestCreateWithToLongNameFail(t *testing.T) {
+	uctc := initUCContainer(t)
+
+	newUser := userModels.User{
+		Name:    chirik_faker.FakeStringWithLength(257),
+		Surname: "Velkov",
+		Phone:   "+79634823344",
+		Login:   "andrey_velkov",
+	}
+	resp, result := doCreateUserRequest(t, uctc, newUser)
+
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	assert.Equal(t, "invalid name", result.FirstError().Error())
+}
+
+func TestCreateWithEmptySurnameFail(t *testing.T) {
+	uctc := initUCContainer(t)
+
+	newUser := userModels.User{
+		Name:    "Andrey",
+		Surname: "",
+		Phone:   "+79634823344",
+		Login:   "andrey_velkov",
+	}
+	resp, result := doCreateUserRequest(t, uctc, newUser)
+
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	assert.Equal(t, "invalid surname", result.FirstError().Error())
+}
+
+func TestCreateWithToLongSurnameFail(t *testing.T) {
+	uctc := initUCContainer(t)
+
+	newUser := userModels.User{
+		Name:    "Andrey",
+		Surname: chirik_faker.FakeStringWithLength(257),
+		Phone:   "+79634823344",
+		Login:   "andrey_velkov",
+	}
+	resp, result := doCreateUserRequest(t, uctc, newUser)
+
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	assert.Equal(t, "invalid surname", result.FirstError().Error())
+}
+
+func TestCreateWithWrongPhoneFail(t *testing.T) {}
+
+func TestCreateWithWrongLoginFail(t *testing.T) {}
+
 func TestCreateAndGetSuccess(t *testing.T) {
-	ucc := initUCContainer(t)
+	uctc := initUCContainer(t)
 
 	newUser := userModels.User{
 		Name:    "Andrey",
@@ -230,31 +264,21 @@ func TestCreateAndGetSuccess(t *testing.T) {
 		Phone:   "+79634823344",
 		Login:   "andrey_velkov",
 	}
+	_, createResult := doCreateUserRequest(t, uctc, newUser)
 
-	body, _ := json.Marshal(newUser)
-	req, _ := http.NewRequest(http.MethodPost, ucc.ServerURL+"/user", bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
-	ctx := context.WithValue(req.Context(), config.UserUserKey, &newUser)
-	req = req.WithContext(ctx)
-
-	resp, _ := ucc.HttpClient.Do(req)
-	defer resp.Body.Close()
-
-	var createResult http_transaction.Response
-	json.NewDecoder(resp.Body).Decode(&createResult)
 	var createdUser userModels.User
 	json.NewDecoder(createResult.ResultContainer).Decode(&createdUser)
 
-	resp, err := ucc.HttpClient.Get(ucc.ServerURL + "/user?id=" + strconv.Itoa(createdUser.Id))
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	getResp, err := uctc.HttpClient.Get(uctc.ServerURL + "/user?id=" + strconv.Itoa(createdUser.Id))
+	defer getResp.Body.Close()
 
 	var getResult http_transaction.Response
-	json.NewDecoder(resp.Body).Decode(&getResult)
+	json.NewDecoder(getResp.Body).Decode(&getResult)
 	var gotUser userModels.User
 	json.NewDecoder(getResult.ResultContainer).Decode(&gotUser)
 
 	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, http.StatusOK, getResp.StatusCode)
 	assert.Equal(t, newUser.Name, gotUser.Name)
 	assert.Equal(t, newUser.Surname, gotUser.Surname)
 	assert.Equal(t, newUser.Phone, gotUser.Phone)
@@ -262,9 +286,61 @@ func TestCreateAndGetSuccess(t *testing.T) {
 	assert.Equal(t, createdUser.Id, gotUser.Id)
 }
 
-func TestCreateAndGetNotExistingUserFail(t *testing.T) {}
+func TestCreateAndGetNotExistingUserFail(t *testing.T) {
+	uctc := initUCContainer(t)
 
-func TestCreateAndGetAll(t *testing.T) {}
+	newUser := userModels.User{
+		Name:    "Andrey",
+		Surname: "Velkov",
+		Phone:   "+79634823344",
+		Login:   "andrey_velkov",
+	}
+	_, createResult := doCreateUserRequest(t, uctc, newUser)
+
+	var createdUser userModels.User
+	json.NewDecoder(createResult.ResultContainer).Decode(&createdUser)
+
+	notExistUserId := createdUser.Id + 1
+	getResp, err := uctc.HttpClient.Get(uctc.ServerURL + "/user?id=" + strconv.Itoa(notExistUserId))
+	defer getResp.Body.Close()
+
+	var getResult http_transaction.Response
+	json.NewDecoder(getResp.Body).Decode(&getResult)
+
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusNotFound, getResp.StatusCode)
+	assert.Equal(t, userModels.UserNotFoundErr, getResult.FirstError())
+}
+
+func TestCreateTwoUsersAndGetAll(t *testing.T) {
+	uctc := initUCContainer(t)
+
+	firstUser := userModels.User{
+		Name:    "Andrey",
+		Surname: "Velkov",
+		Phone:   "+79634823344",
+		Login:   "andrey_velkov",
+	}
+	_, firstUserResult := doCreateUserRequest(t, uctc, firstUser)
+
+	secondUser := userModels.User{
+		Name:    "Andrey",
+		Surname: "Velkov",
+		Phone:   "+79634823343",
+		Login:   "andrey_velkov2",
+	}
+	_, secondUserResult := doCreateUserRequest(t, uctc, secondUser)
+
+	getAllResp, err := uctc.HttpClient.Get(uctc.ServerURL + "/users")
+	defer getAllResp.Body.Close()
+
+	var getAllResult http_transaction.Response
+	json.NewDecoder(getAllResp.Body).Decode(&getAllResult)
+
+	assert.NoError(t, err)
+
+	fmt.Println(firstUserResult, secondUserResult)
+}
 
 func TestUpdateUserSuccess(t *testing.T) {}
 

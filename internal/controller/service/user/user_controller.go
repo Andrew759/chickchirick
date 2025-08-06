@@ -21,7 +21,7 @@ func (uc *UserController) HandleRequest() {
 		case http.MethodGet:
 			uc.GetUsers(w)
 		default:
-			http_transaction.NewResponse().Error(w, http.StatusMethodNotAllowed, "Method not allowed")
+			http_transaction.NewResponse().SendError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}
 	})
 
@@ -36,7 +36,7 @@ func (uc *UserController) HandleRequest() {
 		case http.MethodDelete:
 			uc.DeleteUser(w, r)
 		default:
-			http_transaction.NewResponse().Error(w, http.StatusMethodNotAllowed, "Method not allowed")
+			http_transaction.NewResponse().SendError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}
 	})
 }
@@ -44,25 +44,25 @@ func (uc *UserController) HandleRequest() {
 func (uc *UserController) GetUsers(w http.ResponseWriter) {
 	users, err := user.GetAllUsers(uc.Controller.Dependencies.DBDecorator.GDB())
 	if err != nil {
-		http_transaction.NewResponse().Error(w, http.StatusInternalServerError, err.Error())
+		http_transaction.NewResponse().SendError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	http_transaction.NewResponse().Success(w, http.StatusOK, users)
+	http_transaction.NewResponse().SendSuccess(w, http.StatusOK, users)
 }
 
 func (uc *UserController) GetUser(w http.ResponseWriter, r *http.Request) {
 	id := uc.Controller.GETId(w, r)
 	u, err := user.GetUserById(uc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil && errors.Is(err, user.UserNotFoundErr) {
-		http_transaction.NewResponse().Error(w, http.StatusNotFound, err.Error())
+		http_transaction.NewResponse().SendError(w, http.StatusNotFound, err.Error())
 		return
 	} else if err != nil {
-		http_transaction.NewResponse().Error(w, http.StatusInternalServerError, err.Error())
+		http_transaction.NewResponse().SendError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	http_transaction.NewResponse().Success(w, http.StatusOK, u)
+	http_transaction.NewResponse().SendSuccess(w, http.StatusOK, u)
 }
 
 func (uc *UserController) CreateUser(w http.ResponseWriter, r *http.Request) {
@@ -74,14 +74,14 @@ func (uc *UserController) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	var userAlreadyExistError *user.UserAlreadyExistErr
 	if err != nil && errors.As(err, &userAlreadyExistError) {
-		http_transaction.NewResponse().Error(w, http.StatusConflict, err.Error())
+		http_transaction.NewResponse().SendError(w, http.StatusConflict, err.Error())
 		return
 	} else if err != nil {
-		http_transaction.NewResponse().Error(w, http.StatusInternalServerError, "Failed to create user. "+err.Error())
+		http_transaction.NewResponse().SendError(w, http.StatusInternalServerError, "Failed to create user. "+err.Error())
 		return
 	}
 
-	http_transaction.NewResponse().Success(w, http.StatusCreated, u)
+	http_transaction.NewResponse().SendSuccess(w, http.StatusCreated, u)
 }
 
 func (uc *UserController) UpdateUser(w http.ResponseWriter, r *http.Request) {
@@ -91,20 +91,20 @@ func (uc *UserController) UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	err := user.UpdateUser(uc.Controller.Dependencies.DBDecorator.GDB(), u)
 	if err != nil {
-		http_transaction.NewResponse().Error(w, http.StatusInternalServerError, "Failed to update user. "+err.Error())
+		http_transaction.NewResponse().SendError(w, http.StatusInternalServerError, "Failed to update user. "+err.Error())
 		return
 	}
 
-	http_transaction.NewResponse().Success(w, http.StatusOK, u)
+	http_transaction.NewResponse().SendSuccess(w, http.StatusOK, u)
 }
 
 func (uc *UserController) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	id := uc.Controller.GETId(w, r)
 	err := user.DeleteUserById(uc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
-		http_transaction.NewResponse().Error(w, http.StatusInternalServerError, "Failed to delete user. "+err.Error())
+		http_transaction.NewResponse().SendError(w, http.StatusInternalServerError, "Failed to delete user. "+err.Error())
 		return
 	}
 
-	http_transaction.NewResponse().Success(w, http.StatusNoContent, nil)
+	http_transaction.NewResponse().SendSuccess(w, http.StatusNoContent, nil)
 }
