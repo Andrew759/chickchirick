@@ -107,6 +107,8 @@ func doCreateUserRequest(t *testing.T, uctc UserControllerTestContainer, newUser
 	*http.Response,
 	http_transaction.Response,
 ) {
+	t.Helper()
+
 	body, _ := json.Marshal(newUser)
 	req, _ := http.NewRequest(http.MethodPost, uctc.ServerURL+"/user", bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
@@ -116,10 +118,10 @@ func doCreateUserRequest(t *testing.T, uctc UserControllerTestContainer, newUser
 	resp, _ := uctc.HttpClient.Do(req)
 	defer resp.Body.Close()
 
-	var result http_transaction.Response
-	json.NewDecoder(resp.Body).Decode(&result)
+	var decodedResponse http_transaction.Response
+	json.NewDecoder(resp.Body).Decode(&decodedResponse)
 
-	return resp, result
+	return resp, decodedResponse
 }
 
 func TestCreateSuccess(t *testing.T) {
@@ -131,10 +133,10 @@ func TestCreateSuccess(t *testing.T) {
 		Phone:   "+79634823344",
 		Login:   "andrey_velkov",
 	}
-	resp, result := doCreateUserRequest(t, uctc, newUser)
+	resp, decodedResponse := doCreateUserRequest(t, uctc, newUser)
 
 	var createdUser userModels.User
-	json.NewDecoder(result.ResultContainer).Decode(&createdUser)
+	json.NewDecoder(decodedResponse.PayloadContainer).Decode(&createdUser)
 
 	assert.Equal(t, http.StatusCreated, resp.StatusCode)
 	assert.Equal(t, newUser.Name, createdUser.Name)
@@ -161,11 +163,11 @@ func TestCreateRepeatLoginFail(t *testing.T) {
 		Phone:   "+79634823343",
 		Login:   "andrey_velkov",
 	}
-	secondUserWithSameLoginResp, secondUserResult := doCreateUserRequest(t, uctc, secondNewUser)
+	secondUserWithSameLoginResp, secondUserDecodedResp := doCreateUserRequest(t, uctc, secondNewUser)
 
 	assert.Equal(t, http.StatusCreated, firstUserWithSameLoginResp.StatusCode)
 	assert.Equal(t, http.StatusConflict, secondUserWithSameLoginResp.StatusCode)
-	assert.Equal(t, "user with login 'andrey_velkov' already exists", secondUserResult.FirstError().Error())
+	assert.Equal(t, "user with login 'andrey_velkov' already exists", secondUserDecodedResp.FirstError().Error())
 }
 
 func TestCreateRepeatPhoneFail(t *testing.T) {
@@ -185,11 +187,11 @@ func TestCreateRepeatPhoneFail(t *testing.T) {
 		Phone:   "+79634823344",
 		Login:   "andrey_velkov2",
 	}
-	secondUserWithSamePhoneResp, secondUserResult := doCreateUserRequest(t, uctc, secondNewUser)
+	secondUserWithSamePhoneResp, secondUserDecodedResp := doCreateUserRequest(t, uctc, secondNewUser)
 
 	assert.Equal(t, http.StatusCreated, firstUserWithSamePhoneResp.StatusCode)
 	assert.Equal(t, http.StatusConflict, secondUserWithSamePhoneResp.StatusCode)
-	assert.Equal(t, "user with phone '+79634823344' already exists", secondUserResult.FirstError().Error())
+	assert.Equal(t, "user with phone '+79634823344' already exists", secondUserDecodedResp.FirstError().Error())
 }
 
 func TestCreateWithEmptyNameFail(t *testing.T) {
@@ -201,10 +203,10 @@ func TestCreateWithEmptyNameFail(t *testing.T) {
 		Phone:   "+79634823344",
 		Login:   "andrey_velkov",
 	}
-	resp, result := doCreateUserRequest(t, uctc, newUser)
+	resp, decodedResp := doCreateUserRequest(t, uctc, newUser)
 
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
-	assert.Equal(t, "invalid name", result.FirstError().Error())
+	assert.Equal(t, "invalid name", decodedResp.FirstError().Error())
 }
 
 func TestCreateWithToLongNameFail(t *testing.T) {
@@ -216,10 +218,10 @@ func TestCreateWithToLongNameFail(t *testing.T) {
 		Phone:   "+79634823344",
 		Login:   "andrey_velkov",
 	}
-	resp, result := doCreateUserRequest(t, uctc, newUser)
+	resp, decodedResp := doCreateUserRequest(t, uctc, newUser)
 
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
-	assert.Equal(t, "invalid name", result.FirstError().Error())
+	assert.Equal(t, "invalid name", decodedResp.FirstError().Error())
 }
 
 func TestCreateWithEmptySurnameFail(t *testing.T) {
@@ -231,10 +233,10 @@ func TestCreateWithEmptySurnameFail(t *testing.T) {
 		Phone:   "+79634823344",
 		Login:   "andrey_velkov",
 	}
-	resp, result := doCreateUserRequest(t, uctc, newUser)
+	resp, decodedResp := doCreateUserRequest(t, uctc, newUser)
 
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
-	assert.Equal(t, "invalid surname", result.FirstError().Error())
+	assert.Equal(t, "invalid surname", decodedResp.FirstError().Error())
 }
 
 func TestCreateWithToLongSurnameFail(t *testing.T) {
@@ -246,10 +248,10 @@ func TestCreateWithToLongSurnameFail(t *testing.T) {
 		Phone:   "+79634823344",
 		Login:   "andrey_velkov",
 	}
-	resp, result := doCreateUserRequest(t, uctc, newUser)
+	resp, decodedResp := doCreateUserRequest(t, uctc, newUser)
 
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
-	assert.Equal(t, "invalid surname", result.FirstError().Error())
+	assert.Equal(t, "invalid surname", decodedResp.FirstError().Error())
 }
 
 func TestCreateWithEmptyPhoneFail(t *testing.T) {
@@ -261,10 +263,10 @@ func TestCreateWithEmptyPhoneFail(t *testing.T) {
 		Phone:   "",
 		Login:   "andrey_velkov",
 	}
-	resp, result := doCreateUserRequest(t, uctc, newUser)
+	resp, decodedResp := doCreateUserRequest(t, uctc, newUser)
 
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
-	assert.Equal(t, "invalid phone", result.FirstError().Error())
+	assert.Equal(t, "invalid phone", decodedResp.FirstError().Error())
 }
 
 func TestCreateWithToLongPhoneFail(t *testing.T) {
@@ -276,10 +278,10 @@ func TestCreateWithToLongPhoneFail(t *testing.T) {
 		Phone:   "99999999999999999",
 		Login:   "andrey_velkov",
 	}
-	resp, result := doCreateUserRequest(t, uctc, newUser)
+	resp, decodedResp := doCreateUserRequest(t, uctc, newUser)
 
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
-	assert.Equal(t, "invalid phone", result.FirstError().Error())
+	assert.Equal(t, "invalid phone", decodedResp.FirstError().Error())
 }
 
 func TestCreateWithToShortPhoneFail(t *testing.T) {
@@ -291,10 +293,10 @@ func TestCreateWithToShortPhoneFail(t *testing.T) {
 		Phone:   "95144",
 		Login:   "andrey_velkov",
 	}
-	resp, result := doCreateUserRequest(t, uctc, newUser)
+	resp, decodedResp := doCreateUserRequest(t, uctc, newUser)
 
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
-	assert.Equal(t, "invalid phone", result.FirstError().Error())
+	assert.Equal(t, "invalid phone", decodedResp.FirstError().Error())
 }
 
 func TestCreateWithInvalidPhoneFormatFail(t *testing.T) {
@@ -306,10 +308,10 @@ func TestCreateWithInvalidPhoneFormatFail(t *testing.T) {
 		Phone:   "+79634823344_",
 		Login:   "andrey_velkov",
 	}
-	resp, result := doCreateUserRequest(t, uctc, newUser)
+	resp, decodedResp := doCreateUserRequest(t, uctc, newUser)
 
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
-	assert.Equal(t, "invalid phone", result.FirstError().Error())
+	assert.Equal(t, "invalid phone", decodedResp.FirstError().Error())
 }
 
 func TestCreateWithEmptyLoginFail(t *testing.T) {
@@ -321,10 +323,10 @@ func TestCreateWithEmptyLoginFail(t *testing.T) {
 		Phone:   "+79634823344",
 		Login:   "",
 	}
-	resp, result := doCreateUserRequest(t, uctc, newUser)
+	resp, decodedResp := doCreateUserRequest(t, uctc, newUser)
 
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
-	assert.Equal(t, "invalid login", result.FirstError().Error())
+	assert.Equal(t, "invalid login", decodedResp.FirstError().Error())
 }
 
 func TestCreateWithToShortLoginFail(t *testing.T) {
@@ -336,10 +338,10 @@ func TestCreateWithToShortLoginFail(t *testing.T) {
 		Phone:   "+79634823344",
 		Login:   "s",
 	}
-	resp, result := doCreateUserRequest(t, uctc, newUser)
+	resp, decodedResp := doCreateUserRequest(t, uctc, newUser)
 
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
-	assert.Equal(t, "invalid login", result.FirstError().Error())
+	assert.Equal(t, "invalid login", decodedResp.FirstError().Error())
 }
 
 func TestCreateWithToLongLoginFail(t *testing.T) {
@@ -351,10 +353,10 @@ func TestCreateWithToLongLoginFail(t *testing.T) {
 		Phone:   "+79634823344",
 		Login:   chirik_faker.FakeStringWithLength(257),
 	}
-	resp, result := doCreateUserRequest(t, uctc, newUser)
+	resp, decodedResp := doCreateUserRequest(t, uctc, newUser)
 
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
-	assert.Equal(t, "invalid login", result.FirstError().Error())
+	assert.Equal(t, "invalid login", decodedResp.FirstError().Error())
 }
 
 func TestCreateWithInvalidLoginFail(t *testing.T) {
@@ -384,7 +386,7 @@ func TestCreateAndGetSuccess(t *testing.T) {
 	_, createResult := doCreateUserRequest(t, uctc, newUser)
 
 	var createdUser userModels.User
-	json.NewDecoder(createResult.ResultContainer).Decode(&createdUser)
+	json.NewDecoder(createResult.PayloadContainer).Decode(&createdUser)
 
 	getResp, err := uctc.HttpClient.Get(uctc.ServerURL + "/user?id=" + strconv.Itoa(createdUser.Id))
 	defer getResp.Body.Close()
@@ -392,7 +394,7 @@ func TestCreateAndGetSuccess(t *testing.T) {
 	var getResult http_transaction.Response
 	json.NewDecoder(getResp.Body).Decode(&getResult)
 	var gotUser userModels.User
-	json.NewDecoder(getResult.ResultContainer).Decode(&gotUser)
+	json.NewDecoder(getResult.PayloadContainer).Decode(&gotUser)
 
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, getResp.StatusCode)
@@ -415,7 +417,7 @@ func TestCreateAndGetNotExistingUserFail(t *testing.T) {
 	_, createResult := doCreateUserRequest(t, uctc, newUser)
 
 	var createdUser userModels.User
-	json.NewDecoder(createResult.ResultContainer).Decode(&createdUser)
+	json.NewDecoder(createResult.PayloadContainer).Decode(&createdUser)
 
 	notExistUserId := createdUser.Id + 1
 	getResp, err := uctc.HttpClient.Get(uctc.ServerURL + "/user?id=" + strconv.Itoa(notExistUserId))
@@ -455,6 +457,9 @@ func TestCreateTwoUsersAndGetAll(t *testing.T) {
 	json.NewDecoder(getAllResp.Body).Decode(&getAllResult)
 
 	assert.NoError(t, err)
+	assert.Equal(t, 2, getAllResult.PayloadLength())
+
+	//iter.ForEach(getAllResult.Payload)
 
 	//TODO: удалить. Также доработать автотест. Сейчас он ничего не проверяет!
 	fmt.Println(firstUserResult, secondUserResult)
