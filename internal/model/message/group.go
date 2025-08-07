@@ -1,6 +1,7 @@
 package message
 
 import (
+	"chickChirick/pkg/chirik_gorm_tweaks/time"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -10,6 +11,9 @@ type Group struct {
 	MessageId  int       `json:"message_id" gorm:"type:int"`
 	Message    Message   `json:"message" gorm:"references:MessageId"`
 	GroupId    uuid.UUID `json:"GroupId" gorm:"type:uuid"`
+	CreatedAt  time.TimestampWithTimeZoneMicro
+	UpdatedAt  time.TimestampWithTimeZoneMicro
+	DeletedAt  gorm.DeletedAt `gorm:"index"`
 }
 
 func CreateGroup(db *gorm.DB, g *Group) error {

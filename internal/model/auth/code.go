@@ -1,28 +1,27 @@
 package auth
 
 import (
+	"chickChirick/pkg/chirik_gorm_tweaks/time"
 	"gorm.io/gorm"
-	"time"
 )
 
 type Code struct {
 	gorm.Model `c_migrator:"enabled"`
-	Id         int       `json:"id" gorm:"type:int;unique;primaryKey;autoIncrement"`
-	Code       int8      `json:"code" gorm:"type:smallint"`
-	SessionId  int       `json:"session_id" gorm:"type:int"`
-	Session    Session   `json:"session" gorm:"references:SessionId"`
-	ExpiresAt  time.Time `json:"expires_at" gorm:"type:timestamp without time zone"`
+	Id         int                             `json:"id" gorm:"type:int;unique;primaryKey;autoIncrement"`
+	Code       int8                            `json:"code" gorm:"type:smallint"`
+	SessionId  int                             `json:"session_id" gorm:"type:int"`
+	Session    Session                         `json:"session" gorm:"references:SessionId"`
+	ExpiresAt  time.TimestampWithTimeZoneMicro `json:"expires_at" gorm:"type:timestamp without time zone"`
+	CreatedAt  time.TimestampWithTimeZoneMicro
+	UpdatedAt  time.TimestampWithTimeZoneMicro
+	DeletedAt  gorm.DeletedAt `gorm:"index"`
 }
 
 func CreateCode(db *gorm.DB, c *Code) error {
-	c.CreatedAt = time.Now()
-
 	return db.Create(c).Error
 }
 
 func UpdateCode(db *gorm.DB, c *Code) error {
-	c.UpdatedAt = time.Now()
-
 	return db.Save(c).Error
 }
 

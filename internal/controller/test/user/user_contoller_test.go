@@ -12,10 +12,9 @@ import (
 	userMiddleware "chickChirick/internal/middleware/validators/user"
 	userModels "chickChirick/internal/model/user"
 	"chickChirick/pkg/chirik_faker"
-	"chickChirick/pkg/chirik_gorm_tweaks"
+	"chickChirick/pkg/chirik_gorm_tweaks/schema"
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
@@ -87,7 +86,7 @@ func createUserTable(db service.DBDecorator) {
 }
 
 func dropUserTable(uCTC UserControllerTestContainer) {
-	tableName, err := chirik_gorm_tweaks.GetTableName(uCTC.GDB(), userModels.User{})
+	tableName, err := schema.GetTableName(uCTC.GDB(), userModels.User{})
 	if err != nil {
 		panic("failed to get table name: " + err.Error())
 	}
@@ -459,14 +458,8 @@ func TestCreateTwoUsersAndGetAll(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 2, getAllDecodedResp.PayloadLength())
 
-	//TODO: тут баг горм - при создании он возвращает в сущности время одной длины, а при получении - другой
-	//assert.Equal(t, firstUserDecodedResp.Payload, getAllDecodedResp.PayloadContainer.GetPayloadByIndex(0))
-	//assert.Equal(t, secondUserDecodedResp.Payload, getAllDecodedResp.PayloadContainer.GetPayloadByIndex(1))
-
-	//iter.ForEach(getAllResult.Payload)
-
-	//TODO: удалить. Также доработать автотест. Сейчас он ничего не проверяет!
-	fmt.Println(firstUserDecodedResp, secondUserDecodedResp)
+	assert.Equal(t, firstUserDecodedResp.Payload, getAllDecodedResp.PayloadContainer.GetPayloadByIndex(0))
+	assert.Equal(t, secondUserDecodedResp.Payload, getAllDecodedResp.PayloadContainer.GetPayloadByIndex(1))
 }
 
 func TestUpdateUserSuccess(t *testing.T) {

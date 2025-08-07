@@ -1,6 +1,7 @@
 package user
 
 import (
+	"chickChirick/pkg/chirik_gorm_tweaks/time"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -10,6 +11,9 @@ type Photo struct {
 	FieUuid    uuid.UUID `gorm:"type:uuid"`
 	UserId     int       `json:"user_id" gorm:"type:int"`
 	User       User      `json:"user" gorm:"references:UserId"`
+	CreatedAt  time.TimestampWithTimeZoneMicro
+	UpdatedAt  time.TimestampWithTimeZoneMicro
+	DeletedAt  gorm.DeletedAt `gorm:"index"`
 }
 
 func CreatePhoto(db *gorm.DB, b *Photo) error {

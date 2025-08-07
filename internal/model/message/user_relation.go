@@ -1,6 +1,7 @@
 package message
 
 import (
+	"chickChirick/pkg/chirik_gorm_tweaks/time"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -9,6 +10,9 @@ type UserRelation struct {
 	gorm.Model `c_migrator:"enabled"`
 	UserId     int       `json:"id" gorm:"type:int;unique;primaryKey;autoIncrement"`
 	UserUuid   uuid.UUID `json:"user_uuid" gorm:"type:uuid"`
+	CreatedAt  time.TimestampWithTimeZoneMicro
+	UpdatedAt  time.TimestampWithTimeZoneMicro
+	DeletedAt  gorm.DeletedAt `gorm:"index"`
 }
 
 func CreateUserRelation(db *gorm.DB, ur *UserRelation) error {

@@ -1,6 +1,7 @@
 package user
 
 import (
+	"chickChirick/pkg/chirik_gorm_tweaks/time"
 	"errors"
 	"fmt"
 	"gorm.io/gorm"
@@ -13,6 +14,9 @@ type User struct {
 	Name       string `json:"name" gorm:"type:varchar(256)"`
 	Surname    string `json:"surname" gorm:"type:varchar(256)"`
 	Login      string `json:"login" gorm:"type:varchar(256);unique"`
+	CreatedAt  time.TimestampWithTimeZoneMicro
+	UpdatedAt  time.TimestampWithTimeZoneMicro
+	DeletedAt  gorm.DeletedAt `gorm:"index"`
 }
 
 type UserAlreadyExistErr struct {

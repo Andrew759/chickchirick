@@ -1,4 +1,4 @@
-package chirik_gorm_tweaks
+package schema
 
 import "gorm.io/gorm"
 

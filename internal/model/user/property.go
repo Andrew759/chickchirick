@@ -1,6 +1,9 @@
 package user
 
-import "gorm.io/gorm"
+import (
+	"chickChirick/pkg/chirik_gorm_tweaks/time"
+	"gorm.io/gorm"
+)
 
 type Property struct {
 	gorm.Model `c_migrator:"enabled"`
@@ -9,6 +12,9 @@ type Property struct {
 	Timezone   int8    `json:"timezone" gorm:"type:smallint;default:3"`
 	Email      string  `json:"email" gorm:"type:varchar(256)"`
 	Password   *string `json:"password" gorm:"type:varchar(1024)"`
+	CreatedAt  time.TimestampWithTimeZoneMicro
+	UpdatedAt  time.TimestampWithTimeZoneMicro
+	DeletedAt  gorm.DeletedAt `gorm:"index"`
 }
 
 func (Property) TableName() string {
