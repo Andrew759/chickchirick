@@ -23,7 +23,7 @@ func (pv PropertyValidator) Validate(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		if errorList := validateProperty(p); errorList != nil && len(errorList) > 0 {
+		if errorList := validateProperty(p); len(errorList) > 0 {
 			errResponse := http_transaction.NewResponse()
 			errResponse.AddErrorsToErrorContainer(errorList)
 

@@ -79,6 +79,7 @@ func initUCContainer(t *testing.T) UserControllerTestContainer {
 	return uCTC
 }
 
+// TODO: перевести на работу с мигратором. Отказаться от мигратора Gorm
 func createUserTable(db service.DBDecorator) {
 	if err := db.GDB().AutoMigrate(&userModels.User{}); err != nil {
 		panic("failed to migrate user table: " + err.Error())
@@ -102,7 +103,6 @@ func startTestServer(t *testing.T, db service.DBDecorator, redis service.RedisDe
 	return httptest.NewServer(mux)
 }
 
-// TODO doCreateUserRequest удалить t *testing.T, если не будет использоваться
 func doCreateUserRequest(t *testing.T, uctc UserControllerTestContainer, newUser userModels.User) (
 	*http.Response,
 	http_transaction.Response,
@@ -124,7 +124,7 @@ func doCreateUserRequest(t *testing.T, uctc UserControllerTestContainer, newUser
 	return resp, decodedResponse
 }
 
-func TestCreateSuccess(t *testing.T) {
+func TestCreateUserSuccess(t *testing.T) {
 	uctc := initUCContainer(t)
 
 	newUser := userModels.User{
@@ -146,7 +146,7 @@ func TestCreateSuccess(t *testing.T) {
 	assert.Equal(t, createdUser.CreatedAt, createdUser.UpdatedAt)
 }
 
-func TestCreateRepeatLoginFail(t *testing.T) {
+func TestCreateRepeatLoginUserFail(t *testing.T) {
 	uctc := initUCContainer(t)
 
 	newUser := userModels.User{
@@ -170,7 +170,7 @@ func TestCreateRepeatLoginFail(t *testing.T) {
 	assert.Equal(t, "user with login 'andrey_velkov' already exists", secondUserDecodedResp.FirstError().Error())
 }
 
-func TestCreateRepeatPhoneFail(t *testing.T) {
+func TestCreateRepeatPhoneUserFail(t *testing.T) {
 	uctc := initUCContainer(t)
 
 	newUser := userModels.User{
@@ -194,7 +194,7 @@ func TestCreateRepeatPhoneFail(t *testing.T) {
 	assert.Equal(t, "user with phone '+79634823344' already exists", secondUserDecodedResp.FirstError().Error())
 }
 
-func TestCreateWithEmptyNameFail(t *testing.T) {
+func TestCreateUserWithEmptyNameFail(t *testing.T) {
 	uctc := initUCContainer(t)
 
 	newUser := userModels.User{
@@ -209,7 +209,7 @@ func TestCreateWithEmptyNameFail(t *testing.T) {
 	assert.Equal(t, "invalid name", decodedResp.FirstError().Error())
 }
 
-func TestCreateWithToLongNameFail(t *testing.T) {
+func TestCreateWithToLongNameUserFail(t *testing.T) {
 	uctc := initUCContainer(t)
 
 	newUser := userModels.User{
@@ -224,7 +224,7 @@ func TestCreateWithToLongNameFail(t *testing.T) {
 	assert.Equal(t, "invalid name", decodedResp.FirstError().Error())
 }
 
-func TestCreateWithEmptySurnameFail(t *testing.T) {
+func TestCreateWithEmptySurnameUserFail(t *testing.T) {
 	uctc := initUCContainer(t)
 
 	newUser := userModels.User{
@@ -239,7 +239,7 @@ func TestCreateWithEmptySurnameFail(t *testing.T) {
 	assert.Equal(t, "invalid surname", decodedResp.FirstError().Error())
 }
 
-func TestCreateWithToLongSurnameFail(t *testing.T) {
+func TestCreateWithToLongSurnameUserFail(t *testing.T) {
 	uctc := initUCContainer(t)
 
 	newUser := userModels.User{
@@ -254,7 +254,7 @@ func TestCreateWithToLongSurnameFail(t *testing.T) {
 	assert.Equal(t, "invalid surname", decodedResp.FirstError().Error())
 }
 
-func TestCreateWithEmptyPhoneFail(t *testing.T) {
+func TestCreateWithEmptyPhoneUserFail(t *testing.T) {
 	uctc := initUCContainer(t)
 
 	newUser := userModels.User{
@@ -269,7 +269,7 @@ func TestCreateWithEmptyPhoneFail(t *testing.T) {
 	assert.Equal(t, "invalid phone", decodedResp.FirstError().Error())
 }
 
-func TestCreateWithToLongPhoneFail(t *testing.T) {
+func TestCreateWithToLongPhoneUserFail(t *testing.T) {
 	uctc := initUCContainer(t)
 
 	newUser := userModels.User{
@@ -284,7 +284,7 @@ func TestCreateWithToLongPhoneFail(t *testing.T) {
 	assert.Equal(t, "invalid phone", decodedResp.FirstError().Error())
 }
 
-func TestCreateWithToShortPhoneFail(t *testing.T) {
+func TestCreateWithToShortPhoneUserFail(t *testing.T) {
 	uctc := initUCContainer(t)
 
 	newUser := userModels.User{
@@ -299,7 +299,7 @@ func TestCreateWithToShortPhoneFail(t *testing.T) {
 	assert.Equal(t, "invalid phone", decodedResp.FirstError().Error())
 }
 
-func TestCreateWithInvalidPhoneFormatFail(t *testing.T) {
+func TestCreateWithInvalidPhoneFormatUserFail(t *testing.T) {
 	uctc := initUCContainer(t)
 
 	newUser := userModels.User{
@@ -314,7 +314,7 @@ func TestCreateWithInvalidPhoneFormatFail(t *testing.T) {
 	assert.Equal(t, "invalid phone", decodedResp.FirstError().Error())
 }
 
-func TestCreateWithEmptyLoginFail(t *testing.T) {
+func TestCreateWithEmptyLoginUserFail(t *testing.T) {
 	uctc := initUCContainer(t)
 
 	newUser := userModels.User{
@@ -329,7 +329,7 @@ func TestCreateWithEmptyLoginFail(t *testing.T) {
 	assert.Equal(t, "invalid login", decodedResp.FirstError().Error())
 }
 
-func TestCreateWithToShortLoginFail(t *testing.T) {
+func TestCreateWithToShortLoginUserFail(t *testing.T) {
 	uctc := initUCContainer(t)
 
 	newUser := userModels.User{
@@ -344,7 +344,7 @@ func TestCreateWithToShortLoginFail(t *testing.T) {
 	assert.Equal(t, "invalid login", decodedResp.FirstError().Error())
 }
 
-func TestCreateWithToLongLoginFail(t *testing.T) {
+func TestCreateWithToLongLoginUserFail(t *testing.T) {
 	uctc := initUCContainer(t)
 
 	newUser := userModels.User{
@@ -359,7 +359,7 @@ func TestCreateWithToLongLoginFail(t *testing.T) {
 	assert.Equal(t, "invalid login", decodedResp.FirstError().Error())
 }
 
-func TestCreateWithInvalidLoginFail(t *testing.T) {
+func TestCreateWithInvalidLoginUserFail(t *testing.T) {
 	uctc := initUCContainer(t)
 
 	newUser := userModels.User{
@@ -368,13 +368,13 @@ func TestCreateWithInvalidLoginFail(t *testing.T) {
 		Phone:   "+79634823344",
 		Login:   "@ll_names_are_coo!_",
 	}
-	resp, result := doCreateUserRequest(t, uctc, newUser)
+	resp, decodedResp := doCreateUserRequest(t, uctc, newUser)
 
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
-	assert.Equal(t, "invalid login", result.FirstError().Error())
+	assert.Equal(t, "invalid login", decodedResp.FirstError().Error())
 }
 
-func TestCreateAndGetSuccess(t *testing.T) {
+func TestCreateAndGetUserSuccess(t *testing.T) {
 	uctc := initUCContainer(t)
 
 	newUser := userModels.User{
@@ -383,10 +383,10 @@ func TestCreateAndGetSuccess(t *testing.T) {
 		Phone:   "+79634823344",
 		Login:   "andrey_velkov",
 	}
-	_, createResult := doCreateUserRequest(t, uctc, newUser)
+	_, createdUserDecodedResp := doCreateUserRequest(t, uctc, newUser)
 
 	var createdUser userModels.User
-	json.NewDecoder(createResult.PayloadContainer).Decode(&createdUser)
+	json.NewDecoder(createdUserDecodedResp.PayloadContainer).Decode(&createdUser)
 
 	getResp, err := uctc.HttpClient.Get(uctc.ServerURL + "/user?id=" + strconv.Itoa(createdUser.Id))
 	defer getResp.Body.Close()
@@ -414,10 +414,10 @@ func TestCreateAndGetNotExistingUserFail(t *testing.T) {
 		Phone:   "+79634823344",
 		Login:   "andrey_velkov",
 	}
-	_, createResult := doCreateUserRequest(t, uctc, newUser)
+	_, createdUserDecodedResp := doCreateUserRequest(t, uctc, newUser)
 
 	var createdUser userModels.User
-	json.NewDecoder(createResult.PayloadContainer).Decode(&createdUser)
+	json.NewDecoder(createdUserDecodedResp.PayloadContainer).Decode(&createdUser)
 
 	notExistUserId := createdUser.Id + 1
 	getResp, err := uctc.HttpClient.Get(uctc.ServerURL + "/user?id=" + strconv.Itoa(notExistUserId))
@@ -440,7 +440,7 @@ func TestCreateTwoUsersAndGetAll(t *testing.T) {
 		Phone:   "+79634823344",
 		Login:   "andrey_velkov",
 	}
-	_, firstUserResult := doCreateUserRequest(t, uctc, firstUser)
+	_, firstUserDecodedResp := doCreateUserRequest(t, uctc, firstUser)
 
 	secondUser := userModels.User{
 		Name:    "Andrey",
@@ -448,23 +448,29 @@ func TestCreateTwoUsersAndGetAll(t *testing.T) {
 		Phone:   "+79634823343",
 		Login:   "andrey_velkov2",
 	}
-	_, secondUserResult := doCreateUserRequest(t, uctc, secondUser)
+	_, secondUserDecodedResp := doCreateUserRequest(t, uctc, secondUser)
 
 	getAllResp, err := uctc.HttpClient.Get(uctc.ServerURL + "/users")
 	defer getAllResp.Body.Close()
 
-	var getAllResult http_transaction.Response
-	json.NewDecoder(getAllResp.Body).Decode(&getAllResult)
+	var getAllDecodedResp http_transaction.Response
+	json.NewDecoder(getAllResp.Body).Decode(&getAllDecodedResp)
 
 	assert.NoError(t, err)
-	assert.Equal(t, 2, getAllResult.PayloadLength())
+	assert.Equal(t, 2, getAllDecodedResp.PayloadLength())
+
+	//TODO: тут баг горм - при создании он возвращает в сущности время одной длины, а при получении - другой
+	//assert.Equal(t, firstUserDecodedResp.Payload, getAllDecodedResp.PayloadContainer.GetPayloadByIndex(0))
+	//assert.Equal(t, secondUserDecodedResp.Payload, getAllDecodedResp.PayloadContainer.GetPayloadByIndex(1))
 
 	//iter.ForEach(getAllResult.Payload)
 
 	//TODO: удалить. Также доработать автотест. Сейчас он ничего не проверяет!
-	fmt.Println(firstUserResult, secondUserResult)
+	fmt.Println(firstUserDecodedResp, secondUserDecodedResp)
 }
 
-func TestUpdateUserSuccess(t *testing.T) {}
+func TestUpdateUserSuccess(t *testing.T) {
+
+}
 
 func TestUpdateUserFail(t *testing.T) {}

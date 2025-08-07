@@ -103,3 +103,16 @@ func (pc *PayloadContainer) PayloadLength() int {
 		return 0
 	}
 }
+
+func (pc *PayloadContainer) GetPayloadByIndex(index int) interface{} {
+	switch pc.Payload.(type) {
+	case []interface{}:
+		return pc.Payload.([]interface{})[index]
+	case interface{}:
+		if index == 0 {
+			return pc.Payload
+		}
+	}
+
+	panic("invalid payload, or operation is unacceptable")
+}

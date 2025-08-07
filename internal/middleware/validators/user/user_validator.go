@@ -22,7 +22,7 @@ func (uv UserValidator) Validate(next http.HandlerFunc) http.HandlerFunc {
 			http_transaction.NewResponse().SendError(w, http.StatusBadRequest, "Invalid JSON: "+err.Error())
 			return
 		}
-		if errorList := validateUser(u); errorList != nil && len(errorList) > 0 {
+		if errorList := validateUser(u); len(errorList) > 0 {
 			errResponse := http_transaction.NewResponse()
 			errResponse.AddErrorsToErrorContainer(errorList)
 
