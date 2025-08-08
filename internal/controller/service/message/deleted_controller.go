@@ -11,8 +11,8 @@ type DeletedController struct {
 	Controller abstraction.Controller
 }
 
-func (dc *DeletedController) HandleRequest(mux *http.ServeMux) {
-	mux.HandleFunc("/message/deleted-list", func(w http.ResponseWriter, r *http.Request) {
+func (dc *DeletedController) HandleRequest() {
+	dc.Controller.ServeMux.HandleFunc("/message/deleted-list", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			dc.GetDeletedList(w)
@@ -21,7 +21,7 @@ func (dc *DeletedController) HandleRequest(mux *http.ServeMux) {
 		}
 	})
 
-	mux.HandleFunc("/deleted", func(w http.ResponseWriter, r *http.Request) {
+	dc.Controller.ServeMux.HandleFunc("/deleted", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			dc.GetDeleted(w, r)

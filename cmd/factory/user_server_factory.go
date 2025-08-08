@@ -6,60 +6,82 @@ import (
 	"net/http"
 )
 
-func InitUserServer(mux *http.ServeMux, abstractDiContainer abstraction.DIContainer) {
-	initUserService(mux, abstractDiContainer)
-	initBanService(mux, abstractDiContainer)
-	initUserMetaService(mux, abstractDiContainer)
-	initPhotoService(mux, abstractDiContainer)
-	initPropertyService(mux, abstractDiContainer)
+type UserServer struct {
+	*http.ServeMux
+	abstraction.DIContainer
 }
 
-func initUserService(mux *http.ServeMux, abstractDiContainer abstraction.DIContainer) internalService.UserController {
+func InitUserServer(mux *http.ServeMux, abstractDiContainer abstraction.DIContainer) UserServer {
+	userServer := UserServer{
+		ServeMux:    mux,
+		DIContainer: abstractDiContainer,
+	}
+
+	userServer.initUserService()
+	userServer.initBanService()
+	userServer.initUserMetaService()
+	userServer.initPhotoService()
+	userServer.initPropertyService()
+
+	return userServer
+}
+
+func (us *UserServer) initUserService() internalService.UserController {
 	userService := internalService.UserController{
 		Controller: abstraction.Controller{
-			Dependencies: abstractDiContainer,
+			ServeMux:     us.ServeMux,
+			Dependencies: us.DIContainer,
 		},
 	}
-	userService.HandleRequest(mux)
+	userService.HandleRequest()
+
 	return userService
 }
 
-func initBanService(mux *http.ServeMux, abstractDiContainer abstraction.DIContainer) internalService.BanController {
+func (us *UserServer) initBanService() internalService.BanController {
 	banService := internalService.BanController{
 		Controller: abstraction.Controller{
-			Dependencies: abstractDiContainer,
+			ServeMux:     us.ServeMux,
+			Dependencies: us.DIContainer,
 		},
 	}
-	banService.HandleRequest(mux)
+	banService.HandleRequest()
+
 	return banService
 }
 
-func initUserMetaService(mux *http.ServeMux, abstractDiContainer abstraction.DIContainer) internalService.MetaController {
+func (us *UserServer) initUserMetaService() internalService.MetaController {
 	metaService := internalService.MetaController{
 		Controller: abstraction.Controller{
-			Dependencies: abstractDiContainer,
+			ServeMux:     us.ServeMux,
+			Dependencies: us.DIContainer,
 		},
 	}
-	metaService.HandleRequest(mux)
+	metaService.HandleRequest()
+
 	return metaService
 }
 
-func initPhotoService(mux *http.ServeMux, abstractDiContainer abstraction.DIContainer) internalService.PhotoController {
+func (us *UserServer) initPhotoService() internalService.PhotoController {
 	photoService := internalService.PhotoController{
 		Controller: abstraction.Controller{
-			Dependencies: abstractDiContainer,
+			ServeMux:     us.ServeMux,
+			Dependencies: us.DIContainer,
 		},
 	}
-	photoService.HandleRequest(mux)
+	photoService.HandleRequest()
+
 	return photoService
 }
 
-func initPropertyService(mux *http.ServeMux, abstractDiContainer abstraction.DIContainer) internalService.PropertyController {
+func (us *UserServer) initPropertyService() internalService.PropertyController {
 	propertyService := internalService.PropertyController{
 		Controller: abstraction.Controller{
-			Dependencies: abstractDiContainer,
+			ServeMux:     us.ServeMux,
+			Dependencies: us.DIContainer,
 		},
 	}
-	propertyService.HandleRequest(mux)
+	propertyService.HandleRequest()
+
 	return propertyService
 }

@@ -13,6 +13,15 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func BuildAndServe(dbDecorator service.DBDecorator, redisDecorator service.RedisDecorator) {
+	mux := BuildServer(dbDecorator, redisDecorator)
+
+	err := http.ListenAndServe(":8080", mux)
+	if err != nil {
+		panic(err)
+	}
+}
+
 func BuildServer(dbDecorator service.DBDecorator, redisDecorator service.RedisDecorator) *http.ServeMux {
 	mux := http.NewServeMux()
 
@@ -29,13 +38,4 @@ func BuildServer(dbDecorator service.DBDecorator, redisDecorator service.RedisDe
 	InitAuthServer(mux, container)
 
 	return mux
-}
-
-func BuildAndServe(dbDecorator service.DBDecorator, redisDecorator service.RedisDecorator) {
-	mux := BuildServer(dbDecorator, redisDecorator)
-
-	err := http.ListenAndServe(":8080", mux)
-	if err != nil {
-		panic(err)
-	}
 }

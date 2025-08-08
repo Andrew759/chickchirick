@@ -1,6 +1,7 @@
 package message
 
 import (
+	"chickChirick/pkg/chirik_gorm_tweaks/time"
 	"gorm.io/gorm"
 )
 
@@ -13,6 +14,9 @@ type Personal struct {
 	SenderRelation    UserRelation `json:"sender_relation" gorm:"references:SenderId"`
 	RecipientId       int          `json:"recipient_id" gorm:"type:int"`
 	RecipientRelation UserRelation `json:"recipient_relation" gorm:"references:RecipientId"`
+	CreatedAt         time.TimestampWithTimeZoneMicro
+	UpdatedAt         time.TimestampWithTimeZoneMicro
+	DeletedAt         gorm.DeletedAt `gorm:"index"`
 }
 
 func CreatePersonal(db *gorm.DB, p *Personal) error {

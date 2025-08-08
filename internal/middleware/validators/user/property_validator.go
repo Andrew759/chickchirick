@@ -1,6 +1,7 @@
 package user
 
 import (
+	"chickChirick/internal/controller/http_transaction"
 	"chickChirick/internal/middleware/config"
 	"chickChirick/internal/middleware/service"
 	"chickChirick/internal/model/user"
@@ -13,17 +14,20 @@ import (
 
 type PropertyValidator struct{}
 
-func (pc PropertyValidator) Validate(next http.HandlerFunc) http.HandlerFunc {
+func (pv PropertyValidator) Validate(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var p user.Property
 
 		if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
-			http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+			http_transaction.NewResponse().SendError(w, http.StatusBadRequest, "Invalid JSON: "+err.Error())
 			return
 		}
 
-		if err := validateProperty(p); err != nil {
-			http.Error(w, "Validation error: "+err.Error(), http.StatusBadRequest)
+		if errorList := validateProperty(p); len(errorList) > 0 {
+			errResponse := http_transaction.NewResponse()
+			errResponse.AddErrorsToErrorContainer(errorList)
+
+			errResponse.Send(w, http.StatusBadRequest)
 			return
 		}
 
@@ -32,14 +36,16 @@ func (pc PropertyValidator) Validate(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func validateProperty(p user.Property) error {
+func validateProperty(p user.Property) []error {
+	var errList []error
+
 	if strings.TrimSpace(p.Email) != "" && !service.IsEmail(p.Email) {
-		return errors.New("invalid email")
+		errList = append(errList, errors.New("invalid email"))
 	}
 	if p.Password != nil || !service.IsHasCorrectLength(*p.Password, 1024) {
-		return errors.New("invalid password")
+		errList = append(errList, errors.New("invalid password"))
 	}
 	//TODO: валидация таймзон
 
-	return nil
+	return errList
 }

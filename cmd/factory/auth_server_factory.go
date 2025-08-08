@@ -6,41 +6,56 @@ import (
 	"net/http"
 )
 
-func InitAuthServer(mux *http.ServeMux, abstractDiContainer abstraction.DIContainer) {
-	initCodeService(mux, abstractDiContainer)
-	initSessionService(mux, abstractDiContainer)
-	initTokenService(mux, abstractDiContainer)
+type AuthServer struct {
+	*http.ServeMux
+	abstraction.DIContainer
 }
 
-func initCodeService(mux *http.ServeMux, abstractDiContainer abstraction.DIContainer) internalService.CodeController {
+func InitAuthServer(mux *http.ServeMux, abstractDiContainer abstraction.DIContainer) AuthServer {
+	authServer := AuthServer{
+		ServeMux:    mux,
+		DIContainer: abstractDiContainer,
+	}
+
+	authServer.initCodeService()
+	authServer.initSessionService()
+	authServer.initTokenService()
+
+	return authServer
+}
+
+func (as AuthServer) initCodeService() internalService.CodeController {
 	codeService := internalService.CodeController{
 		Controller: abstraction.Controller{
-			Dependencies: abstractDiContainer,
+			ServeMux:     as.ServeMux,
+			Dependencies: as.DIContainer,
 		},
 	}
-	codeService.HandleRequest(mux)
+	codeService.HandleRequest()
 
 	return codeService
 }
 
-func initSessionService(mux *http.ServeMux, abstractDiContainer abstraction.DIContainer) internalService.SessionController {
+func (as AuthServer) initSessionService() internalService.SessionController {
 	sessionService := internalService.SessionController{
 		Controller: abstraction.Controller{
-			Dependencies: abstractDiContainer,
+			ServeMux:     as.ServeMux,
+			Dependencies: as.DIContainer,
 		},
 	}
-	sessionService.HandleRequest(mux)
+	sessionService.HandleRequest()
 
 	return sessionService
 }
 
-func initTokenService(mux *http.ServeMux, abstractDiContainer abstraction.DIContainer) internalService.TokenController {
+func (as AuthServer) initTokenService() internalService.TokenController {
 	tokenService := internalService.TokenController{
 		Controller: abstraction.Controller{
-			Dependencies: abstractDiContainer,
+			ServeMux:     as.ServeMux,
+			Dependencies: as.DIContainer,
 		},
 	}
-	tokenService.HandleRequest(mux)
+	tokenService.HandleRequest()
 
 	return tokenService
 }

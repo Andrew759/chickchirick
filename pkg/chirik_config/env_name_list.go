@@ -1,5 +1,10 @@
 package chirik_config
 
+// server
+const (
+	ServerUrl = "SERVER_URL"
+)
+
 // environment
 const (
 	Enviroment = "ENVIRONMENT"

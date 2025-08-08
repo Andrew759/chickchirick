@@ -1,6 +1,7 @@
 package message
 
 import (
+	"chickChirick/pkg/chirik_gorm_tweaks/time"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -14,6 +15,9 @@ type Meta struct {
 	Status           Status    `json:"status" gorm:"references:MessageStatusId"`
 	RespondMessageId *int      `json:"respond_message_id" gorm:"type:int"`
 	RespondMessage   *Message  `json:"RespondMessage" gorm:"references:RespondMessageId"`
+	CreatedAt        time.TimestampWithTimeZoneMicro
+	UpdatedAt        time.TimestampWithTimeZoneMicro
+	DeletedAt        gorm.DeletedAt `gorm:"index"`
 }
 
 func (Meta) TableName() string {

@@ -11,8 +11,8 @@ type FileController struct {
 	Controller abstraction.Controller
 }
 
-func (fc *FileController) HandleRequest(mux *http.ServeMux) {
-	mux.HandleFunc("/message/files", func(w http.ResponseWriter, r *http.Request) {
+func (fc *FileController) HandleRequest() {
+	fc.Controller.ServeMux.HandleFunc("/message/files", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			fc.GetFiles(w)
@@ -21,7 +21,7 @@ func (fc *FileController) HandleRequest(mux *http.ServeMux) {
 		}
 	})
 
-	mux.HandleFunc("/message/file", func(w http.ResponseWriter, r *http.Request) {
+	fc.Controller.ServeMux.HandleFunc("/message/file", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			fc.GetFile(w, r)

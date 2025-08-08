@@ -12,18 +12,12 @@ type DIContainer struct {
 }
 
 type Controller struct {
+	ServeMux     *http.ServeMux
 	Dependencies DIContainer
 }
 
 type ControllerInterface interface {
 	HandleRequest()
-}
-
-// Init @deprecated
-func (c *Controller) Init(container DIContainer) *Controller {
-	c.Dependencies = container
-
-	return c
 }
 
 func (c *Controller) HandleRequest() {}

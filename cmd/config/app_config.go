@@ -11,6 +11,7 @@ type AppConfigurationInterface interface {
 }
 
 type AppConfiguration struct {
+	ServerURL   string
 	Environment string
 	dto.DatabaseConfig
 	RedisConfig
@@ -25,6 +26,7 @@ type RedisConfig struct {
 
 func (c AppConfiguration) NewAppConfiguration() AppConfiguration {
 	return AppConfiguration{
+		ServerURL:      viper.GetString(globalConfig.ServerUrl),
 		Environment:    viper.GetString(globalConfig.Enviroment),
 		DatabaseConfig: PrepareDatabaseConfig(),
 		RedisConfig: RedisConfig{

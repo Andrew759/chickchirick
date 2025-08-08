@@ -6,113 +6,134 @@ import (
 	"net/http"
 )
 
-func InitMessageServer(mux *http.ServeMux, abstractDiContainer abstraction.DIContainer) {
-	initDeletedService(mux, abstractDiContainer)
-	initFileService(mux, abstractDiContainer)
-	initGroupService(mux, abstractDiContainer)
-	initMessageService(mux, abstractDiContainer)
-	initMessageMetaService(mux, abstractDiContainer)
-	initPersonalService(mux, abstractDiContainer)
-	initSettingsService(mux, abstractDiContainer)
-	initStatusService(mux, abstractDiContainer)
-	initUserRelationService(mux, abstractDiContainer)
+type MessageServer struct {
+	*http.ServeMux
+	abstraction.DIContainer
 }
 
-func initDeletedService(mux *http.ServeMux, abstractDiContainer abstraction.DIContainer) internalService.DeletedController {
+func InitMessageServer(mux *http.ServeMux, abstractDiContainer abstraction.DIContainer) MessageServer {
+	messageServer := MessageServer{
+		ServeMux:    mux,
+		DIContainer: abstractDiContainer,
+	}
+
+	messageServer.initDeletedService()
+	messageServer.initFileService()
+	messageServer.initGroupService()
+	messageServer.initMessageService()
+	messageServer.initMessageMetaService()
+	messageServer.initPersonalService()
+	messageServer.initSettingsService()
+	messageServer.initStatusService()
+	messageServer.initUserRelationService()
+
+	return messageServer
+}
+
+func (ms MessageServer) initDeletedService() internalService.DeletedController {
 	deletedService := internalService.DeletedController{
 		Controller: abstraction.Controller{
-			Dependencies: abstractDiContainer,
+			ServeMux:     ms.ServeMux,
+			Dependencies: ms.DIContainer,
 		},
 	}
-	deletedService.HandleRequest(mux)
+	deletedService.HandleRequest()
 
 	return deletedService
 }
 
-func initFileService(mux *http.ServeMux, abstractDiContainer abstraction.DIContainer) internalService.FileController {
+func (ms MessageServer) initFileService() internalService.FileController {
 	fileService := internalService.FileController{
 		Controller: abstraction.Controller{
-			Dependencies: abstractDiContainer,
+			ServeMux:     ms.ServeMux,
+			Dependencies: ms.DIContainer,
 		},
 	}
-	fileService.HandleRequest(mux)
+	fileService.HandleRequest()
 
 	return fileService
 }
 
-func initGroupService(mux *http.ServeMux, abstractDiContainer abstraction.DIContainer) internalService.GroupController {
+func (ms MessageServer) initGroupService() internalService.GroupController {
 	groupService := internalService.GroupController{
 		Controller: abstraction.Controller{
-			Dependencies: abstractDiContainer,
+			ServeMux:     ms.ServeMux,
+			Dependencies: ms.DIContainer,
 		},
 	}
-	groupService.HandleRequest(mux)
+	groupService.HandleRequest()
 
 	return groupService
 }
 
-func initMessageService(mux *http.ServeMux, abstractDiContainer abstraction.DIContainer) internalService.MessagesController {
+func (ms MessageServer) initMessageService() internalService.MessagesController {
 	messageService := internalService.MessagesController{
 		Controller: abstraction.Controller{
-			Dependencies: abstractDiContainer,
+			ServeMux:     ms.ServeMux,
+			Dependencies: ms.DIContainer,
 		},
 	}
-	messageService.HandleRequest(mux)
+	messageService.HandleRequest()
 
 	return messageService
 }
 
-func initMessageMetaService(mux *http.ServeMux, abstractDiContainer abstraction.DIContainer) internalService.MetaController {
+func (ms MessageServer) initMessageMetaService() internalService.MetaController {
 	metaService := internalService.MetaController{
 		Controller: abstraction.Controller{
-			Dependencies: abstractDiContainer,
+			ServeMux:     ms.ServeMux,
+			Dependencies: ms.DIContainer,
 		},
 	}
-	metaService.HandleRequest(mux)
+	metaService.HandleRequest()
 
 	return metaService
 }
 
-func initPersonalService(mux *http.ServeMux, abstractDiContainer abstraction.DIContainer) internalService.PersonalController {
+func (ms MessageServer) initPersonalService() internalService.PersonalController {
 	personalService := internalService.PersonalController{
 		Controller: abstraction.Controller{
-			Dependencies: abstractDiContainer,
+			ServeMux:     ms.ServeMux,
+			Dependencies: ms.DIContainer,
 		},
 	}
-	personalService.HandleRequest(mux)
+	personalService.HandleRequest()
 
 	return personalService
 }
 
-func initSettingsService(mux *http.ServeMux, abstractDiContainer abstraction.DIContainer) internalService.SettingsController {
+func (ms MessageServer) initSettingsService() internalService.SettingsController {
 	settingsService := internalService.SettingsController{
 		Controller: abstraction.Controller{
-			Dependencies: abstractDiContainer,
+			ServeMux:     ms.ServeMux,
+			Dependencies: ms.DIContainer,
 		},
 	}
-	settingsService.HandleRequest(mux)
+	settingsService.HandleRequest()
 
 	return settingsService
 }
 
-func initStatusService(mux *http.ServeMux, abstractDiContainer abstraction.DIContainer) internalService.StatusController {
+func (ms MessageServer) initStatusService() internalService.StatusController {
 	statusService := internalService.StatusController{
 		Controller: abstraction.Controller{
-			Dependencies: abstractDiContainer,
+			ServeMux:     ms.ServeMux,
+			Dependencies: ms.DIContainer,
 		},
 	}
-	statusService.HandleRequest(mux)
+	statusService.HandleRequest()
 
 	return statusService
 }
 
-func initUserRelationService(mux *http.ServeMux, abstractDiContainer abstraction.DIContainer) internalService.UserRelationController {
+func (ms MessageServer) initUserRelationService() internalService.UserRelationController {
 	userRelationService := internalService.UserRelationController{
 		Controller: abstraction.Controller{
-			Dependencies: abstractDiContainer,
+			ServeMux:     ms.ServeMux,
+			Dependencies: ms.DIContainer,
 		},
 	}
-	userRelationService.HandleRequest(mux)
+	userRelationService.HandleRequest()
 
 	return userRelationService
 }

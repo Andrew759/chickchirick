@@ -11,8 +11,8 @@ type UserRelationController struct {
 	Controller abstraction.Controller
 }
 
-func (urc *UserRelationController) HandleRequest(mux *http.ServeMux) {
-	mux.HandleFunc("/message/user-relations", func(w http.ResponseWriter, r *http.Request) {
+func (urc *UserRelationController) HandleRequest() {
+	urc.Controller.ServeMux.HandleFunc("/message/user-relations", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			urc.GetUserRelations(w)
@@ -21,7 +21,7 @@ func (urc *UserRelationController) HandleRequest(mux *http.ServeMux) {
 		}
 	})
 
-	mux.HandleFunc("/message/user-relation", func(w http.ResponseWriter, r *http.Request) {
+	urc.Controller.ServeMux.HandleFunc("/message/user-relation", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			urc.GetUserRelation(w, r)

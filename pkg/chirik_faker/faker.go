@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func FakeValue(fieldName string, dataType data_type.Type) (any, error) {
+func FakeSQLValue(fieldName string, dataType data_type.Type) (any, error) {
 	switch fieldName {
 	case "id":
 		return gofakeit.IntRange(1, 32767), nil
@@ -75,4 +75,8 @@ func FakeValue(fieldName string, dataType data_type.Type) (any, error) {
 	default:
 		return "", fmt.Errorf("unsupported type: %s", dataType)
 	}
+}
+
+func FakeStringWithLength(length uint) string {
+	return gofakeit.LetterN(length)
 }
