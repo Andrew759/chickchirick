@@ -7,6 +7,8 @@ import (
 	"net/http"
 )
 
+const TokenResource = "/auth/token/"
+
 type TokenController struct {
 	Controller abstraction.Controller
 }
@@ -21,7 +23,7 @@ func (tc *TokenController) HandleRequest() {
 		}
 	})
 
-	tc.Controller.ServeMux.HandleFunc("/auth/token", func(w http.ResponseWriter, r *http.Request) {
+	tc.Controller.ServeMux.HandleFunc(TokenResource, func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			tc.GetToken(w, r)
@@ -52,7 +54,7 @@ func (tc *TokenController) GetTokens(w http.ResponseWriter) {
 }
 
 func (tc *TokenController) GetToken(w http.ResponseWriter, r *http.Request) {
-	id := tc.Controller.GETId(w, r)
+	id := tc.Controller.HttpId(w, r, TokenResource)
 	t, err := token.GetTokenById(tc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		http.Error(w, "Token not found: "+err.Error(), http.StatusNotFound)
@@ -105,7 +107,7 @@ func (tc *TokenController) UpdateToken(w http.ResponseWriter, r *http.Request) {
 }
 
 func (tc *TokenController) DeleteToken(w http.ResponseWriter, r *http.Request) {
-	id := tc.Controller.GETId(w, r)
+	id := tc.Controller.HttpId(w, r, TokenResource)
 	err := token.DeleteTokenById(tc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		http.Error(w, "Failed to delete token: "+err.Error(), http.StatusInternalServerError)

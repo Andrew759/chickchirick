@@ -123,6 +123,24 @@ func doCreateUserRequest(t *testing.T, uctc UserControllerTestContainer, newUser
 	return resp, decodedResponse
 }
 
+func doUpdateUserRequest(t *testing.T, uctc UserControllerTestContainer, updatedUser userModels.User) (
+	*http.Response,
+	http_transaction.Response,
+) {
+	t.Helper()
+
+	body, _ := json.Marshal(updatedUser)
+	req, _ := http.NewRequest(http.MethodPut, uctc.ServerURL+"/user?id="+strconv.Itoa(updatedUser.Id), bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	resp, _ := uctc.HttpClient.Do(req)
+	defer resp.Body.Close()
+
+	var decodedResponse http_transaction.Response
+	json.NewDecoder(resp.Body).Decode(&decodedResponse)
+
+	return resp, decodedResponse
+}
+
 func TestCreateUserSuccess(t *testing.T) {
 	uctc := initUCContainer(t)
 
@@ -463,7 +481,99 @@ func TestCreateTwoUsersAndGetAll(t *testing.T) {
 }
 
 func TestUpdateUserSuccess(t *testing.T) {
+	uctc := initUCContainer(t)
 
+	newUser := userModels.User{
+		Name:    "Andrey",
+		Surname: "Velkov",
+		Phone:   "+79634823344",
+		Login:   "andrey_velkov",
+	}
+	_, createUserDecodedResp := doCreateUserRequest(t, uctc, newUser)
+
+	var createdUser userModels.User
+	json.NewDecoder(createUserDecodedResp.PayloadContainer).Decode(&createdUser)
+
+	updatingUser := createdUser
+	updatingUser.Name = "AndreyUpdated"
+	updatingUser.Surname = "VelkovUpdated"
+	updatingUser.Phone = "+79634823317"
+	updatingUser.Login = "velkov_andrey_updated"
+
+	updateUserResp, updateUserDecodedResp := doUpdateUserRequest(t, uctc, updatingUser)
+
+	var updatedUser userModels.User
+	json.NewDecoder(updateUserDecodedResp.PayloadContainer).Decode(&updatedUser)
+
+	assert.Equal(t, http.StatusOK, updateUserResp.StatusCode)
+	assert.Equal(t, updatingUser.Name, updatedUser.Name)
+	assert.Equal(t, updatingUser.Surname, updatedUser.Surname)
+	assert.Equal(t, updatingUser.Phone, updatedUser.Phone)
+	assert.Equal(t, updatingUser.Login, updatedUser.Login)
 }
 
-func TestUpdateUserFail(t *testing.T) {}
+func TestUpdateNotExistUserFail(t *testing.T) {
+	uctc := initUCContainer(t)
+
+	// Обновляем несуществующего пользователя
+	nonExistUser := userModels.User{
+		Id:      9999,
+		Name:    "NotExistUserName",
+		Surname: "NotExistUserName",
+		Phone:   "+79634823322",
+		Login:   "not_exists_user",
+	}
+
+	updateNotExistUserResp, updateNotExistUserDecodedResp := doUpdateUserRequest(t, uctc, nonExistUser)
+
+	assert.Equal(t, http.StatusNotFound, updateNotExistUserResp.StatusCode)
+	assert.Equal(t, userModels.UserNotFoundErr, updateNotExistUserDecodedResp.FirstError())
+}
+
+func TestDeleteUserSuccess(t *testing.T) {
+	uctc := initUCContainer(t)
+
+	// Создаём пользователя
+	newUser := userModels.User{
+		Name:    "Andrey",
+		Surname: "Velkov",
+		Phone:   "+79634823344",
+		Login:   "andrey_velkov",
+	}
+	_, createdResp := doCreateUserRequest(t, uctc, newUser)
+
+	var createdUser userModels.User
+	json.NewDecoder(createdResp.PayloadContainer).Decode(&createdUser)
+
+	// Удаляем пользователя
+	req, _ := http.NewRequest(http.MethodDelete, uctc.ServerURL+"/user?id="+strconv.Itoa(createdUser.Id), nil)
+	resp, err := uctc.HttpClient.Do(req)
+	assert.NoError(t, err)
+	defer resp.Body.Close()
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	// Проверяем, что его больше нет
+	getResp, _ := uctc.HttpClient.Get(uctc.ServerURL + "/user?id=" + strconv.Itoa(createdUser.Id))
+	defer getResp.Body.Close()
+
+	var getResult http_transaction.Response
+	json.NewDecoder(getResp.Body).Decode(&getResult)
+	assert.Equal(t, http.StatusNotFound, getResp.StatusCode)
+	assert.Equal(t, userModels.UserNotFoundErr, getResult.FirstError())
+}
+
+func TestDeleteUserFail(t *testing.T) {
+	uctc := initUCContainer(t)
+
+	// Удаляем несуществующего пользователя
+	req, _ := http.NewRequest(http.MethodDelete, uctc.ServerURL+"/user?id=9999", nil)
+	resp, err := uctc.HttpClient.Do(req)
+	assert.NoError(t, err)
+	defer resp.Body.Close()
+
+	var decodedResp http_transaction.Response
+	json.NewDecoder(resp.Body).Decode(&decodedResp)
+
+	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+	assert.Equal(t, userModels.UserNotFoundErr, decodedResp.FirstError())
+}

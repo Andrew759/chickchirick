@@ -7,6 +7,8 @@ import (
 	"net/http"
 )
 
+const StatusResource = "/message/status/"
+
 type StatusController struct {
 	Controller abstraction.Controller
 }
@@ -21,7 +23,7 @@ func (sc *StatusController) HandleRequest() {
 		}
 	})
 
-	sc.Controller.ServeMux.HandleFunc("/message/status", func(w http.ResponseWriter, r *http.Request) {
+	sc.Controller.ServeMux.HandleFunc(StatusResource, func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			sc.GetStatus(w, r)
@@ -52,7 +54,7 @@ func (sc *StatusController) GetStatuses(w http.ResponseWriter) {
 }
 
 func (sc *StatusController) GetStatus(w http.ResponseWriter, r *http.Request) {
-	id := sc.Controller.GETId(w, r)
+	id := sc.Controller.HttpId(w, r, StatusResource)
 	s, err := status.GetStatusById(sc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		http.Error(w, "Status not found: "+err.Error(), http.StatusNotFound)
@@ -105,7 +107,7 @@ func (sc *StatusController) UpdateStatus(w http.ResponseWriter, r *http.Request)
 }
 
 func (sc *StatusController) DeleteStatus(w http.ResponseWriter, r *http.Request) {
-	id := sc.Controller.GETId(w, r)
+	id := sc.Controller.HttpId(w, r, StatusResource)
 	err := status.DeleteStatusById(sc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		http.Error(w, "Failed to delete status: "+err.Error(), http.StatusInternalServerError)

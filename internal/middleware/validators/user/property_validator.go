@@ -19,7 +19,7 @@ func (pv PropertyValidator) Validate(next http.HandlerFunc) http.HandlerFunc {
 		var p user.Property
 
 		if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
-			http_transaction.NewResponse().SendError(w, http.StatusBadRequest, "Invalid JSON: "+err.Error())
+			http_transaction.NewResponse().SendError(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
 			return
 		}
 

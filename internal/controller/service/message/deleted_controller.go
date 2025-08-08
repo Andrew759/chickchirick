@@ -7,6 +7,8 @@ import (
 	"net/http"
 )
 
+const DeletedResource = "/message/deleted/"
+
 type DeletedController struct {
 	Controller abstraction.Controller
 }
@@ -21,7 +23,7 @@ func (dc *DeletedController) HandleRequest() {
 		}
 	})
 
-	dc.Controller.ServeMux.HandleFunc("/deleted", func(w http.ResponseWriter, r *http.Request) {
+	dc.Controller.ServeMux.HandleFunc(DeletedResource, func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			dc.GetDeleted(w, r)
@@ -52,7 +54,7 @@ func (dc *DeletedController) GetDeletedList(w http.ResponseWriter) {
 }
 
 func (dc *DeletedController) GetDeleted(w http.ResponseWriter, r *http.Request) {
-	id := dc.Controller.GETId(w, r)
+	id := dc.Controller.HttpId(w, r, DeletedResource)
 	d, err := deleted.GetDeletedById(dc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		http.Error(w, "Deleted not found: "+err.Error(), http.StatusNotFound)
@@ -105,7 +107,7 @@ func (dc *DeletedController) UpdateDeleted(w http.ResponseWriter, r *http.Reques
 }
 
 func (dc *DeletedController) DeleteDeleted(w http.ResponseWriter, r *http.Request) {
-	id := dc.Controller.GETId(w, r)
+	id := dc.Controller.HttpId(w, r, DeletedResource)
 	err := deleted.DeleteDeletedById(dc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		http.Error(w, "Failed to delete deleted: "+err.Error(), http.StatusInternalServerError)

@@ -7,6 +7,8 @@ import (
 	"net/http"
 )
 
+const FileResource = "/message/file/"
+
 type FileController struct {
 	Controller abstraction.Controller
 }
@@ -21,7 +23,7 @@ func (fc *FileController) HandleRequest() {
 		}
 	})
 
-	fc.Controller.ServeMux.HandleFunc("/message/file", func(w http.ResponseWriter, r *http.Request) {
+	fc.Controller.ServeMux.HandleFunc(FileResource, func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			fc.GetFile(w, r)
@@ -52,7 +54,7 @@ func (fc *FileController) GetFiles(w http.ResponseWriter) {
 }
 
 func (fc *FileController) GetFile(w http.ResponseWriter, r *http.Request) {
-	id := fc.Controller.GETId(w, r)
+	id := fc.Controller.HttpId(w, r, FileResource)
 	f, err := file.GetFileById(fc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		http.Error(w, "File not found: "+err.Error(), http.StatusNotFound)
@@ -105,7 +107,7 @@ func (fc *FileController) UpdateFile(w http.ResponseWriter, r *http.Request) {
 }
 
 func (fc *FileController) DeleteFile(w http.ResponseWriter, r *http.Request) {
-	id := fc.Controller.GETId(w, r)
+	id := fc.Controller.HttpId(w, r, FileResource)
 	err := file.DeleteFileById(fc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		http.Error(w, "Failed to delete file: "+err.Error(), http.StatusInternalServerError)

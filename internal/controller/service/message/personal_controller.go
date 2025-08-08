@@ -7,6 +7,8 @@ import (
 	"net/http"
 )
 
+const PersonalResource = "/message/personal/"
+
 type PersonalController struct {
 	Controller abstraction.Controller
 }
@@ -21,7 +23,7 @@ func (pc *PersonalController) HandleRequest() {
 		}
 	})
 
-	pc.Controller.ServeMux.HandleFunc("/message/personal", func(w http.ResponseWriter, r *http.Request) {
+	pc.Controller.ServeMux.HandleFunc(PersonalResource, func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			pc.GetPersonal(w, r)
@@ -52,7 +54,7 @@ func (pc *PersonalController) GetPersonals(w http.ResponseWriter) {
 }
 
 func (pc *PersonalController) GetPersonal(w http.ResponseWriter, r *http.Request) {
-	id := pc.Controller.GETId(w, r)
+	id := pc.Controller.HttpId(w, r, PersonalResource)
 	p, err := personal.GetPersonalById(pc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		http.Error(w, "Personal not found: "+err.Error(), http.StatusNotFound)
@@ -105,7 +107,7 @@ func (pc *PersonalController) UpdatePersonal(w http.ResponseWriter, r *http.Requ
 }
 
 func (pc *PersonalController) DeletePersonal(w http.ResponseWriter, r *http.Request) {
-	id := pc.Controller.GETId(w, r)
+	id := pc.Controller.HttpId(w, r, PersonalResource)
 	err := personal.DeletePersonalById(pc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		http.Error(w, "Failed to delete personal: "+err.Error(), http.StatusInternalServerError)

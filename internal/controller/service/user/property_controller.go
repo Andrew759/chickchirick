@@ -2,12 +2,14 @@ package user
 
 import (
 	"chickChirick/internal/controller/abstraction"
+	"chickChirick/internal/controller/http_transaction"
 	"chickChirick/internal/middleware/config"
 	userMiddleware "chickChirick/internal/middleware/validators/user"
 	property "chickChirick/internal/model/user"
-	"encoding/json"
 	"net/http"
 )
+
+const PropertyResource = "/user/property/"
 
 type PropertyController struct {
 	Controller abstraction.Controller
@@ -20,11 +22,11 @@ func (pc *PropertyController) HandleRequest() {
 		case http.MethodGet:
 			pc.GetProperties(w)
 		default:
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			http_transaction.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
 
-	pc.Controller.ServeMux.HandleFunc("/user/property", func(w http.ResponseWriter, r *http.Request) {
+	pc.Controller.ServeMux.HandleFunc(PropertyResource, func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			pc.GetProperty(w, r)
@@ -35,7 +37,7 @@ func (pc *PropertyController) HandleRequest() {
 		case http.MethodDelete:
 			pc.DeleteProperty(w, r)
 		default:
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			http_transaction.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
 }
@@ -43,67 +45,53 @@ func (pc *PropertyController) HandleRequest() {
 func (pc *PropertyController) GetProperties(w http.ResponseWriter) {
 	properties, err := property.GetProperties(pc.Controller.Dependencies.DBDecorator.GDB())
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http_transaction.NewResponse().SendError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(properties)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	http_transaction.NewResponse().SendSuccess(w, properties, http.StatusOK)
 }
 
 func (pc *PropertyController) GetProperty(w http.ResponseWriter, r *http.Request) {
-	id := pc.Controller.GETId(w, r)
+	id := pc.Controller.HttpId(w, r, PropertyResource)
+	//TODO: тут, а также во всех остальныъ контроллерах потребуется доработка по типу, как это сделано в user_controller
 	p, err := property.GetPropertyById(pc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
-		http.Error(w, "Property not found: "+err.Error(), http.StatusNotFound)
+		http_transaction.NewResponse().SendError(w, "Property not found: "+err.Error(), http.StatusNotFound)
 		return
 	}
 
-	if err := json.NewEncoder(w).Encode(p); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	http_transaction.NewResponse().SendSuccess(w, p, http.StatusOK)
 }
 
 func (pc *PropertyController) CreateProperty(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
 	p := r.Context().Value(config.UserPropertyKey).(*property.Property)
 
 	if err := property.CreateProperty(pc.Controller.Dependencies.DBDecorator.GDB(), p); err != nil {
-		http.Error(w, "Failed to create property: "+err.Error(), http.StatusInternalServerError)
+		http_transaction.NewResponse().SendError(w, "Failed to create property: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
-	if err := json.NewEncoder(w).Encode(p); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	http_transaction.NewResponse().SendSuccess(w, p, http.StatusCreated)
 }
 
 func (pc *PropertyController) UpdateProperty(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
 	p := r.Context().Value(config.UserPropertyKey).(*property.Property)
 
 	err := property.UpdateProperty(pc.Controller.Dependencies.DBDecorator.GDB(), p)
 	if err != nil {
-		http.Error(w, "Failed to update property: "+err.Error(), http.StatusInternalServerError)
+		http_transaction.NewResponse().SendError(w, "Failed to update property: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	if err := json.NewEncoder(w).Encode(p); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	http_transaction.NewResponse().SendSuccess(w, p, http.StatusOK)
 }
 
 func (pc *PropertyController) DeleteProperty(w http.ResponseWriter, r *http.Request) {
-	id := pc.Controller.GETId(w, r)
+	id := pc.Controller.HttpId(w, r, PropertyResource)
 	err := property.DeletePropertyById(pc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
-		http.Error(w, "Failed to delete property: "+err.Error(), http.StatusInternalServerError)
+		http_transaction.NewResponse().SendError(w, "Failed to delete property: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 

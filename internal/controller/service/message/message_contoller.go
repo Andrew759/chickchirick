@@ -7,6 +7,8 @@ import (
 	"net/http"
 )
 
+const MessageResource = "/message/"
+
 type MessagesController struct {
 	Controller abstraction.Controller
 }
@@ -21,7 +23,7 @@ func (mc *MessagesController) HandleRequest() {
 		}
 	})
 
-	mc.Controller.ServeMux.HandleFunc("/message", func(w http.ResponseWriter, r *http.Request) {
+	mc.Controller.ServeMux.HandleFunc(MessageResource, func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			mc.GetMessage(w, r)
@@ -52,7 +54,7 @@ func (mc *MessagesController) GetMessages(w http.ResponseWriter) {
 }
 
 func (mc *MessagesController) GetMessage(w http.ResponseWriter, r *http.Request) {
-	id := mc.Controller.GETId(w, r)
+	id := mc.Controller.HttpId(w, r, MessageResource)
 	m, err := message.GetMessageById(mc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		http.Error(w, "Message not found: "+err.Error(), http.StatusNotFound)
@@ -105,7 +107,7 @@ func (mc *MessagesController) UpdateMessage(w http.ResponseWriter, r *http.Reque
 }
 
 func (mc *MessagesController) DeleteMessage(w http.ResponseWriter, r *http.Request) {
-	id := mc.Controller.GETId(w, r)
+	id := mc.Controller.HttpId(w, r, MessageResource)
 	err := message.DeleteMessageById(mc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		http.Error(w, "Failed to delete message: "+err.Error(), http.StatusInternalServerError)

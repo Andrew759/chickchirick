@@ -25,5 +25,5 @@ func (t *TimestampWithTimeZoneMicro) Scan(value interface{}) error {
 }
 
 func (t TimestampWithTimeZoneMicro) Value() (driver.Value, error) {
-	return t.Time.UTC().Truncate(time.Microsecond), nil
+	return t.Time.Truncate(time.Microsecond), nil
 }

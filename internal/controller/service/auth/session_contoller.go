@@ -7,6 +7,8 @@ import (
 	"net/http"
 )
 
+const SessionResource = "/auth/session/"
+
 type SessionController struct {
 	Controller abstraction.Controller
 }
@@ -21,7 +23,7 @@ func (sc *SessionController) HandleRequest() {
 		}
 	})
 
-	sc.Controller.ServeMux.HandleFunc("/auth/session", func(w http.ResponseWriter, r *http.Request) {
+	sc.Controller.ServeMux.HandleFunc(SessionResource, func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			sc.GetSession(w, r)
@@ -52,7 +54,7 @@ func (sc *SessionController) GetSessions(w http.ResponseWriter) {
 }
 
 func (sc *SessionController) GetSession(w http.ResponseWriter, r *http.Request) {
-	id := sc.Controller.GETId(w, r)
+	id := sc.Controller.HttpId(w, r, SessionResource)
 	c, err := session.GetSessionById(sc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		http.Error(w, "Session not found: "+err.Error(), http.StatusNotFound)
@@ -105,7 +107,7 @@ func (sc *SessionController) UpdateSession(w http.ResponseWriter, r *http.Reques
 }
 
 func (sc *SessionController) DeleteSession(w http.ResponseWriter, r *http.Request) {
-	id := sc.Controller.GETId(w, r)
+	id := sc.Controller.HttpId(w, r, SessionResource)
 	err := session.DeleteSessionById(sc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		http.Error(w, "Failed to delete session: "+err.Error(), http.StatusInternalServerError)

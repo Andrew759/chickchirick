@@ -26,7 +26,7 @@ func NewResponse() *Response {
 }
 
 // SendSuccess перезаписывает PayloadContainer и отправляет ответ
-func (r *Response) SendSuccess(w http.ResponseWriter, code int, payload interface{}) {
+func (r *Response) SendSuccess(w http.ResponseWriter, payload interface{}, code int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 
@@ -36,12 +36,12 @@ func (r *Response) SendSuccess(w http.ResponseWriter, code int, payload interfac
 
 	err := json.NewEncoder(w).Encode(r)
 	if err != nil {
-		r.SendError(w, http.StatusInternalServerError, err.Error())
+		r.SendError(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
 // SendError добавляет одну ошибку в структуру ошибок и отправляет ответ
-func (r *Response) SendError(w http.ResponseWriter, code int, message string) {
+func (r *Response) SendError(w http.ResponseWriter, message string, code int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 

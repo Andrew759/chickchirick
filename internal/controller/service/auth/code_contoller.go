@@ -7,6 +7,8 @@ import (
 	"net/http"
 )
 
+const CodeResource = "/auth/code/"
+
 type CodeController struct {
 	Controller abstraction.Controller
 }
@@ -21,7 +23,7 @@ func (cc *CodeController) HandleRequest() {
 		}
 	})
 
-	cc.Controller.ServeMux.HandleFunc("/auth/code", func(w http.ResponseWriter, r *http.Request) {
+	cc.Controller.ServeMux.HandleFunc(CodeResource, func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			cc.GetCode(w, r)
@@ -52,7 +54,7 @@ func (cc *CodeController) GetCodes(w http.ResponseWriter) {
 }
 
 func (cc *CodeController) GetCode(w http.ResponseWriter, r *http.Request) {
-	id := cc.Controller.GETId(w, r)
+	id := cc.Controller.HttpId(w, r, CodeResource)
 	c, err := code.GetCodeById(cc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		http.Error(w, "Code not found: "+err.Error(), http.StatusNotFound)
@@ -105,7 +107,7 @@ func (cc *CodeController) UpdateCode(w http.ResponseWriter, r *http.Request) {
 }
 
 func (cc *CodeController) DeleteCode(w http.ResponseWriter, r *http.Request) {
-	id := cc.Controller.GETId(w, r)
+	id := cc.Controller.HttpId(w, r, CodeResource)
 	err := code.DeleteCodeById(cc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		http.Error(w, "Failed to delete code: "+err.Error(), http.StatusInternalServerError)
