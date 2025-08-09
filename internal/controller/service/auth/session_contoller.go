@@ -2,6 +2,7 @@ package auth
 
 import (
 	"chickChirick/internal/controller/abstraction"
+	"chickChirick/internal/controller/c_http"
 	session "chickChirick/internal/model/auth"
 	"encoding/json"
 	"net/http"
@@ -19,7 +20,7 @@ func (sc *SessionController) HandleRequest() {
 		case http.MethodGet:
 			sc.GetSessions(w)
 		default:
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
 
@@ -34,7 +35,7 @@ func (sc *SessionController) HandleRequest() {
 		case http.MethodDelete:
 			sc.DeleteSession(w, r)
 		default:
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
 }
@@ -42,75 +43,60 @@ func (sc *SessionController) HandleRequest() {
 func (sc *SessionController) GetSessions(w http.ResponseWriter) {
 	codes, err := session.GetSessions(sc.Controller.Dependencies.DBDecorator.GDB())
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(codes)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	c_http.NewResponse().SendSuccess(w, codes, http.StatusOK)
 }
 
 func (sc *SessionController) GetSession(w http.ResponseWriter, r *http.Request) {
 	id := sc.Controller.HttpId(w, r, SessionResource)
 	c, err := session.GetSessionById(sc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
-		http.Error(w, "Session not found: "+err.Error(), http.StatusNotFound)
+		c_http.NewResponse().SendError(w, "Session not found: "+err.Error(), http.StatusNotFound)
 		return
 	}
 
-	if err := json.NewEncoder(w).Encode(c); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	c_http.NewResponse().SendSuccess(w, c, http.StatusOK)
 }
 
 func (sc *SessionController) CreateSession(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
 	var s session.Session
 	if err := json.NewDecoder(r.Body).Decode(&s); err != nil {
-		http.Error(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
+		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	if err := session.CreateSession(sc.Controller.Dependencies.DBDecorator.GDB(), &s); err != nil {
-		http.Error(w, "Failed to create session: "+err.Error(), http.StatusInternalServerError)
+		c_http.NewResponse().SendError(w, "Failed to create session: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
-	if err := json.NewEncoder(w).Encode(s); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	c_http.NewResponse().SendSuccess(w, s, http.StatusCreated)
 }
 
 func (sc *SessionController) UpdateSession(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
 	var s session.Session
 	if err := json.NewDecoder(r.Body).Decode(&s); err != nil {
-		http.Error(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
+		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	err := session.UpdateSession(sc.Controller.Dependencies.DBDecorator.GDB(), &s)
 	if err != nil {
-		http.Error(w, "Failed to update session: "+err.Error(), http.StatusInternalServerError)
+		c_http.NewResponse().SendError(w, "Failed to update session: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	if err := json.NewEncoder(w).Encode(s); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	c_http.NewResponse().SendSuccess(w, s, http.StatusOK)
 }
 
 func (sc *SessionController) DeleteSession(w http.ResponseWriter, r *http.Request) {
 	id := sc.Controller.HttpId(w, r, SessionResource)
 	err := session.DeleteSessionById(sc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
-		http.Error(w, "Failed to delete session: "+err.Error(), http.StatusInternalServerError)
+		c_http.NewResponse().SendError(w, "Failed to delete session: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 

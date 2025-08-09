@@ -79,27 +79,24 @@ func (sc *SettingsController) CreateSetting(w http.ResponseWriter, r *http.Reque
 func (sc *SettingsController) UpdateSetting(w http.ResponseWriter, r *http.Request) {
 	var s settings.Settings
 	if err := json.NewDecoder(r.Body).Decode(&s); err != nil {
-		//TODO: обновить
-		http.Error(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
+		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	err := settings.UpdateSettings(sc.Controller.Dependencies.DBDecorator.GDB(), &s)
 	if err != nil {
-		http.Error(w, "Failed to update setting: "+err.Error(), http.StatusInternalServerError)
+		c_http.NewResponse().SendError(w, "Failed to update setting: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	if err := json.NewEncoder(w).Encode(s); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	c_http.NewResponse().SendSuccess(w, s, http.StatusOK)
 }
 
 func (sc *SettingsController) DeleteSetting(w http.ResponseWriter, r *http.Request) {
 	id := sc.Controller.HttpId(w, r, SettingResource)
 	err := settings.DeleteSettingsById(sc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
-		http.Error(w, "Failed to delete setting: "+err.Error(), http.StatusInternalServerError)
+		c_http.NewResponse().SendError(w, "Failed to delete setting: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 

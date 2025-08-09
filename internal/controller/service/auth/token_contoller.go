@@ -2,6 +2,7 @@ package auth
 
 import (
 	"chickChirick/internal/controller/abstraction"
+	"chickChirick/internal/controller/c_http"
 	token "chickChirick/internal/model/auth"
 	"encoding/json"
 	"net/http"
@@ -19,7 +20,7 @@ func (tc *TokenController) HandleRequest() {
 		case http.MethodGet:
 			tc.GetTokens(w)
 		default:
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
 
@@ -34,7 +35,7 @@ func (tc *TokenController) HandleRequest() {
 		case http.MethodDelete:
 			tc.DeleteToken(w, r)
 		default:
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
 }
@@ -42,75 +43,60 @@ func (tc *TokenController) HandleRequest() {
 func (tc *TokenController) GetTokens(w http.ResponseWriter) {
 	tokens, err := token.GetTokens(tc.Controller.Dependencies.DBDecorator.GDB())
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(tokens)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	c_http.NewResponse().SendSuccess(w, tokens, http.StatusOK)
 }
 
 func (tc *TokenController) GetToken(w http.ResponseWriter, r *http.Request) {
 	id := tc.Controller.HttpId(w, r, TokenResource)
 	t, err := token.GetTokenById(tc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
-		http.Error(w, "Token not found: "+err.Error(), http.StatusNotFound)
+		c_http.NewResponse().SendError(w, "Token not found: "+err.Error(), http.StatusNotFound)
 		return
 	}
 
-	if err := json.NewEncoder(w).Encode(t); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	c_http.NewResponse().SendSuccess(w, t, http.StatusOK)
 }
 
 func (tc *TokenController) CreateToken(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
 	var t token.Token
 	if err := json.NewDecoder(r.Body).Decode(&t); err != nil {
-		http.Error(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
+		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	if err := token.CreateToken(tc.Controller.Dependencies.DBDecorator.GDB(), &t); err != nil {
-		http.Error(w, "Failed to create token: "+err.Error(), http.StatusInternalServerError)
+		c_http.NewResponse().SendError(w, "Failed to create token: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
-	if err := json.NewEncoder(w).Encode(t); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	c_http.NewResponse().SendSuccess(w, t, http.StatusCreated)
 }
 
 func (tc *TokenController) UpdateToken(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
 	var t token.Token
 	if err := json.NewDecoder(r.Body).Decode(&t); err != nil {
-		http.Error(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
+		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	err := token.UpdateToken(tc.Controller.Dependencies.DBDecorator.GDB(), &t)
 	if err != nil {
-		http.Error(w, "Failed to update token: "+err.Error(), http.StatusInternalServerError)
+		c_http.NewResponse().SendError(w, "Failed to update token: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	if err := json.NewEncoder(w).Encode(t); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	c_http.NewResponse().SendSuccess(w, t, http.StatusOK)
 }
 
 func (tc *TokenController) DeleteToken(w http.ResponseWriter, r *http.Request) {
 	id := tc.Controller.HttpId(w, r, TokenResource)
 	err := token.DeleteTokenById(tc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
-		http.Error(w, "Failed to delete token: "+err.Error(), http.StatusInternalServerError)
+		c_http.NewResponse().SendError(w, "Failed to delete token: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
