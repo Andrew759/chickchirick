@@ -1,4 +1,4 @@
-package http_transaction
+package c_http
 
 import (
 	"bytes"

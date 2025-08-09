@@ -2,7 +2,7 @@ package user
 
 import (
 	"chickChirick/internal/controller/abstraction"
-	"chickChirick/internal/controller/http_transaction"
+	"chickChirick/internal/controller/c_http"
 	photo "chickChirick/internal/model/user"
 	"encoding/json"
 	"net/http"
@@ -20,7 +20,7 @@ func (pc *PhotoController) HandleRequest() {
 		case http.MethodGet:
 			pc.GetPhotos(w)
 		default:
-			http_transaction.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
+			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
 
@@ -35,7 +35,7 @@ func (pc *PhotoController) HandleRequest() {
 		case http.MethodDelete:
 			pc.DeletePhoto(w, r)
 		default:
-			http_transaction.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
+			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
 }
@@ -43,60 +43,60 @@ func (pc *PhotoController) HandleRequest() {
 func (pc *PhotoController) GetPhotos(w http.ResponseWriter) {
 	photos, err := photo.GetPhotos(pc.Controller.Dependencies.DBDecorator.GDB())
 	if err != nil {
-		http_transaction.NewResponse().SendError(w, err.Error(), http.StatusInternalServerError)
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	http_transaction.NewResponse().SendSuccess(w, photos, http.StatusOK)
+	c_http.NewResponse().SendSuccess(w, photos, http.StatusOK)
 }
 
 func (pc *PhotoController) GetPhoto(w http.ResponseWriter, r *http.Request) {
 	id := pc.Controller.HttpId(w, r, PhotoResource)
 	p, err := photo.GetPhotoById(pc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
-		http_transaction.NewResponse().SendError(w, "Photo not found: "+err.Error(), http.StatusNotFound)
+		c_http.NewResponse().SendError(w, "Photo not found: "+err.Error(), http.StatusNotFound)
 		return
 	}
 
-	http_transaction.NewResponse().SendSuccess(w, p, http.StatusOK)
+	c_http.NewResponse().SendSuccess(w, p, http.StatusOK)
 }
 
 func (pc *PhotoController) CreatePhoto(w http.ResponseWriter, r *http.Request) {
 	var p photo.Photo
 	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
-		http_transaction.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
+		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	if err := photo.CreatePhoto(pc.Controller.Dependencies.DBDecorator.GDB(), &p); err != nil {
-		http_transaction.NewResponse().SendError(w, "Failed to create photo: "+err.Error(), http.StatusInternalServerError)
+		c_http.NewResponse().SendError(w, "Failed to create photo: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	http_transaction.NewResponse().SendSuccess(w, p, http.StatusOK)
+	c_http.NewResponse().SendSuccess(w, p, http.StatusCreated)
 }
 
 func (pc *PhotoController) UpdatePhoto(w http.ResponseWriter, r *http.Request) {
 	var p photo.Photo
 	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
-		http_transaction.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
+		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	err := photo.UpdatePhoto(pc.Controller.Dependencies.DBDecorator.GDB(), &p)
 	if err != nil {
-		http_transaction.NewResponse().SendError(w, "Failed to update photo: "+err.Error(), http.StatusInternalServerError)
+		c_http.NewResponse().SendError(w, "Failed to update photo: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	http_transaction.NewResponse().SendSuccess(w, p, http.StatusOK)
+	c_http.NewResponse().SendSuccess(w, p, http.StatusOK)
 }
 
 func (pc *PhotoController) DeletePhoto(w http.ResponseWriter, r *http.Request) {
 	id := pc.Controller.HttpId(w, r, PhotoResource)
 	err := photo.DeletePhotoById(pc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
-		http_transaction.NewResponse().SendError(w, "Failed to delete photo: "+err.Error(), http.StatusInternalServerError)
+		c_http.NewResponse().SendError(w, "Failed to delete photo: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 

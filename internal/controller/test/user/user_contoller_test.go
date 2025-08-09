@@ -6,7 +6,7 @@ import (
 	"chickChirick/cmd/factory"
 	"chickChirick/cmd/service"
 	"chickChirick/internal/controller/abstraction"
-	"chickChirick/internal/controller/http_transaction"
+	"chickChirick/internal/controller/c_http"
 	"chickChirick/internal/controller/service/user"
 	"chickChirick/internal/middleware/config"
 	userMiddleware "chickChirick/internal/middleware/validators/user"
@@ -104,7 +104,7 @@ func startTestServer(t *testing.T, db service.DBDecorator, redis service.RedisDe
 
 func doCreateUserRequest(t *testing.T, uctc UserControllerTestContainer, newUser userModels.User) (
 	*http.Response,
-	http_transaction.Response,
+	c_http.Response,
 ) {
 	t.Helper()
 
@@ -117,7 +117,7 @@ func doCreateUserRequest(t *testing.T, uctc UserControllerTestContainer, newUser
 	resp, _ := uctc.HttpClient.Do(req)
 	defer resp.Body.Close()
 
-	var decodedResponse http_transaction.Response
+	var decodedResponse c_http.Response
 	json.NewDecoder(resp.Body).Decode(&decodedResponse)
 
 	return resp, decodedResponse
@@ -125,7 +125,7 @@ func doCreateUserRequest(t *testing.T, uctc UserControllerTestContainer, newUser
 
 func doUpdateUserRequest(t *testing.T, uctc UserControllerTestContainer, updatedUser userModels.User) (
 	*http.Response,
-	http_transaction.Response,
+	c_http.Response,
 ) {
 	t.Helper()
 
@@ -135,7 +135,7 @@ func doUpdateUserRequest(t *testing.T, uctc UserControllerTestContainer, updated
 	resp, _ := uctc.HttpClient.Do(req)
 	defer resp.Body.Close()
 
-	var decodedResponse http_transaction.Response
+	var decodedResponse c_http.Response
 	json.NewDecoder(resp.Body).Decode(&decodedResponse)
 
 	return resp, decodedResponse
@@ -408,7 +408,7 @@ func TestCreateAndGetUserSuccess(t *testing.T) {
 	getResp, err := uctc.HttpClient.Get(uctc.ServerURL + "/user?id=" + strconv.Itoa(createdUser.Id))
 	defer getResp.Body.Close()
 
-	var getResult http_transaction.Response
+	var getResult c_http.Response
 	json.NewDecoder(getResp.Body).Decode(&getResult)
 	var gotUser userModels.User
 	json.NewDecoder(getResult.PayloadContainer).Decode(&gotUser)
@@ -440,7 +440,7 @@ func TestCreateAndGetNotExistingUserFail(t *testing.T) {
 	getResp, err := uctc.HttpClient.Get(uctc.ServerURL + "/user?id=" + strconv.Itoa(notExistUserId))
 	defer getResp.Body.Close()
 
-	var getResult http_transaction.Response
+	var getResult c_http.Response
 	json.NewDecoder(getResp.Body).Decode(&getResult)
 
 	assert.NoError(t, err)
@@ -470,7 +470,7 @@ func TestCreateTwoUsersAndGetAll(t *testing.T) {
 	getAllResp, err := uctc.HttpClient.Get(uctc.ServerURL + "/users")
 	defer getAllResp.Body.Close()
 
-	var getAllDecodedResp http_transaction.Response
+	var getAllDecodedResp c_http.Response
 	json.NewDecoder(getAllResp.Body).Decode(&getAllDecodedResp)
 
 	assert.NoError(t, err)
@@ -556,7 +556,7 @@ func TestDeleteUserSuccess(t *testing.T) {
 	getResp, _ := uctc.HttpClient.Get(uctc.ServerURL + "/user?id=" + strconv.Itoa(createdUser.Id))
 	defer getResp.Body.Close()
 
-	var getResult http_transaction.Response
+	var getResult c_http.Response
 	json.NewDecoder(getResp.Body).Decode(&getResult)
 	assert.Equal(t, http.StatusNotFound, getResp.StatusCode)
 	assert.Equal(t, userModels.UserNotFoundErr, getResult.FirstError())
@@ -571,7 +571,7 @@ func TestDeleteUserFail(t *testing.T) {
 	assert.NoError(t, err)
 	defer resp.Body.Close()
 
-	var decodedResp http_transaction.Response
+	var decodedResp c_http.Response
 	json.NewDecoder(resp.Body).Decode(&decodedResp)
 
 	assert.Equal(t, http.StatusNotFound, resp.StatusCode)

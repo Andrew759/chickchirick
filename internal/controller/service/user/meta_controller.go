@@ -2,7 +2,7 @@ package user
 
 import (
 	"chickChirick/internal/controller/abstraction"
-	"chickChirick/internal/controller/http_transaction"
+	"chickChirick/internal/controller/c_http"
 	meta "chickChirick/internal/model/user"
 	"encoding/json"
 	"net/http"
@@ -20,7 +20,7 @@ func (mc *MetaController) HandleRequest() {
 		case http.MethodGet:
 			mc.GetMetas(w)
 		default:
-			http_transaction.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
+			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
 
@@ -35,7 +35,7 @@ func (mc *MetaController) HandleRequest() {
 		case http.MethodDelete:
 			mc.DeleteMeta(w, r)
 		default:
-			http_transaction.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
+			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
 }
@@ -43,60 +43,60 @@ func (mc *MetaController) HandleRequest() {
 func (mc *MetaController) GetMetas(w http.ResponseWriter) {
 	metas, err := meta.GetMetas(mc.Controller.Dependencies.DBDecorator.GDB())
 	if err != nil {
-		http_transaction.NewResponse().SendError(w, err.Error(), http.StatusInternalServerError)
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	http_transaction.NewResponse().SendSuccess(w, metas, http.StatusOK)
+	c_http.NewResponse().SendSuccess(w, metas, http.StatusOK)
 }
 
 func (mc *MetaController) GetMeta(w http.ResponseWriter, r *http.Request) {
 	id := mc.Controller.HttpId(w, r, MetaResource)
 	m, err := meta.GetMetaById(mc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
-		http_transaction.NewResponse().SendError(w, "Meta not found: "+err.Error(), http.StatusNotFound)
+		c_http.NewResponse().SendError(w, "Meta not found: "+err.Error(), http.StatusNotFound)
 		return
 	}
 
-	http_transaction.NewResponse().SendSuccess(w, m, http.StatusOK)
+	c_http.NewResponse().SendSuccess(w, m, http.StatusOK)
 }
 
 func (mc *MetaController) CreateMeta(w http.ResponseWriter, r *http.Request) {
 	var m meta.Meta
 	if err := json.NewDecoder(r.Body).Decode(&m); err != nil {
-		http_transaction.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
+		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusCreated)
 		return
 	}
 
 	if err := meta.CreateMeta(mc.Controller.Dependencies.DBDecorator.GDB(), &m); err != nil {
-		http_transaction.NewResponse().SendError(w, "Failed to create meta: "+err.Error(), http.StatusInternalServerError)
+		c_http.NewResponse().SendError(w, "Failed to create meta: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	http_transaction.NewResponse().SendSuccess(w, m, http.StatusOK)
+	c_http.NewResponse().SendSuccess(w, m, http.StatusOK)
 }
 
 func (mc *MetaController) UpdateMeta(w http.ResponseWriter, r *http.Request) {
 	var m meta.Meta
 	if err := json.NewDecoder(r.Body).Decode(&m); err != nil {
-		http_transaction.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
+		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	err := meta.UpdateMeta(mc.Controller.Dependencies.DBDecorator.GDB(), &m)
 	if err != nil {
-		http_transaction.NewResponse().SendError(w, "Failed to update meta: "+err.Error(), http.StatusInternalServerError)
+		c_http.NewResponse().SendError(w, "Failed to update meta: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	http_transaction.NewResponse().SendSuccess(w, m, http.StatusOK)
+	c_http.NewResponse().SendSuccess(w, m, http.StatusOK)
 }
 
 func (mc *MetaController) DeleteMeta(w http.ResponseWriter, r *http.Request) {
 	id := mc.Controller.HttpId(w, r, UserResource)
 	err := meta.DeleteMetaById(mc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
-		http_transaction.NewResponse().SendError(w, "Failed to delete meta: "+err.Error(), http.StatusInternalServerError)
+		c_http.NewResponse().SendError(w, "Failed to delete meta: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 

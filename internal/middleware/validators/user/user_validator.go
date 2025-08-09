@@ -1,7 +1,7 @@
 package user
 
 import (
-	"chickChirick/internal/controller/http_transaction"
+	"chickChirick/internal/controller/c_http"
 	"chickChirick/internal/middleware/config"
 	"chickChirick/internal/middleware/service"
 	"chickChirick/internal/model/user"
@@ -19,11 +19,11 @@ func (uv UserValidator) Validate(next http.HandlerFunc) http.HandlerFunc {
 		var u user.User
 
 		if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
-			http_transaction.NewResponse().SendError(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+			c_http.NewResponse().SendError(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
 			return
 		}
 		if errorList := validateUser(u); len(errorList) > 0 {
-			errResponse := http_transaction.NewResponse()
+			errResponse := c_http.NewResponse()
 			errResponse.AddErrorsToErrorContainer(errorList)
 
 			errResponse.Send(w, http.StatusBadRequest)

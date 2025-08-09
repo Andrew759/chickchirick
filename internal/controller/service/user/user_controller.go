@@ -2,7 +2,7 @@ package user
 
 import (
 	"chickChirick/internal/controller/abstraction"
-	"chickChirick/internal/controller/http_transaction"
+	"chickChirick/internal/controller/c_http"
 	"chickChirick/internal/middleware/config"
 	userMiddleware "chickChirick/internal/middleware/validators/user"
 	"chickChirick/internal/model/user"
@@ -23,7 +23,7 @@ func (uc *UserController) HandleRequest() {
 		case http.MethodGet:
 			uc.GetUsers(w)
 		default:
-			http_transaction.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
+			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
 
@@ -38,7 +38,7 @@ func (uc *UserController) HandleRequest() {
 		case http.MethodDelete:
 			uc.DeleteUser(w, r)
 		default:
-			http_transaction.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
+			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
 }
@@ -46,25 +46,25 @@ func (uc *UserController) HandleRequest() {
 func (uc *UserController) GetUsers(w http.ResponseWriter) {
 	users, err := user.GetAllUsers(uc.Controller.Dependencies.DBDecorator.GDB())
 	if err != nil {
-		http_transaction.NewResponse().SendError(w, err.Error(), http.StatusInternalServerError)
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	http_transaction.NewResponse().SendSuccess(w, users, http.StatusOK)
+	c_http.NewResponse().SendSuccess(w, users, http.StatusOK)
 }
 
 func (uc *UserController) GetUser(w http.ResponseWriter, r *http.Request) {
 	id := uc.Controller.HttpId(w, r, UserResource)
 	u, err := user.GetUserById(uc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil && errors.Is(err, user.UserNotFoundErr) {
-		http_transaction.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
 		return
 	} else if err != nil {
-		http_transaction.NewResponse().SendError(w, err.Error(), http.StatusInternalServerError)
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	http_transaction.NewResponse().SendSuccess(w, u, http.StatusOK)
+	c_http.NewResponse().SendSuccess(w, u, http.StatusOK)
 }
 
 func (uc *UserController) CreateUser(w http.ResponseWriter, r *http.Request) {
@@ -74,14 +74,14 @@ func (uc *UserController) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	var userAlreadyExistError *user.UserAlreadyExistErr
 	if err != nil && errors.As(err, &userAlreadyExistError) {
-		http_transaction.NewResponse().SendError(w, err.Error(), http.StatusConflict)
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusConflict)
 		return
 	} else if err != nil {
-		http_transaction.NewResponse().SendError(w, "Failed to create user. "+err.Error(), http.StatusInternalServerError)
+		c_http.NewResponse().SendError(w, "Failed to create user. "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	http_transaction.NewResponse().SendSuccess(w, u, http.StatusCreated)
+	c_http.NewResponse().SendSuccess(w, u, http.StatusCreated)
 }
 
 func (uc *UserController) UpdateUser(w http.ResponseWriter, r *http.Request) {
@@ -90,20 +90,20 @@ func (uc *UserController) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	//TODO: доработать метод
 	err := user.UpdateUserById(uc.Controller.Dependencies.DBDecorator.GDB(), u)
 	if err != nil {
-		http_transaction.NewResponse().SendError(w, "Failed to update user. "+err.Error(), http.StatusInternalServerError)
+		c_http.NewResponse().SendError(w, "Failed to update user. "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	http_transaction.NewResponse().SendSuccess(w, u, http.StatusOK)
+	c_http.NewResponse().SendSuccess(w, u, http.StatusOK)
 }
 
 func (uc *UserController) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	id := uc.Controller.HttpId(w, r, UserResource)
 	err := user.DeleteUserById(uc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
-		http_transaction.NewResponse().SendError(w, "Failed to delete user. "+err.Error(), http.StatusInternalServerError)
+		c_http.NewResponse().SendError(w, "Failed to delete user. "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	http_transaction.NewResponse().SendSuccess(w, nil, http.StatusNoContent)
+	c_http.NewResponse().SendSuccess(w, nil, http.StatusNoContent)
 }

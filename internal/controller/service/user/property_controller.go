@@ -2,7 +2,7 @@ package user
 
 import (
 	"chickChirick/internal/controller/abstraction"
-	"chickChirick/internal/controller/http_transaction"
+	"chickChirick/internal/controller/c_http"
 	"chickChirick/internal/middleware/config"
 	userMiddleware "chickChirick/internal/middleware/validators/user"
 	property "chickChirick/internal/model/user"
@@ -22,7 +22,7 @@ func (pc *PropertyController) HandleRequest() {
 		case http.MethodGet:
 			pc.GetProperties(w)
 		default:
-			http_transaction.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
+			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
 
@@ -37,7 +37,7 @@ func (pc *PropertyController) HandleRequest() {
 		case http.MethodDelete:
 			pc.DeleteProperty(w, r)
 		default:
-			http_transaction.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
+			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
 }
@@ -45,11 +45,11 @@ func (pc *PropertyController) HandleRequest() {
 func (pc *PropertyController) GetProperties(w http.ResponseWriter) {
 	properties, err := property.GetProperties(pc.Controller.Dependencies.DBDecorator.GDB())
 	if err != nil {
-		http_transaction.NewResponse().SendError(w, err.Error(), http.StatusInternalServerError)
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	http_transaction.NewResponse().SendSuccess(w, properties, http.StatusOK)
+	c_http.NewResponse().SendSuccess(w, properties, http.StatusOK)
 }
 
 func (pc *PropertyController) GetProperty(w http.ResponseWriter, r *http.Request) {
@@ -57,22 +57,22 @@ func (pc *PropertyController) GetProperty(w http.ResponseWriter, r *http.Request
 	//TODO: тут, а также во всех остальныъ контроллерах потребуется доработка по типу, как это сделано в user_controller
 	p, err := property.GetPropertyById(pc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
-		http_transaction.NewResponse().SendError(w, "Property not found: "+err.Error(), http.StatusNotFound)
+		c_http.NewResponse().SendError(w, "Property not found: "+err.Error(), http.StatusNotFound)
 		return
 	}
 
-	http_transaction.NewResponse().SendSuccess(w, p, http.StatusOK)
+	c_http.NewResponse().SendSuccess(w, p, http.StatusOK)
 }
 
 func (pc *PropertyController) CreateProperty(w http.ResponseWriter, r *http.Request) {
 	p := r.Context().Value(config.UserPropertyKey).(*property.Property)
 
 	if err := property.CreateProperty(pc.Controller.Dependencies.DBDecorator.GDB(), p); err != nil {
-		http_transaction.NewResponse().SendError(w, "Failed to create property: "+err.Error(), http.StatusInternalServerError)
+		c_http.NewResponse().SendError(w, "Failed to create property: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	http_transaction.NewResponse().SendSuccess(w, p, http.StatusCreated)
+	c_http.NewResponse().SendSuccess(w, p, http.StatusCreated)
 }
 
 func (pc *PropertyController) UpdateProperty(w http.ResponseWriter, r *http.Request) {
@@ -80,18 +80,18 @@ func (pc *PropertyController) UpdateProperty(w http.ResponseWriter, r *http.Requ
 
 	err := property.UpdateProperty(pc.Controller.Dependencies.DBDecorator.GDB(), p)
 	if err != nil {
-		http_transaction.NewResponse().SendError(w, "Failed to update property: "+err.Error(), http.StatusInternalServerError)
+		c_http.NewResponse().SendError(w, "Failed to update property: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	http_transaction.NewResponse().SendSuccess(w, p, http.StatusOK)
+	c_http.NewResponse().SendSuccess(w, p, http.StatusOK)
 }
 
 func (pc *PropertyController) DeleteProperty(w http.ResponseWriter, r *http.Request) {
 	id := pc.Controller.HttpId(w, r, PropertyResource)
 	err := property.DeletePropertyById(pc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
-		http_transaction.NewResponse().SendError(w, "Failed to delete property: "+err.Error(), http.StatusInternalServerError)
+		c_http.NewResponse().SendError(w, "Failed to delete property: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 

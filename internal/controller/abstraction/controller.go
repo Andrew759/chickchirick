@@ -2,7 +2,7 @@ package abstraction
 
 import (
 	"chickChirick/cmd/service"
-	"chickChirick/internal/controller/http_transaction"
+	"chickChirick/internal/controller/c_http"
 	"net/http"
 	"strconv"
 	"strings"
@@ -28,12 +28,12 @@ func (c *Controller) HandleRequest() {}
 func (c *Controller) HttpId(w http.ResponseWriter, r *http.Request, urlPrefix string) int {
 	idStr := strings.TrimPrefix(r.URL.Path, urlPrefix)
 	if idStr == "" || idStr == r.URL.Path {
-		http_transaction.NewResponse().SendError(w, "Invalid URL", http.StatusBadRequest)
+		c_http.NewResponse().SendError(w, "Invalid URL", http.StatusBadRequest)
 	}
 
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		http_transaction.NewResponse().SendError(w, "Invalid URL id", http.StatusBadRequest)
+		c_http.NewResponse().SendError(w, "Invalid URL id", http.StatusBadRequest)
 	}
 
 	return id

@@ -2,6 +2,7 @@ package message
 
 import (
 	"chickChirick/internal/controller/abstraction"
+	"chickChirick/internal/controller/c_http"
 	settings "chickChirick/internal/model/message"
 	"encoding/json"
 	"net/http"
@@ -19,7 +20,7 @@ func (sc *SettingsController) HandleRequest() {
 		case http.MethodGet:
 			sc.GetSettings(w)
 		default:
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
 
@@ -34,7 +35,7 @@ func (sc *SettingsController) HandleRequest() {
 		case http.MethodDelete:
 			sc.DeleteSetting(w, r)
 		default:
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
 }
@@ -42,55 +43,43 @@ func (sc *SettingsController) HandleRequest() {
 func (sc *SettingsController) GetSettings(w http.ResponseWriter) {
 	settingList, err := settings.GetSettings(sc.Controller.Dependencies.DBDecorator.GDB())
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(settingList)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	c_http.NewResponse().SendSuccess(w, settingList, http.StatusOK)
 }
 
 func (sc *SettingsController) GetSetting(w http.ResponseWriter, r *http.Request) {
 	id := sc.Controller.HttpId(w, r, SettingResource)
 	s, err := settings.GetSettingsById(sc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
-		http.Error(w, "Setting not found: "+err.Error(), http.StatusNotFound)
+		c_http.NewResponse().SendSuccess(w, "Setting not found: "+err.Error(), http.StatusNotFound)
 		return
 	}
 
-	if err := json.NewEncoder(w).Encode(s); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	c_http.NewResponse().SendSuccess(w, s, http.StatusOK)
 }
 
 func (sc *SettingsController) CreateSetting(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
 	var s settings.Settings
 	if err := json.NewDecoder(r.Body).Decode(&s); err != nil {
-		http.Error(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
+		c_http.NewResponse().SendSuccess(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	if err := settings.CreateSettings(sc.Controller.Dependencies.DBDecorator.GDB(), &s); err != nil {
-		http.Error(w, "Failed to create setting: "+err.Error(), http.StatusInternalServerError)
+		c_http.NewResponse().SendSuccess(w, "Failed to create setting: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
-	if err := json.NewEncoder(w).Encode(s); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	c_http.NewResponse().SendSuccess(w, "Success", http.StatusCreated)
 }
 
 func (sc *SettingsController) UpdateSetting(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
 	var s settings.Settings
 	if err := json.NewDecoder(r.Body).Decode(&s); err != nil {
+		//TODO: обновить
 		http.Error(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
 		return
 	}
