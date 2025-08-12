@@ -25,7 +25,7 @@ func CreateProperty(db *gorm.DB, b *Property) error {
 	return db.Create(b).Error
 }
 
-func UpdateProperty(db *gorm.DB, p *Property) error {
+func UpdateProperty(db *gorm.DB, p *Property, id int) error {
 	return db.Save(p).Error
 }
 

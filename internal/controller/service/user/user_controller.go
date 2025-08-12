@@ -10,15 +10,13 @@ import (
 	"net/http"
 )
 
-const UserResource = "/user/"
-
 type UserController struct {
 	Controller abstraction.Controller
 	userMiddleware.UserValidator
 }
 
 func (uc *UserController) HandleRequest() {
-	uc.Controller.ServeMux.HandleFunc("/users/", func(w http.ResponseWriter, r *http.Request) {
+	uc.Controller.ServeMux.HandleFunc("/users", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			uc.GetUsers(w)
@@ -27,16 +25,29 @@ func (uc *UserController) HandleRequest() {
 		}
 	})
 
-	uc.Controller.ServeMux.HandleFunc(UserResource, func(w http.ResponseWriter, r *http.Request) {
+	uc.Controller.ServeMux.HandleFunc("/user", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			uc.Validate(func(w http.ResponseWriter, r *http.Request) {
+				uc.CreateUser(w, c_http.NewRequest(r))
+			})(w, r)
+		default:
+			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	})
+
+	uc.Controller.ServeMux.HandleFunc("/user/", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
-			uc.GetUser(w, r)
-		case http.MethodPost:
-			uc.Validate(uc.CreateUser)(w, r)
+			uc.GetUser(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/user/")))
 		case http.MethodPut:
-			uc.Validate(uc.UpdateUser)(w, r)
+			uc.Validate(func(w http.ResponseWriter, r *http.Request) {
+				uc.UpdateUser(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/user/")))
+			})(w, r)
 		case http.MethodDelete:
-			uc.DeleteUser(w, r)
+			uc.Validate(func(w http.ResponseWriter, r *http.Request) {
+				uc.DeleteUser(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/user/")))
+			})(w, r)
 		default:
 			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
@@ -53,8 +64,12 @@ func (uc *UserController) GetUsers(w http.ResponseWriter) {
 	c_http.NewResponse().SendSuccess(w, users, http.StatusOK)
 }
 
-func (uc *UserController) GetUser(w http.ResponseWriter, r *http.Request) {
-	id := uc.Controller.HttpId(w, r, UserResource)
+func (uc *UserController) GetUser(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+	}
+
 	u, err := user.GetUserById(uc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil && errors.Is(err, user.UserNotFoundErr) {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
@@ -67,7 +82,7 @@ func (uc *UserController) GetUser(w http.ResponseWriter, r *http.Request) {
 	c_http.NewResponse().SendSuccess(w, u, http.StatusOK)
 }
 
-func (uc *UserController) CreateUser(w http.ResponseWriter, r *http.Request) {
+func (uc *UserController) CreateUser(w http.ResponseWriter, r *c_http.Request) {
 	u := r.Context().Value(config.UserUserKey).(*user.User)
 
 	err := user.CreateUser(uc.Controller.Dependencies.DBDecorator.GDB(), u)
@@ -84,11 +99,16 @@ func (uc *UserController) CreateUser(w http.ResponseWriter, r *http.Request) {
 	c_http.NewResponse().SendSuccess(w, u, http.StatusCreated)
 }
 
-func (uc *UserController) UpdateUser(w http.ResponseWriter, r *http.Request) {
+func (uc *UserController) UpdateUser(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+	}
+
 	u := r.Context().Value(config.UserUserKey).(*user.User)
 
 	//TODO: доработать метод
-	err := user.UpdateUserById(uc.Controller.Dependencies.DBDecorator.GDB(), u)
+	err = user.UpdateUserById(uc.Controller.Dependencies.DBDecorator.GDB(), u, id)
 	if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to update user. "+err.Error(), http.StatusInternalServerError)
 		return
@@ -97,9 +117,13 @@ func (uc *UserController) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	c_http.NewResponse().SendSuccess(w, u, http.StatusOK)
 }
 
-func (uc *UserController) DeleteUser(w http.ResponseWriter, r *http.Request) {
-	id := uc.Controller.HttpId(w, r, UserResource)
-	err := user.DeleteUserById(uc.Controller.Dependencies.DBDecorator.GDB(), id)
+func (uc *UserController) DeleteUser(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+	}
+
+	err = user.DeleteUserById(uc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to delete user. "+err.Error(), http.StatusInternalServerError)
 		return

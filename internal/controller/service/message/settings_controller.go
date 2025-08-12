@@ -8,8 +8,6 @@ import (
 	"net/http"
 )
 
-const SettingResource = "/message/setting/"
-
 type SettingsController struct {
 	Controller abstraction.Controller
 }
@@ -51,7 +49,11 @@ func (sc *SettingsController) GetSettings(w http.ResponseWriter) {
 }
 
 func (sc *SettingsController) GetSetting(w http.ResponseWriter, r *http.Request) {
-	id := sc.Controller.HttpId(w, r, SettingResource)
+	id, err := sc.Controller.HttpId(w, r, SettingResource)
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+	}
+
 	s, err := settings.GetSettingsById(sc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		c_http.NewResponse().SendSuccess(w, "Setting not found: "+err.Error(), http.StatusNotFound)
@@ -93,8 +95,12 @@ func (sc *SettingsController) UpdateSetting(w http.ResponseWriter, r *http.Reque
 }
 
 func (sc *SettingsController) DeleteSetting(w http.ResponseWriter, r *http.Request) {
-	id := sc.Controller.HttpId(w, r, SettingResource)
-	err := settings.DeleteSettingsById(sc.Controller.Dependencies.DBDecorator.GDB(), id)
+	id, err := sc.Controller.HttpId(w, r, SettingResource)
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+	}
+
+	err = settings.DeleteSettingsById(sc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to delete setting: "+err.Error(), http.StatusInternalServerError)
 		return

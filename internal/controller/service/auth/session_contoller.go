@@ -8,8 +8,6 @@ import (
 	"net/http"
 )
 
-const SessionResource = "/auth/session/"
-
 type SessionController struct {
 	Controller abstraction.Controller
 }
@@ -51,7 +49,11 @@ func (sc *SessionController) GetSessions(w http.ResponseWriter) {
 }
 
 func (sc *SessionController) GetSession(w http.ResponseWriter, r *http.Request) {
-	id := sc.Controller.HttpId(w, r, SessionResource)
+	id, err := sc.Controller.HttpId(w, r, SessionResource)
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+	}
+
 	c, err := session.GetSessionById(sc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		c_http.NewResponse().SendError(w, "Session not found: "+err.Error(), http.StatusNotFound)
@@ -93,8 +95,12 @@ func (sc *SessionController) UpdateSession(w http.ResponseWriter, r *http.Reques
 }
 
 func (sc *SessionController) DeleteSession(w http.ResponseWriter, r *http.Request) {
-	id := sc.Controller.HttpId(w, r, SessionResource)
-	err := session.DeleteSessionById(sc.Controller.Dependencies.DBDecorator.GDB(), id)
+	id, err := sc.Controller.HttpId(w, r, SessionResource)
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+	}
+
+	err = session.DeleteSessionById(sc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to delete session: "+err.Error(), http.StatusInternalServerError)
 		return

@@ -9,8 +9,6 @@ import (
 	"net/http"
 )
 
-const PropertyResource = "/user/property/"
-
 type PropertyController struct {
 	Controller abstraction.Controller
 	userMiddleware.PropertyValidator
@@ -26,7 +24,7 @@ func (pc *PropertyController) HandleRequest() {
 		}
 	})
 
-	pc.Controller.ServeMux.HandleFunc(PropertyResource, func(w http.ResponseWriter, r *http.Request) {
+	pc.Controller.ServeMux.HandleFunc("/user/property", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			pc.GetProperty(w, r)
@@ -53,8 +51,12 @@ func (pc *PropertyController) GetProperties(w http.ResponseWriter) {
 }
 
 func (pc *PropertyController) GetProperty(w http.ResponseWriter, r *http.Request) {
-	id := pc.Controller.HttpId(w, r, PropertyResource)
-	//TODO: тут, а также во всех остальныъ контроллерах потребуется доработка по типу, как это сделано в user_controller
+	id, err := pc.Controller.HttpId(w, r, PropertyResource)
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+	}
+
+	//TODO: тут, а также во всех остальных контроллерах потребуется доработка по типу, как это сделано в user_controller
 	p, err := property.GetPropertyById(pc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		c_http.NewResponse().SendError(w, "Property not found: "+err.Error(), http.StatusNotFound)
@@ -76,9 +78,14 @@ func (pc *PropertyController) CreateProperty(w http.ResponseWriter, r *http.Requ
 }
 
 func (pc *PropertyController) UpdateProperty(w http.ResponseWriter, r *http.Request) {
+	id, err := pc.Controller.HttpId(w, r, PropertyResource)
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+	}
+
 	p := r.Context().Value(config.UserPropertyKey).(*property.Property)
 
-	err := property.UpdateProperty(pc.Controller.Dependencies.DBDecorator.GDB(), p)
+	err = property.UpdateProperty(pc.Controller.Dependencies.DBDecorator.GDB(), p, id)
 	if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to update property: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -88,8 +95,11 @@ func (pc *PropertyController) UpdateProperty(w http.ResponseWriter, r *http.Requ
 }
 
 func (pc *PropertyController) DeleteProperty(w http.ResponseWriter, r *http.Request) {
-	id := pc.Controller.HttpId(w, r, PropertyResource)
-	err := property.DeletePropertyById(pc.Controller.Dependencies.DBDecorator.GDB(), id)
+	id, err := pc.Controller.HttpId(w, r, PropertyResource)
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+	}
+	err = property.DeletePropertyById(pc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to delete property: "+err.Error(), http.StatusInternalServerError)
 		return

@@ -8,8 +8,6 @@ import (
 	"net/http"
 )
 
-const MetaResource = "/message/meta"
-
 type MetaController struct {
 	Controller abstraction.Controller
 }
@@ -51,7 +49,11 @@ func (mc *MetaController) GetMetas(w http.ResponseWriter) {
 }
 
 func (mc *MetaController) GetMeta(w http.ResponseWriter, r *http.Request) {
-	id := mc.Controller.HttpId(w, r, MetaResource)
+	id, err := mc.Controller.HttpId(w, r, MetaResource)
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+	}
+
 	m, err := meta.GetMetaById(mc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		c_http.NewResponse().SendError(w, "Meta not found: "+err.Error(), http.StatusNotFound)
@@ -93,8 +95,12 @@ func (mc *MetaController) UpdateMeta(w http.ResponseWriter, r *http.Request) {
 }
 
 func (mc *MetaController) DeleteMeta(w http.ResponseWriter, r *http.Request) {
-	id := mc.Controller.HttpId(w, r, MetaResource)
-	err := meta.DeleteMetaById(mc.Controller.Dependencies.DBDecorator.GDB(), id)
+	id, err := mc.Controller.HttpId(w, r, MetaResource)
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+	}
+
+	err = meta.DeleteMetaById(mc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to delete meta: "+err.Error(), http.StatusInternalServerError)
 		return

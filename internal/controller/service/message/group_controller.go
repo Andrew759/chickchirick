@@ -8,8 +8,6 @@ import (
 	"net/http"
 )
 
-const GroupResource = "/message/group/"
-
 type GroupController struct {
 	Controller abstraction.Controller
 }
@@ -51,7 +49,11 @@ func (gc *GroupController) GetGroups(w http.ResponseWriter) {
 }
 
 func (gc *GroupController) GetGroup(w http.ResponseWriter, r *http.Request) {
-	id := gc.Controller.HttpId(w, r, GroupResource)
+	id, err := gc.Controller.HttpId(w, r, GroupResource)
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+	}
+
 	g, err := group.GetGroupById(gc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		c_http.NewResponse().SendError(w, "Group not found: "+err.Error(), http.StatusNotFound)
@@ -93,8 +95,12 @@ func (gc *GroupController) UpdateGroup(w http.ResponseWriter, r *http.Request) {
 }
 
 func (gc *GroupController) DeleteGroup(w http.ResponseWriter, r *http.Request) {
-	id := gc.Controller.HttpId(w, r, GroupResource)
-	err := group.DeleteGroupById(gc.Controller.Dependencies.DBDecorator.GDB(), id)
+	id, err := gc.Controller.HttpId(w, r, GroupResource)
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+	}
+
+	err = group.DeleteGroupById(gc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to delete group: "+err.Error(), http.StatusInternalServerError)
 		return

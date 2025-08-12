@@ -2,7 +2,7 @@ package abstraction
 
 import (
 	"chickChirick/cmd/service"
-	"chickChirick/internal/controller/c_http"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -25,16 +25,20 @@ type ControllerInterface interface {
 func (c *Controller) HandleRequest() {}
 
 // HttpId - берет id из URL. Метод предполагает, что ID передается в согласовании с правилами REST API
-func (c *Controller) HttpId(w http.ResponseWriter, r *http.Request, urlPrefix string) int {
-	idStr := strings.TrimPrefix(r.URL.Path, urlPrefix)
-	if idStr == "" || idStr == r.URL.Path {
-		c_http.NewResponse().SendError(w, "Invalid URL", http.StatusBadRequest)
+// @deprecated
+// TODO: метод должен быть заменён на аналогичный из c_http.Request
+func (c *Controller) HttpId(w http.ResponseWriter, r *http.Request, urlPrefix string) (int, error) {
+	path := strings.TrimPrefix(r.URL.Path, urlPrefix)
+	path = strings.TrimPrefix(path, "/")
+
+	if path == "" {
+		return 0, fmt.Errorf("missing id in URL")
 	}
 
-	id, err := strconv.Atoi(idStr)
+	id, err := strconv.Atoi(path)
 	if err != nil {
-		c_http.NewResponse().SendError(w, "Invalid URL id", http.StatusBadRequest)
+		return 0, fmt.Errorf("invalid URL id")
 	}
 
-	return id
+	return id, nil
 }

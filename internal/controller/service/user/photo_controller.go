@@ -8,8 +8,6 @@ import (
 	"net/http"
 )
 
-const PhotoResource = "/user/photo/"
-
 type PhotoController struct {
 	Controller abstraction.Controller
 }
@@ -51,7 +49,11 @@ func (pc *PhotoController) GetPhotos(w http.ResponseWriter) {
 }
 
 func (pc *PhotoController) GetPhoto(w http.ResponseWriter, r *http.Request) {
-	id := pc.Controller.HttpId(w, r, PhotoResource)
+	id, err := pc.Controller.HttpId(w, r, PhotoResource)
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+	}
+
 	p, err := photo.GetPhotoById(pc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		c_http.NewResponse().SendError(w, "Photo not found: "+err.Error(), http.StatusNotFound)
@@ -93,8 +95,12 @@ func (pc *PhotoController) UpdatePhoto(w http.ResponseWriter, r *http.Request) {
 }
 
 func (pc *PhotoController) DeletePhoto(w http.ResponseWriter, r *http.Request) {
-	id := pc.Controller.HttpId(w, r, PhotoResource)
-	err := photo.DeletePhotoById(pc.Controller.Dependencies.DBDecorator.GDB(), id)
+	id, err := pc.Controller.HttpId(w, r, PhotoResource)
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+	}
+
+	err = photo.DeletePhotoById(pc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to delete photo: "+err.Error(), http.StatusInternalServerError)
 		return

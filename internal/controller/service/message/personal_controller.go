@@ -8,8 +8,6 @@ import (
 	"net/http"
 )
 
-const PersonalResource = "/message/personal/"
-
 type PersonalController struct {
 	Controller abstraction.Controller
 }
@@ -51,7 +49,11 @@ func (pc *PersonalController) GetPersonals(w http.ResponseWriter) {
 }
 
 func (pc *PersonalController) GetPersonal(w http.ResponseWriter, r *http.Request) {
-	id := pc.Controller.HttpId(w, r, PersonalResource)
+	id, err := pc.Controller.HttpId(w, r, PersonalResource)
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+	}
+
 	p, err := personal.GetPersonalById(pc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		c_http.NewResponse().SendError(w, "Personal not found: "+err.Error(), http.StatusNotFound)
@@ -93,8 +95,12 @@ func (pc *PersonalController) UpdatePersonal(w http.ResponseWriter, r *http.Requ
 }
 
 func (pc *PersonalController) DeletePersonal(w http.ResponseWriter, r *http.Request) {
-	id := pc.Controller.HttpId(w, r, PersonalResource)
-	err := personal.DeletePersonalById(pc.Controller.Dependencies.DBDecorator.GDB(), id)
+	id, err := pc.Controller.HttpId(w, r, PersonalResource)
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+	}
+
+	err = personal.DeletePersonalById(pc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to delete personal: "+err.Error(), http.StatusInternalServerError)
 		return

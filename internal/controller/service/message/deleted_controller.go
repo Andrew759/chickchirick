@@ -8,8 +8,6 @@ import (
 	"net/http"
 )
 
-const DeletedResource = "/message/deleted/"
-
 type DeletedController struct {
 	Controller abstraction.Controller
 }
@@ -51,7 +49,11 @@ func (dc *DeletedController) GetDeletedList(w http.ResponseWriter) {
 }
 
 func (dc *DeletedController) GetDeleted(w http.ResponseWriter, r *http.Request) {
-	id := dc.Controller.HttpId(w, r, DeletedResource)
+	id, err := dc.Controller.HttpId(w, r, DeletedResource)
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+	}
+
 	d, err := deleted.GetDeletedById(dc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		c_http.NewResponse().SendError(w, "Deleted not found: "+err.Error(), http.StatusNotFound)
@@ -93,8 +95,12 @@ func (dc *DeletedController) UpdateDeleted(w http.ResponseWriter, r *http.Reques
 }
 
 func (dc *DeletedController) DeleteDeleted(w http.ResponseWriter, r *http.Request) {
-	id := dc.Controller.HttpId(w, r, DeletedResource)
-	err := deleted.DeleteDeletedById(dc.Controller.Dependencies.DBDecorator.GDB(), id)
+	id, err := dc.Controller.HttpId(w, r, DeletedResource)
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+	}
+
+	err = deleted.DeleteDeletedById(dc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to delete deleted: "+err.Error(), http.StatusInternalServerError)
 		return

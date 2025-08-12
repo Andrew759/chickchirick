@@ -8,8 +8,6 @@ import (
 	"net/http"
 )
 
-const FileResource = "/message/file/"
-
 type FileController struct {
 	Controller abstraction.Controller
 }
@@ -51,7 +49,11 @@ func (fc *FileController) GetFiles(w http.ResponseWriter) {
 }
 
 func (fc *FileController) GetFile(w http.ResponseWriter, r *http.Request) {
-	id := fc.Controller.HttpId(w, r, FileResource)
+	id, err := fc.Controller.HttpId(w, r, FileResource)
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+	}
+
 	f, err := file.GetFileById(fc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		c_http.NewResponse().SendError(w, "File not found: "+err.Error(), http.StatusNotFound)
@@ -93,8 +95,12 @@ func (fc *FileController) UpdateFile(w http.ResponseWriter, r *http.Request) {
 }
 
 func (fc *FileController) DeleteFile(w http.ResponseWriter, r *http.Request) {
-	id := fc.Controller.HttpId(w, r, FileResource)
-	err := file.DeleteFileById(fc.Controller.Dependencies.DBDecorator.GDB(), id)
+	id, err := fc.Controller.HttpId(w, r, FileResource)
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+	}
+
+	err = file.DeleteFileById(fc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to delete file: "+err.Error(), http.StatusInternalServerError)
 		return

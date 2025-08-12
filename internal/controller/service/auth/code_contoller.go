@@ -8,8 +8,6 @@ import (
 	"net/http"
 )
 
-const CodeResource = "/auth/code/"
-
 type CodeController struct {
 	Controller abstraction.Controller
 }
@@ -51,7 +49,11 @@ func (cc *CodeController) GetCodes(w http.ResponseWriter) {
 }
 
 func (cc *CodeController) GetCode(w http.ResponseWriter, r *http.Request) {
-	id := cc.Controller.HttpId(w, r, CodeResource)
+	id, err := cc.Controller.HttpId(w, r, CodeResource)
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+	}
+
 	c, err := code.GetCodeById(cc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		c_http.NewResponse().SendError(w, "Code not found: "+err.Error(), http.StatusNotFound)
@@ -93,8 +95,12 @@ func (cc *CodeController) UpdateCode(w http.ResponseWriter, r *http.Request) {
 }
 
 func (cc *CodeController) DeleteCode(w http.ResponseWriter, r *http.Request) {
-	id := cc.Controller.HttpId(w, r, CodeResource)
-	err := code.DeleteCodeById(cc.Controller.Dependencies.DBDecorator.GDB(), id)
+	id, err := cc.Controller.HttpId(w, r, CodeResource)
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+	}
+
+	err = code.DeleteCodeById(cc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to delete code: "+err.Error(), http.StatusInternalServerError)
 		return

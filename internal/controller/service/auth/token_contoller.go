@@ -8,8 +8,6 @@ import (
 	"net/http"
 )
 
-const TokenResource = "/auth/token/"
-
 type TokenController struct {
 	Controller abstraction.Controller
 }
@@ -51,7 +49,11 @@ func (tc *TokenController) GetTokens(w http.ResponseWriter) {
 }
 
 func (tc *TokenController) GetToken(w http.ResponseWriter, r *http.Request) {
-	id := tc.Controller.HttpId(w, r, TokenResource)
+	id, err := tc.Controller.HttpId(w, r, TokenResource)
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+	}
+
 	t, err := token.GetTokenById(tc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		c_http.NewResponse().SendError(w, "Token not found: "+err.Error(), http.StatusNotFound)
@@ -93,8 +95,12 @@ func (tc *TokenController) UpdateToken(w http.ResponseWriter, r *http.Request) {
 }
 
 func (tc *TokenController) DeleteToken(w http.ResponseWriter, r *http.Request) {
-	id := tc.Controller.HttpId(w, r, TokenResource)
-	err := token.DeleteTokenById(tc.Controller.Dependencies.DBDecorator.GDB(), id)
+	id, err := tc.Controller.HttpId(w, r, TokenResource)
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+	}
+
+	err = token.DeleteTokenById(tc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to delete token: "+err.Error(), http.StatusInternalServerError)
 		return

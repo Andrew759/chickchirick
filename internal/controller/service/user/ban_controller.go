@@ -8,8 +8,6 @@ import (
 	"net/http"
 )
 
-const BanResource = "/user/ban/"
-
 type BanController struct {
 	Controller abstraction.Controller
 }
@@ -51,7 +49,11 @@ func (bc *BanController) GetBans(w http.ResponseWriter) {
 }
 
 func (bc *BanController) GetBan(w http.ResponseWriter, r *http.Request) {
-	id := bc.Controller.HttpId(w, r, BanResource)
+	id, err := bc.Controller.HttpId(w, r, BanResource)
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+	}
+
 	b, err := ban.GetBanById(bc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		c_http.NewResponse().SendError(w, "Ban not found: "+err.Error(), http.StatusNotFound)
@@ -93,8 +95,12 @@ func (bc *BanController) UpdateBan(w http.ResponseWriter, r *http.Request) {
 }
 
 func (bc *BanController) DeleteBan(w http.ResponseWriter, r *http.Request) {
-	id := bc.Controller.HttpId(w, r, BanResource)
-	err := ban.DeleteBanById(bc.Controller.Dependencies.DBDecorator.GDB(), id)
+	id, err := bc.Controller.HttpId(w, r, BanResource)
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+	}
+
+	err = ban.DeleteBanById(bc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to delete ban: "+err.Error(), http.StatusInternalServerError)
 		return

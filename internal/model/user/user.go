@@ -49,7 +49,7 @@ func CreateUser(db *gorm.DB, u *User) error {
 
 }
 
-func UpdateUserById(db *gorm.DB, u *User) error {
+func UpdateUserById(db *gorm.DB, u *User, id int) error {
 	return db.Save(u).Error
 }
 

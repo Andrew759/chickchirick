@@ -8,8 +8,6 @@ import (
 	"net/http"
 )
 
-const StatusResource = "/message/status/"
-
 type StatusController struct {
 	Controller abstraction.Controller
 }
@@ -51,7 +49,11 @@ func (sc *StatusController) GetStatuses(w http.ResponseWriter) {
 }
 
 func (sc *StatusController) GetStatus(w http.ResponseWriter, r *http.Request) {
-	id := sc.Controller.HttpId(w, r, StatusResource)
+	id, err := sc.Controller.HttpId(w, r, StatusResource)
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+	}
+
 	s, err := status.GetStatusById(sc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		c_http.NewResponse().SendError(w, "Status not found: "+err.Error(), http.StatusNotFound)
@@ -77,6 +79,8 @@ func (sc *StatusController) CreateStatus(w http.ResponseWriter, r *http.Request)
 }
 
 func (sc *StatusController) UpdateStatus(w http.ResponseWriter, r *http.Request) {
+	//TODO: во всех остальных методах выше (по списку файлов) требуется обработка ид
+
 	var s status.Status
 	if err := json.NewDecoder(r.Body).Decode(&s); err != nil {
 		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
@@ -93,8 +97,12 @@ func (sc *StatusController) UpdateStatus(w http.ResponseWriter, r *http.Request)
 }
 
 func (sc *StatusController) DeleteStatus(w http.ResponseWriter, r *http.Request) {
-	id := sc.Controller.HttpId(w, r, StatusResource)
-	err := status.DeleteStatusById(sc.Controller.Dependencies.DBDecorator.GDB(), id)
+	id, err := sc.Controller.HttpId(w, r, StatusResource)
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+	}
+
+	err = status.DeleteStatusById(sc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to delete status: "+err.Error(), http.StatusInternalServerError)
 		return

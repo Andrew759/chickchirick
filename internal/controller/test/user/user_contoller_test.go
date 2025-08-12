@@ -130,7 +130,7 @@ func doUpdateUserRequest(t *testing.T, uctc UserControllerTestContainer, updated
 	t.Helper()
 
 	body, _ := json.Marshal(updatedUser)
-	req, _ := http.NewRequest(http.MethodPut, uctc.ServerURL+"/user?id="+strconv.Itoa(updatedUser.Id), bytes.NewBuffer(body))
+	req, _ := http.NewRequest(http.MethodPut, uctc.ServerURL+"/user/"+strconv.Itoa(updatedUser.Id), bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
 	resp, _ := uctc.HttpClient.Do(req)
 	defer resp.Body.Close()
@@ -405,13 +405,13 @@ func TestCreateAndGetUserSuccess(t *testing.T) {
 	var createdUser userModels.User
 	json.NewDecoder(createdUserDecodedResp.PayloadContainer).Decode(&createdUser)
 
-	getResp, err := uctc.HttpClient.Get(uctc.ServerURL + "/user?id=" + strconv.Itoa(createdUser.Id))
+	getResp, err := uctc.HttpClient.Get(uctc.ServerURL + "/user/" + strconv.Itoa(createdUser.Id))
 	defer getResp.Body.Close()
 
-	var getResult c_http.Response
-	json.NewDecoder(getResp.Body).Decode(&getResult)
+	var decodedGetResp c_http.Response
+	json.NewDecoder(getResp.Body).Decode(&decodedGetResp)
 	var gotUser userModels.User
-	json.NewDecoder(getResult.PayloadContainer).Decode(&gotUser)
+	json.NewDecoder(decodedGetResp.PayloadContainer).Decode(&gotUser)
 
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, getResp.StatusCode)

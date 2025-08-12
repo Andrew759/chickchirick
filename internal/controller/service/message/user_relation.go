@@ -8,8 +8,6 @@ import (
 	"net/http"
 )
 
-const UserRelationResource = "/message/user-relation/"
-
 type UserRelationController struct {
 	Controller abstraction.Controller
 }
@@ -51,7 +49,11 @@ func (urc *UserRelationController) GetUserRelations(w http.ResponseWriter) {
 }
 
 func (urc *UserRelationController) GetUserRelation(w http.ResponseWriter, r *http.Request) {
-	id := urc.Controller.HttpId(w, r, UserRelationResource)
+	id, err := urc.Controller.HttpId(w, r, UserRelationResource)
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+	}
+
 	ur, err := userRelation.GetUserRelationById(urc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		c_http.NewResponse().SendError(w, "User relation not found: "+err.Error(), http.StatusNotFound)
@@ -93,8 +95,12 @@ func (urc *UserRelationController) UpdateUserRelation(w http.ResponseWriter, r *
 }
 
 func (urc *UserRelationController) DeleteUserRelation(w http.ResponseWriter, r *http.Request) {
-	id := urc.Controller.HttpId(w, r, UserRelationResource)
-	err := userRelation.DeleteUserRelationById(urc.Controller.Dependencies.DBDecorator.GDB(), id)
+	id, err := urc.Controller.HttpId(w, r, UserRelationResource)
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+	}
+
+	err = userRelation.DeleteUserRelationById(urc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to delete user relation: "+err.Error(), http.StatusInternalServerError)
 		return
