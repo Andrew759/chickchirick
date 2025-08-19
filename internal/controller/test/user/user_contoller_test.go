@@ -437,7 +437,7 @@ func TestCreateAndGetNotExistingUserFail(t *testing.T) {
 	json.NewDecoder(createdUserDecodedResp.PayloadContainer).Decode(&createdUser)
 
 	notExistUserId := createdUser.Id + 1
-	getResp, err := uctc.HttpClient.Get(uctc.ServerURL + "/user?id=" + strconv.Itoa(notExistUserId))
+	getResp, err := uctc.HttpClient.Get(uctc.ServerURL + "/user/" + strconv.Itoa(notExistUserId))
 	defer getResp.Body.Close()
 
 	var getResult c_http.Response
@@ -546,14 +546,14 @@ func TestDeleteUserSuccess(t *testing.T) {
 	json.NewDecoder(createdResp.PayloadContainer).Decode(&createdUser)
 
 	// Удаляем пользователя
-	req, _ := http.NewRequest(http.MethodDelete, uctc.ServerURL+"/user?id="+strconv.Itoa(createdUser.Id), nil)
+	req, _ := http.NewRequest(http.MethodDelete, uctc.ServerURL+"/user/"+strconv.Itoa(createdUser.Id), nil)
 	resp, err := uctc.HttpClient.Do(req)
 	assert.NoError(t, err)
 	defer resp.Body.Close()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	// Проверяем, что его больше нет
-	getResp, _ := uctc.HttpClient.Get(uctc.ServerURL + "/user?id=" + strconv.Itoa(createdUser.Id))
+	getResp, _ := uctc.HttpClient.Get(uctc.ServerURL + "/user/" + strconv.Itoa(createdUser.Id))
 	defer getResp.Body.Close()
 
 	var getResult c_http.Response
@@ -566,7 +566,7 @@ func TestDeleteUserFail(t *testing.T) {
 	uctc := initUCContainer(t)
 
 	// Удаляем несуществующего пользователя
-	req, _ := http.NewRequest(http.MethodDelete, uctc.ServerURL+"/user?id=9999", nil)
+	req, _ := http.NewRequest(http.MethodDelete, uctc.ServerURL+"/user/9999", nil)
 	resp, err := uctc.HttpClient.Do(req)
 	assert.NoError(t, err)
 	defer resp.Body.Close()

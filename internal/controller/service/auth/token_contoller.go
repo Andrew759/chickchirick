@@ -22,16 +22,23 @@ func (tc *TokenController) HandleRequest() {
 		}
 	})
 
-	tc.Controller.ServeMux.HandleFunc(TokenResource, func(w http.ResponseWriter, r *http.Request) {
+	tc.Controller.ServeMux.HandleFunc("/auth/token", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			tc.CreateToken(w, c_http.NewRequest(r))
+		default:
+			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	})
+
+	tc.Controller.ServeMux.HandleFunc("/auth/token/", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
-			tc.GetToken(w, r)
-		case http.MethodPost:
-			tc.CreateToken(w, r)
+			tc.GetToken(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/auth/token/")))
 		case http.MethodPut:
-			tc.UpdateToken(w, r)
+			tc.UpdateToken(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/auth/token/")))
 		case http.MethodDelete:
-			tc.DeleteToken(w, r)
+			tc.DeleteToken(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/auth/token/")))
 		default:
 			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
@@ -48,10 +55,11 @@ func (tc *TokenController) GetTokens(w http.ResponseWriter) {
 	c_http.NewResponse().SendSuccess(w, tokens, http.StatusOK)
 }
 
-func (tc *TokenController) GetToken(w http.ResponseWriter, r *http.Request) {
-	id, err := tc.Controller.HttpId(w, r, TokenResource)
+func (tc *TokenController) GetToken(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	t, err := token.GetTokenById(tc.Controller.Dependencies.DBDecorator.GDB(), id)
@@ -63,7 +71,7 @@ func (tc *TokenController) GetToken(w http.ResponseWriter, r *http.Request) {
 	c_http.NewResponse().SendSuccess(w, t, http.StatusOK)
 }
 
-func (tc *TokenController) CreateToken(w http.ResponseWriter, r *http.Request) {
+func (tc *TokenController) CreateToken(w http.ResponseWriter, r *c_http.Request) {
 	var t token.Token
 	if err := json.NewDecoder(r.Body).Decode(&t); err != nil {
 		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
@@ -78,7 +86,7 @@ func (tc *TokenController) CreateToken(w http.ResponseWriter, r *http.Request) {
 	c_http.NewResponse().SendSuccess(w, t, http.StatusCreated)
 }
 
-func (tc *TokenController) UpdateToken(w http.ResponseWriter, r *http.Request) {
+func (tc *TokenController) UpdateToken(w http.ResponseWriter, r *c_http.Request) {
 	var t token.Token
 	if err := json.NewDecoder(r.Body).Decode(&t); err != nil {
 		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
@@ -94,10 +102,11 @@ func (tc *TokenController) UpdateToken(w http.ResponseWriter, r *http.Request) {
 	c_http.NewResponse().SendSuccess(w, t, http.StatusOK)
 }
 
-func (tc *TokenController) DeleteToken(w http.ResponseWriter, r *http.Request) {
-	id, err := tc.Controller.HttpId(w, r, TokenResource)
+func (tc *TokenController) DeleteToken(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	err = token.DeleteTokenById(tc.Controller.Dependencies.DBDecorator.GDB(), id)

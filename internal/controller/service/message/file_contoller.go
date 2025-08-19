@@ -22,16 +22,23 @@ func (fc *FileController) HandleRequest() {
 		}
 	})
 
-	fc.Controller.ServeMux.HandleFunc(FileResource, func(w http.ResponseWriter, r *http.Request) {
+	fc.Controller.ServeMux.HandleFunc("/message/file", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			fc.CreateFile(w, c_http.NewRequest(r))
+		default:
+			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	})
+
+	fc.Controller.ServeMux.HandleFunc("/message/file/", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
-			fc.GetFile(w, r)
-		case http.MethodPost:
-			fc.CreateFile(w, r)
+			fc.GetFile(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/file/")))
 		case http.MethodPut:
-			fc.UpdateFile(w, r)
+			fc.UpdateFile(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/file/")))
 		case http.MethodDelete:
-			fc.DeleteFile(w, r)
+			fc.DeleteFile(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/file/")))
 		default:
 			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
@@ -48,10 +55,11 @@ func (fc *FileController) GetFiles(w http.ResponseWriter) {
 	c_http.NewResponse().SendSuccess(w, files, http.StatusOK)
 }
 
-func (fc *FileController) GetFile(w http.ResponseWriter, r *http.Request) {
-	id, err := fc.Controller.HttpId(w, r, FileResource)
+func (fc *FileController) GetFile(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	f, err := file.GetFileById(fc.Controller.Dependencies.DBDecorator.GDB(), id)
@@ -63,7 +71,7 @@ func (fc *FileController) GetFile(w http.ResponseWriter, r *http.Request) {
 	c_http.NewResponse().SendSuccess(w, f, http.StatusOK)
 }
 
-func (fc *FileController) CreateFile(w http.ResponseWriter, r *http.Request) {
+func (fc *FileController) CreateFile(w http.ResponseWriter, r *c_http.Request) {
 	var f file.File
 	if err := json.NewDecoder(r.Body).Decode(&f); err != nil {
 		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
@@ -78,7 +86,7 @@ func (fc *FileController) CreateFile(w http.ResponseWriter, r *http.Request) {
 	c_http.NewResponse().SendSuccess(w, f, http.StatusCreated)
 }
 
-func (fc *FileController) UpdateFile(w http.ResponseWriter, r *http.Request) {
+func (fc *FileController) UpdateFile(w http.ResponseWriter, r *c_http.Request) {
 	var f file.File
 	if err := json.NewDecoder(r.Body).Decode(&f); err != nil {
 		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
@@ -94,10 +102,11 @@ func (fc *FileController) UpdateFile(w http.ResponseWriter, r *http.Request) {
 	c_http.NewResponse().SendSuccess(w, f, http.StatusOK)
 }
 
-func (fc *FileController) DeleteFile(w http.ResponseWriter, r *http.Request) {
-	id, err := fc.Controller.HttpId(w, r, FileResource)
+func (fc *FileController) DeleteFile(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	err = file.DeleteFileById(fc.Controller.Dependencies.DBDecorator.GDB(), id)

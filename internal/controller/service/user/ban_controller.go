@@ -22,16 +22,23 @@ func (bc *BanController) HandleRequest() {
 		}
 	})
 
-	bc.Controller.ServeMux.HandleFunc(BanResource, func(w http.ResponseWriter, r *http.Request) {
+	bc.Controller.ServeMux.HandleFunc("/user/ban", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			bc.CreateBan(w, c_http.NewRequest(r))
+		default:
+			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	})
+
+	bc.Controller.ServeMux.HandleFunc("/user/ban/", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
-			bc.GetBan(w, r)
-		case http.MethodPost:
-			bc.CreateBan(w, r)
+			bc.GetBan(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/user/ban/")))
 		case http.MethodPut:
-			bc.UpdateBan(w, r)
+			bc.UpdateBan(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/user/ban/")))
 		case http.MethodDelete:
-			bc.DeleteBan(w, r)
+			bc.DeleteBan(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/user/ban/")))
 		default:
 			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
@@ -48,10 +55,11 @@ func (bc *BanController) GetBans(w http.ResponseWriter) {
 	c_http.NewResponse().SendSuccess(w, bans, http.StatusOK)
 }
 
-func (bc *BanController) GetBan(w http.ResponseWriter, r *http.Request) {
-	id, err := bc.Controller.HttpId(w, r, BanResource)
+func (bc *BanController) GetBan(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	b, err := ban.GetBanById(bc.Controller.Dependencies.DBDecorator.GDB(), id)
@@ -63,7 +71,7 @@ func (bc *BanController) GetBan(w http.ResponseWriter, r *http.Request) {
 	c_http.NewResponse().SendSuccess(w, b, http.StatusOK)
 }
 
-func (bc *BanController) CreateBan(w http.ResponseWriter, r *http.Request) {
+func (bc *BanController) CreateBan(w http.ResponseWriter, r *c_http.Request) {
 	var b ban.Ban
 	if err := json.NewDecoder(r.Body).Decode(&b); err != nil {
 		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
@@ -78,7 +86,7 @@ func (bc *BanController) CreateBan(w http.ResponseWriter, r *http.Request) {
 	c_http.NewResponse().SendSuccess(w, b, http.StatusCreated)
 }
 
-func (bc *BanController) UpdateBan(w http.ResponseWriter, r *http.Request) {
+func (bc *BanController) UpdateBan(w http.ResponseWriter, r *c_http.Request) {
 	var b ban.Ban
 	if err := json.NewDecoder(r.Body).Decode(&b); err != nil {
 		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
@@ -94,10 +102,11 @@ func (bc *BanController) UpdateBan(w http.ResponseWriter, r *http.Request) {
 	c_http.NewResponse().SendSuccess(w, b, http.StatusOK)
 }
 
-func (bc *BanController) DeleteBan(w http.ResponseWriter, r *http.Request) {
-	id, err := bc.Controller.HttpId(w, r, BanResource)
+func (bc *BanController) DeleteBan(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	err = ban.DeleteBanById(bc.Controller.Dependencies.DBDecorator.GDB(), id)

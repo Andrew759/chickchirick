@@ -22,16 +22,23 @@ func (sc *SettingsController) HandleRequest() {
 		}
 	})
 
-	sc.Controller.ServeMux.HandleFunc(SettingResource, func(w http.ResponseWriter, r *http.Request) {
+	sc.Controller.ServeMux.HandleFunc("/message/setting", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			sc.CreateSetting(w, c_http.NewRequest(r))
+		default:
+			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	})
+
+	sc.Controller.ServeMux.HandleFunc("/message/setting/", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
-			sc.GetSetting(w, r)
-		case http.MethodPost:
-			sc.CreateSetting(w, r)
+			sc.GetSetting(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/setting/")))
 		case http.MethodPut:
-			sc.UpdateSetting(w, r)
+			sc.UpdateSetting(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/setting/")))
 		case http.MethodDelete:
-			sc.DeleteSetting(w, r)
+			sc.DeleteSetting(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/setting/")))
 		default:
 			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
@@ -48,10 +55,11 @@ func (sc *SettingsController) GetSettings(w http.ResponseWriter) {
 	c_http.NewResponse().SendSuccess(w, settingList, http.StatusOK)
 }
 
-func (sc *SettingsController) GetSetting(w http.ResponseWriter, r *http.Request) {
-	id, err := sc.Controller.HttpId(w, r, SettingResource)
+func (sc *SettingsController) GetSetting(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	s, err := settings.GetSettingsById(sc.Controller.Dependencies.DBDecorator.GDB(), id)
@@ -63,7 +71,7 @@ func (sc *SettingsController) GetSetting(w http.ResponseWriter, r *http.Request)
 	c_http.NewResponse().SendSuccess(w, s, http.StatusOK)
 }
 
-func (sc *SettingsController) CreateSetting(w http.ResponseWriter, r *http.Request) {
+func (sc *SettingsController) CreateSetting(w http.ResponseWriter, r *c_http.Request) {
 	var s settings.Settings
 	if err := json.NewDecoder(r.Body).Decode(&s); err != nil {
 		c_http.NewResponse().SendSuccess(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
@@ -78,7 +86,7 @@ func (sc *SettingsController) CreateSetting(w http.ResponseWriter, r *http.Reque
 	c_http.NewResponse().SendSuccess(w, "Success", http.StatusCreated)
 }
 
-func (sc *SettingsController) UpdateSetting(w http.ResponseWriter, r *http.Request) {
+func (sc *SettingsController) UpdateSetting(w http.ResponseWriter, r *c_http.Request) {
 	var s settings.Settings
 	if err := json.NewDecoder(r.Body).Decode(&s); err != nil {
 		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
@@ -94,10 +102,11 @@ func (sc *SettingsController) UpdateSetting(w http.ResponseWriter, r *http.Reque
 	c_http.NewResponse().SendSuccess(w, s, http.StatusOK)
 }
 
-func (sc *SettingsController) DeleteSetting(w http.ResponseWriter, r *http.Request) {
-	id, err := sc.Controller.HttpId(w, r, SettingResource)
+func (sc *SettingsController) DeleteSetting(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	err = settings.DeleteSettingsById(sc.Controller.Dependencies.DBDecorator.GDB(), id)

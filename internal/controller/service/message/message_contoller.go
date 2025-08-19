@@ -22,16 +22,23 @@ func (mc *MessagesController) HandleRequest() {
 		}
 	})
 
-	mc.Controller.ServeMux.HandleFunc(MessageResource, func(w http.ResponseWriter, r *http.Request) {
+	mc.Controller.ServeMux.HandleFunc("/message", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			mc.CreateMessage(w, c_http.NewRequest(r))
+		default:
+			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	})
+
+	mc.Controller.ServeMux.HandleFunc("/message/", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
-			mc.GetMessage(w, r)
-		case http.MethodPost:
-			mc.CreateMessage(w, r)
+			mc.GetMessage(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/")))
 		case http.MethodPut:
-			mc.UpdateMessage(w, r)
+			mc.UpdateMessage(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/")))
 		case http.MethodDelete:
-			mc.DeleteMessage(w, r)
+			mc.DeleteMessage(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/")))
 		default:
 			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
@@ -48,10 +55,11 @@ func (mc *MessagesController) GetMessages(w http.ResponseWriter) {
 	c_http.NewResponse().SendSuccess(w, messages, http.StatusOK)
 }
 
-func (mc *MessagesController) GetMessage(w http.ResponseWriter, r *http.Request) {
-	id, err := mc.Controller.HttpId(w, r, MessageResource)
+func (mc *MessagesController) GetMessage(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	m, err := message.GetMessageById(mc.Controller.Dependencies.DBDecorator.GDB(), id)
@@ -63,7 +71,7 @@ func (mc *MessagesController) GetMessage(w http.ResponseWriter, r *http.Request)
 	c_http.NewResponse().SendSuccess(w, m, http.StatusOK)
 }
 
-func (mc *MessagesController) CreateMessage(w http.ResponseWriter, r *http.Request) {
+func (mc *MessagesController) CreateMessage(w http.ResponseWriter, r *c_http.Request) {
 	var m message.Message
 	if err := json.NewDecoder(r.Body).Decode(&m); err != nil {
 		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
@@ -78,7 +86,7 @@ func (mc *MessagesController) CreateMessage(w http.ResponseWriter, r *http.Reque
 	c_http.NewResponse().SendSuccess(w, m, http.StatusCreated)
 }
 
-func (mc *MessagesController) UpdateMessage(w http.ResponseWriter, r *http.Request) {
+func (mc *MessagesController) UpdateMessage(w http.ResponseWriter, r *c_http.Request) {
 	var m message.Message
 	if err := json.NewDecoder(r.Body).Decode(&m); err != nil {
 		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
@@ -94,10 +102,11 @@ func (mc *MessagesController) UpdateMessage(w http.ResponseWriter, r *http.Reque
 	c_http.NewResponse().SendSuccess(w, m, http.StatusOK)
 }
 
-func (mc *MessagesController) DeleteMessage(w http.ResponseWriter, r *http.Request) {
-	id, err := mc.Controller.HttpId(w, r, MessageResource)
+func (mc *MessagesController) DeleteMessage(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	err = message.DeleteMessageById(mc.Controller.Dependencies.DBDecorator.GDB(), id)

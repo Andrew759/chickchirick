@@ -22,19 +22,27 @@ func (urc *UserRelationController) HandleRequest() {
 		}
 	})
 
-	urc.Controller.ServeMux.HandleFunc(UserRelationResource, func(w http.ResponseWriter, r *http.Request) {
+	urc.Controller.ServeMux.HandleFunc("/message/user-relation", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
-		case http.MethodGet:
-			urc.GetUserRelation(w, r)
 		case http.MethodPost:
-			urc.CreateUserRelation(w, r)
-		case http.MethodPut:
-			urc.UpdateUserRelation(w, r)
-		case http.MethodDelete:
-			urc.DeleteUserRelation(w, r)
+			urc.CreateUserRelation(w, c_http.NewRequest(r))
 		default:
 			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
+	})
+
+	urc.Controller.ServeMux.HandleFunc("/message/user-relation/", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			urc.GetUserRelation(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/user-relation/")))
+		case http.MethodPut:
+			urc.UpdateUserRelation(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/user-relation/")))
+		case http.MethodDelete:
+			urc.DeleteUserRelation(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/user-relation/")))
+		default:
+			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+
 	})
 }
 
@@ -48,10 +56,11 @@ func (urc *UserRelationController) GetUserRelations(w http.ResponseWriter) {
 	c_http.NewResponse().SendSuccess(w, userRelations, http.StatusOK)
 }
 
-func (urc *UserRelationController) GetUserRelation(w http.ResponseWriter, r *http.Request) {
-	id, err := urc.Controller.HttpId(w, r, UserRelationResource)
+func (urc *UserRelationController) GetUserRelation(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	ur, err := userRelation.GetUserRelationById(urc.Controller.Dependencies.DBDecorator.GDB(), id)
@@ -63,7 +72,7 @@ func (urc *UserRelationController) GetUserRelation(w http.ResponseWriter, r *htt
 	c_http.NewResponse().SendSuccess(w, ur, http.StatusOK)
 }
 
-func (urc *UserRelationController) CreateUserRelation(w http.ResponseWriter, r *http.Request) {
+func (urc *UserRelationController) CreateUserRelation(w http.ResponseWriter, r *c_http.Request) {
 	var ur userRelation.UserRelation
 	if err := json.NewDecoder(r.Body).Decode(&ur); err != nil {
 		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
@@ -78,7 +87,7 @@ func (urc *UserRelationController) CreateUserRelation(w http.ResponseWriter, r *
 	c_http.NewResponse().SendSuccess(w, ur, http.StatusCreated)
 }
 
-func (urc *UserRelationController) UpdateUserRelation(w http.ResponseWriter, r *http.Request) {
+func (urc *UserRelationController) UpdateUserRelation(w http.ResponseWriter, r *c_http.Request) {
 	var ur userRelation.UserRelation
 	if err := json.NewDecoder(r.Body).Decode(&ur); err != nil {
 		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
@@ -94,10 +103,11 @@ func (urc *UserRelationController) UpdateUserRelation(w http.ResponseWriter, r *
 	c_http.NewResponse().SendSuccess(w, ur, http.StatusOK)
 }
 
-func (urc *UserRelationController) DeleteUserRelation(w http.ResponseWriter, r *http.Request) {
-	id, err := urc.Controller.HttpId(w, r, UserRelationResource)
+func (urc *UserRelationController) DeleteUserRelation(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	err = userRelation.DeleteUserRelationById(urc.Controller.Dependencies.DBDecorator.GDB(), id)

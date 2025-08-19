@@ -22,16 +22,23 @@ func (sc *SessionController) HandleRequest() {
 		}
 	})
 
-	sc.Controller.ServeMux.HandleFunc(SessionResource, func(w http.ResponseWriter, r *http.Request) {
+	sc.Controller.ServeMux.HandleFunc("/auth/session", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			sc.CreateSession(w, c_http.NewRequest(r))
+		default:
+			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	})
+
+	sc.Controller.ServeMux.HandleFunc("/auth/session/", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
-			sc.GetSession(w, r)
-		case http.MethodPost:
-			sc.CreateSession(w, r)
+			sc.GetSession(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/auth/session/")))
 		case http.MethodPut:
-			sc.UpdateSession(w, r)
+			sc.UpdateSession(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/auth/session/")))
 		case http.MethodDelete:
-			sc.DeleteSession(w, r)
+			sc.DeleteSession(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/auth/session/")))
 		default:
 			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
@@ -48,10 +55,11 @@ func (sc *SessionController) GetSessions(w http.ResponseWriter) {
 	c_http.NewResponse().SendSuccess(w, codes, http.StatusOK)
 }
 
-func (sc *SessionController) GetSession(w http.ResponseWriter, r *http.Request) {
-	id, err := sc.Controller.HttpId(w, r, SessionResource)
+func (sc *SessionController) GetSession(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	c, err := session.GetSessionById(sc.Controller.Dependencies.DBDecorator.GDB(), id)
@@ -63,7 +71,7 @@ func (sc *SessionController) GetSession(w http.ResponseWriter, r *http.Request) 
 	c_http.NewResponse().SendSuccess(w, c, http.StatusOK)
 }
 
-func (sc *SessionController) CreateSession(w http.ResponseWriter, r *http.Request) {
+func (sc *SessionController) CreateSession(w http.ResponseWriter, r *c_http.Request) {
 	var s session.Session
 	if err := json.NewDecoder(r.Body).Decode(&s); err != nil {
 		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
@@ -78,7 +86,7 @@ func (sc *SessionController) CreateSession(w http.ResponseWriter, r *http.Reques
 	c_http.NewResponse().SendSuccess(w, s, http.StatusCreated)
 }
 
-func (sc *SessionController) UpdateSession(w http.ResponseWriter, r *http.Request) {
+func (sc *SessionController) UpdateSession(w http.ResponseWriter, r *c_http.Request) {
 	var s session.Session
 	if err := json.NewDecoder(r.Body).Decode(&s); err != nil {
 		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
@@ -94,10 +102,11 @@ func (sc *SessionController) UpdateSession(w http.ResponseWriter, r *http.Reques
 	c_http.NewResponse().SendSuccess(w, s, http.StatusOK)
 }
 
-func (sc *SessionController) DeleteSession(w http.ResponseWriter, r *http.Request) {
-	id, err := sc.Controller.HttpId(w, r, SessionResource)
+func (sc *SessionController) DeleteSession(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	err = session.DeleteSessionById(sc.Controller.Dependencies.DBDecorator.GDB(), id)

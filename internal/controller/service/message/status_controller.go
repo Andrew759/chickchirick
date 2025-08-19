@@ -22,16 +22,23 @@ func (sc *StatusController) HandleRequest() {
 		}
 	})
 
-	sc.Controller.ServeMux.HandleFunc(StatusResource, func(w http.ResponseWriter, r *http.Request) {
+	sc.Controller.ServeMux.HandleFunc("/message/status", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			sc.CreateStatus(w, c_http.NewRequest(r))
+		default:
+			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	})
+
+	sc.Controller.ServeMux.HandleFunc("/message/status/", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
-			sc.GetStatus(w, r)
-		case http.MethodPost:
-			sc.CreateStatus(w, r)
+			sc.GetStatus(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/status/")))
 		case http.MethodPut:
-			sc.UpdateStatus(w, r)
+			sc.UpdateStatus(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/status/")))
 		case http.MethodDelete:
-			sc.DeleteStatus(w, r)
+			sc.DeleteStatus(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/status/")))
 		default:
 			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
@@ -48,10 +55,11 @@ func (sc *StatusController) GetStatuses(w http.ResponseWriter) {
 	c_http.NewResponse().SendSuccess(w, statuses, http.StatusOK)
 }
 
-func (sc *StatusController) GetStatus(w http.ResponseWriter, r *http.Request) {
-	id, err := sc.Controller.HttpId(w, r, StatusResource)
+func (sc *StatusController) GetStatus(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	s, err := status.GetStatusById(sc.Controller.Dependencies.DBDecorator.GDB(), id)
@@ -63,7 +71,7 @@ func (sc *StatusController) GetStatus(w http.ResponseWriter, r *http.Request) {
 	c_http.NewResponse().SendSuccess(w, s, http.StatusOK)
 }
 
-func (sc *StatusController) CreateStatus(w http.ResponseWriter, r *http.Request) {
+func (sc *StatusController) CreateStatus(w http.ResponseWriter, r *c_http.Request) {
 	var s status.Status
 	if err := json.NewDecoder(r.Body).Decode(&s); err != nil {
 		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
@@ -78,7 +86,7 @@ func (sc *StatusController) CreateStatus(w http.ResponseWriter, r *http.Request)
 	c_http.NewResponse().SendSuccess(w, s, http.StatusCreated)
 }
 
-func (sc *StatusController) UpdateStatus(w http.ResponseWriter, r *http.Request) {
+func (sc *StatusController) UpdateStatus(w http.ResponseWriter, r *c_http.Request) {
 	//TODO: во всех остальных методах выше (по списку файлов) требуется обработка ид
 
 	var s status.Status
@@ -96,10 +104,11 @@ func (sc *StatusController) UpdateStatus(w http.ResponseWriter, r *http.Request)
 	c_http.NewResponse().SendSuccess(w, s, http.StatusOK)
 }
 
-func (sc *StatusController) DeleteStatus(w http.ResponseWriter, r *http.Request) {
-	id, err := sc.Controller.HttpId(w, r, StatusResource)
+func (sc *StatusController) DeleteStatus(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	err = status.DeleteStatusById(sc.Controller.Dependencies.DBDecorator.GDB(), id)

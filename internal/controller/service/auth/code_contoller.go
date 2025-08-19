@@ -22,16 +22,23 @@ func (cc *CodeController) HandleRequest() {
 		}
 	})
 
-	cc.Controller.ServeMux.HandleFunc(CodeResource, func(w http.ResponseWriter, r *http.Request) {
+	cc.Controller.ServeMux.HandleFunc("/auth/code", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			cc.CreateCode(w, c_http.NewRequest(r))
+		default:
+			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	})
+
+	cc.Controller.ServeMux.HandleFunc("/auth/code/", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
-			cc.GetCode(w, r)
-		case http.MethodPost:
-			cc.CreateCode(w, r)
+			cc.GetCode(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/auth/code/")))
 		case http.MethodPut:
-			cc.UpdateCode(w, r)
+			cc.UpdateCode(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/auth/code/")))
 		case http.MethodDelete:
-			cc.DeleteCode(w, r)
+			cc.DeleteCode(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/auth/code/")))
 		default:
 			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
@@ -48,10 +55,11 @@ func (cc *CodeController) GetCodes(w http.ResponseWriter) {
 	c_http.NewResponse().SendSuccess(w, codes, http.StatusOK)
 }
 
-func (cc *CodeController) GetCode(w http.ResponseWriter, r *http.Request) {
-	id, err := cc.Controller.HttpId(w, r, CodeResource)
+func (cc *CodeController) GetCode(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	c, err := code.GetCodeById(cc.Controller.Dependencies.DBDecorator.GDB(), id)
@@ -63,7 +71,7 @@ func (cc *CodeController) GetCode(w http.ResponseWriter, r *http.Request) {
 	c_http.NewResponse().SendSuccess(w, c, http.StatusOK)
 }
 
-func (cc *CodeController) CreateCode(w http.ResponseWriter, r *http.Request) {
+func (cc *CodeController) CreateCode(w http.ResponseWriter, r *c_http.Request) {
 	var c code.Code
 	if err := json.NewDecoder(r.Body).Decode(&c); err != nil {
 		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
@@ -78,7 +86,7 @@ func (cc *CodeController) CreateCode(w http.ResponseWriter, r *http.Request) {
 	c_http.NewResponse().SendSuccess(w, c, http.StatusCreated)
 }
 
-func (cc *CodeController) UpdateCode(w http.ResponseWriter, r *http.Request) {
+func (cc *CodeController) UpdateCode(w http.ResponseWriter, r *c_http.Request) {
 	var c code.Code
 	if err := json.NewDecoder(r.Body).Decode(&c); err != nil {
 		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
@@ -94,10 +102,11 @@ func (cc *CodeController) UpdateCode(w http.ResponseWriter, r *http.Request) {
 	c_http.NewResponse().SendSuccess(w, c, http.StatusOK)
 }
 
-func (cc *CodeController) DeleteCode(w http.ResponseWriter, r *http.Request) {
-	id, err := cc.Controller.HttpId(w, r, CodeResource)
+func (cc *CodeController) DeleteCode(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	err = code.DeleteCodeById(cc.Controller.Dependencies.DBDecorator.GDB(), id)

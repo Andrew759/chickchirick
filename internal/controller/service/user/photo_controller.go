@@ -22,16 +22,23 @@ func (pc *PhotoController) HandleRequest() {
 		}
 	})
 
-	pc.Controller.ServeMux.HandleFunc(PhotoResource, func(w http.ResponseWriter, r *http.Request) {
+	pc.Controller.ServeMux.HandleFunc("/user/photo", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			pc.CreatePhoto(w, c_http.NewRequest(r))
+		default:
+			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	})
+
+	pc.Controller.ServeMux.HandleFunc("/user/photo/", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
-			pc.GetPhoto(w, r)
-		case http.MethodPost:
-			pc.CreatePhoto(w, r)
+			pc.GetPhoto(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/user/photo/")))
 		case http.MethodPut:
-			pc.UpdatePhoto(w, r)
+			pc.UpdatePhoto(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/user/photo/")))
 		case http.MethodDelete:
-			pc.DeletePhoto(w, r)
+			pc.DeletePhoto(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/user/photo/")))
 		default:
 			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
@@ -48,10 +55,11 @@ func (pc *PhotoController) GetPhotos(w http.ResponseWriter) {
 	c_http.NewResponse().SendSuccess(w, photos, http.StatusOK)
 }
 
-func (pc *PhotoController) GetPhoto(w http.ResponseWriter, r *http.Request) {
-	id, err := pc.Controller.HttpId(w, r, PhotoResource)
+func (pc *PhotoController) GetPhoto(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	p, err := photo.GetPhotoById(pc.Controller.Dependencies.DBDecorator.GDB(), id)
@@ -63,7 +71,7 @@ func (pc *PhotoController) GetPhoto(w http.ResponseWriter, r *http.Request) {
 	c_http.NewResponse().SendSuccess(w, p, http.StatusOK)
 }
 
-func (pc *PhotoController) CreatePhoto(w http.ResponseWriter, r *http.Request) {
+func (pc *PhotoController) CreatePhoto(w http.ResponseWriter, r *c_http.Request) {
 	var p photo.Photo
 	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
 		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
@@ -78,7 +86,7 @@ func (pc *PhotoController) CreatePhoto(w http.ResponseWriter, r *http.Request) {
 	c_http.NewResponse().SendSuccess(w, p, http.StatusCreated)
 }
 
-func (pc *PhotoController) UpdatePhoto(w http.ResponseWriter, r *http.Request) {
+func (pc *PhotoController) UpdatePhoto(w http.ResponseWriter, r *c_http.Request) {
 	var p photo.Photo
 	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
 		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
@@ -94,10 +102,11 @@ func (pc *PhotoController) UpdatePhoto(w http.ResponseWriter, r *http.Request) {
 	c_http.NewResponse().SendSuccess(w, p, http.StatusOK)
 }
 
-func (pc *PhotoController) DeletePhoto(w http.ResponseWriter, r *http.Request) {
-	id, err := pc.Controller.HttpId(w, r, PhotoResource)
+func (pc *PhotoController) DeletePhoto(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	err = photo.DeletePhotoById(pc.Controller.Dependencies.DBDecorator.GDB(), id)

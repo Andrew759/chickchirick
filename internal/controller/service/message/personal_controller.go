@@ -22,16 +22,23 @@ func (pc *PersonalController) HandleRequest() {
 		}
 	})
 
-	pc.Controller.ServeMux.HandleFunc(PersonalResource, func(w http.ResponseWriter, r *http.Request) {
+	pc.Controller.ServeMux.HandleFunc("/message/personal", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			pc.CreatePersonal(w, c_http.NewRequest(r))
+		default:
+			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	})
+
+	pc.Controller.ServeMux.HandleFunc("/message/personal/", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
-			pc.GetPersonal(w, r)
-		case http.MethodPost:
-			pc.CreatePersonal(w, r)
+			pc.GetPersonal(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/personal/")))
 		case http.MethodPut:
-			pc.UpdatePersonal(w, r)
+			pc.UpdatePersonal(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/personal/")))
 		case http.MethodDelete:
-			pc.DeletePersonal(w, r)
+			pc.DeletePersonal(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/personal/")))
 		default:
 			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
@@ -48,10 +55,11 @@ func (pc *PersonalController) GetPersonals(w http.ResponseWriter) {
 	c_http.NewResponse().SendSuccess(w, personals, http.StatusOK)
 }
 
-func (pc *PersonalController) GetPersonal(w http.ResponseWriter, r *http.Request) {
-	id, err := pc.Controller.HttpId(w, r, PersonalResource)
+func (pc *PersonalController) GetPersonal(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	p, err := personal.GetPersonalById(pc.Controller.Dependencies.DBDecorator.GDB(), id)
@@ -63,7 +71,7 @@ func (pc *PersonalController) GetPersonal(w http.ResponseWriter, r *http.Request
 	c_http.NewResponse().SendSuccess(w, p, http.StatusOK)
 }
 
-func (pc *PersonalController) CreatePersonal(w http.ResponseWriter, r *http.Request) {
+func (pc *PersonalController) CreatePersonal(w http.ResponseWriter, r *c_http.Request) {
 	var p personal.Personal
 	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
 		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
@@ -78,7 +86,7 @@ func (pc *PersonalController) CreatePersonal(w http.ResponseWriter, r *http.Requ
 	c_http.NewResponse().SendSuccess(w, p, http.StatusCreated)
 }
 
-func (pc *PersonalController) UpdatePersonal(w http.ResponseWriter, r *http.Request) {
+func (pc *PersonalController) UpdatePersonal(w http.ResponseWriter, r *c_http.Request) {
 	var p personal.Personal
 	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
 		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
@@ -94,10 +102,11 @@ func (pc *PersonalController) UpdatePersonal(w http.ResponseWriter, r *http.Requ
 	c_http.NewResponse().SendSuccess(w, p, http.StatusOK)
 }
 
-func (pc *PersonalController) DeletePersonal(w http.ResponseWriter, r *http.Request) {
-	id, err := pc.Controller.HttpId(w, r, PersonalResource)
+func (pc *PersonalController) DeletePersonal(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	err = personal.DeletePersonalById(pc.Controller.Dependencies.DBDecorator.GDB(), id)

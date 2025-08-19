@@ -22,16 +22,23 @@ func (dc *DeletedController) HandleRequest() {
 		}
 	})
 
-	dc.Controller.ServeMux.HandleFunc(DeletedResource, func(w http.ResponseWriter, r *http.Request) {
+	dc.Controller.ServeMux.HandleFunc("/message/deleted", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			dc.CreateDeleted(w, c_http.NewRequest(r))
+		default:
+			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	})
+
+	dc.Controller.ServeMux.HandleFunc("/message/deleted/", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
-			dc.GetDeleted(w, r)
-		case http.MethodPost:
-			dc.CreateDeleted(w, r)
+			dc.GetDeleted(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/deleted/")))
 		case http.MethodDelete:
-			dc.DeleteDeleted(w, r)
+			dc.DeleteDeleted(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/deleted/")))
 		case http.MethodPut:
-			dc.UpdateDeleted(w, r)
+			dc.UpdateDeleted(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/deleted/")))
 		default:
 			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
@@ -48,10 +55,11 @@ func (dc *DeletedController) GetDeletedList(w http.ResponseWriter) {
 	c_http.NewResponse().SendSuccess(w, deletedList, http.StatusOK)
 }
 
-func (dc *DeletedController) GetDeleted(w http.ResponseWriter, r *http.Request) {
-	id, err := dc.Controller.HttpId(w, r, DeletedResource)
+func (dc *DeletedController) GetDeleted(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	d, err := deleted.GetDeletedById(dc.Controller.Dependencies.DBDecorator.GDB(), id)
@@ -63,7 +71,7 @@ func (dc *DeletedController) GetDeleted(w http.ResponseWriter, r *http.Request) 
 	c_http.NewResponse().SendSuccess(w, d, http.StatusOK)
 }
 
-func (dc *DeletedController) CreateDeleted(w http.ResponseWriter, r *http.Request) {
+func (dc *DeletedController) CreateDeleted(w http.ResponseWriter, r *c_http.Request) {
 	var d deleted.Deleted
 	if err := json.NewDecoder(r.Body).Decode(&d); err != nil {
 		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
@@ -78,7 +86,7 @@ func (dc *DeletedController) CreateDeleted(w http.ResponseWriter, r *http.Reques
 	c_http.NewResponse().SendSuccess(w, d, http.StatusCreated)
 }
 
-func (dc *DeletedController) UpdateDeleted(w http.ResponseWriter, r *http.Request) {
+func (dc *DeletedController) UpdateDeleted(w http.ResponseWriter, r *c_http.Request) {
 	var d deleted.Deleted
 	if err := json.NewDecoder(r.Body).Decode(&d); err != nil {
 		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
@@ -94,10 +102,11 @@ func (dc *DeletedController) UpdateDeleted(w http.ResponseWriter, r *http.Reques
 	c_http.NewResponse().SendSuccess(w, d, http.StatusOK)
 }
 
-func (dc *DeletedController) DeleteDeleted(w http.ResponseWriter, r *http.Request) {
-	id, err := dc.Controller.HttpId(w, r, DeletedResource)
+func (dc *DeletedController) DeleteDeleted(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	err = deleted.DeleteDeletedById(dc.Controller.Dependencies.DBDecorator.GDB(), id)

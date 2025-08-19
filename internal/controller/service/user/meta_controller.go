@@ -22,16 +22,23 @@ func (mc *MetaController) HandleRequest() {
 		}
 	})
 
-	mc.Controller.ServeMux.HandleFunc(MetaResource, func(w http.ResponseWriter, r *http.Request) {
+	mc.Controller.ServeMux.HandleFunc("/user/meta", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			mc.CreateMeta(w, c_http.NewRequest(r))
+		default:
+			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	})
+
+	mc.Controller.ServeMux.HandleFunc("/user/meta/", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
-			mc.GetMeta(w, r)
-		case http.MethodPost:
-			mc.CreateMeta(w, r)
+			mc.GetMeta(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/user/meta/")))
 		case http.MethodPut:
-			mc.UpdateMeta(w, r)
+			mc.UpdateMeta(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/user/meta/")))
 		case http.MethodDelete:
-			mc.DeleteMeta(w, r)
+			mc.DeleteMeta(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/user/meta/")))
 		default:
 			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
@@ -48,10 +55,11 @@ func (mc *MetaController) GetMetas(w http.ResponseWriter) {
 	c_http.NewResponse().SendSuccess(w, metas, http.StatusOK)
 }
 
-func (mc *MetaController) GetMeta(w http.ResponseWriter, r *http.Request) {
-	id, err := mc.Controller.HttpId(w, r, MetaResource)
+func (mc *MetaController) GetMeta(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	m, err := meta.GetMetaById(mc.Controller.Dependencies.DBDecorator.GDB(), id)
@@ -63,7 +71,7 @@ func (mc *MetaController) GetMeta(w http.ResponseWriter, r *http.Request) {
 	c_http.NewResponse().SendSuccess(w, m, http.StatusOK)
 }
 
-func (mc *MetaController) CreateMeta(w http.ResponseWriter, r *http.Request) {
+func (mc *MetaController) CreateMeta(w http.ResponseWriter, r *c_http.Request) {
 	var m meta.Meta
 	if err := json.NewDecoder(r.Body).Decode(&m); err != nil {
 		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusCreated)
@@ -78,7 +86,7 @@ func (mc *MetaController) CreateMeta(w http.ResponseWriter, r *http.Request) {
 	c_http.NewResponse().SendSuccess(w, m, http.StatusOK)
 }
 
-func (mc *MetaController) UpdateMeta(w http.ResponseWriter, r *http.Request) {
+func (mc *MetaController) UpdateMeta(w http.ResponseWriter, r *c_http.Request) {
 	var m meta.Meta
 	if err := json.NewDecoder(r.Body).Decode(&m); err != nil {
 		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
@@ -94,10 +102,11 @@ func (mc *MetaController) UpdateMeta(w http.ResponseWriter, r *http.Request) {
 	c_http.NewResponse().SendSuccess(w, m, http.StatusOK)
 }
 
-func (mc *MetaController) DeleteMeta(w http.ResponseWriter, r *http.Request) {
-	id, err := mc.Controller.HttpId(w, r, MetaResource)
+func (mc *MetaController) DeleteMeta(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	err = meta.DeleteMetaById(mc.Controller.Dependencies.DBDecorator.GDB(), id)

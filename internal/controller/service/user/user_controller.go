@@ -45,9 +45,7 @@ func (uc *UserController) HandleRequest() {
 				uc.UpdateUser(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/user/")))
 			})(w, r)
 		case http.MethodDelete:
-			uc.Validate(func(w http.ResponseWriter, r *http.Request) {
-				uc.DeleteUser(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/user/")))
-			})(w, r)
+			uc.DeleteUser(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/user/")))
 		default:
 			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
@@ -103,13 +101,16 @@ func (uc *UserController) UpdateUser(w http.ResponseWriter, r *c_http.Request) {
 	id, err := r.HttpId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	u := r.Context().Value(config.UserUserKey).(*user.User)
 
-	//TODO: доработать метод
 	err = user.UpdateUserById(uc.Controller.Dependencies.DBDecorator.GDB(), u, id)
-	if err != nil {
+	if err != nil && errors.Is(err, user.UserNotFoundErr) {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
+		return
+	} else if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to update user. "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -121,8 +122,10 @@ func (uc *UserController) DeleteUser(w http.ResponseWriter, r *c_http.Request) {
 	id, err := r.HttpId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
+	//TODO: добавить ошибку, что пользователь не найден
 	err = user.DeleteUserById(uc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to delete user. "+err.Error(), http.StatusInternalServerError)

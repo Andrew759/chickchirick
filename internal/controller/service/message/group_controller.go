@@ -22,16 +22,23 @@ func (gc *GroupController) HandleRequest() {
 		}
 	})
 
-	gc.Controller.ServeMux.HandleFunc(GroupResource, func(w http.ResponseWriter, r *http.Request) {
+	gc.Controller.ServeMux.HandleFunc("/message/group", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost:
+			gc.CreateGroup(w, c_http.NewRequest(r))
+		default:
+			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	})
+
+	gc.Controller.ServeMux.HandleFunc("/message/group/", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
-			gc.GetGroup(w, r)
-		case http.MethodPost:
-			gc.CreateGroup(w, r)
+			gc.GetGroup(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/group/")))
 		case http.MethodPut:
-			gc.UpdateGroup(w, r)
+			gc.UpdateGroup(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/group/")))
 		case http.MethodDelete:
-			gc.DeleteGroup(w, r)
+			gc.DeleteGroup(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/group/")))
 		default:
 			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
@@ -48,10 +55,11 @@ func (gc *GroupController) GetGroups(w http.ResponseWriter) {
 	c_http.NewResponse().SendSuccess(w, groups, http.StatusOK)
 }
 
-func (gc *GroupController) GetGroup(w http.ResponseWriter, r *http.Request) {
-	id, err := gc.Controller.HttpId(w, r, GroupResource)
+func (gc *GroupController) GetGroup(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	g, err := group.GetGroupById(gc.Controller.Dependencies.DBDecorator.GDB(), id)
@@ -63,7 +71,7 @@ func (gc *GroupController) GetGroup(w http.ResponseWriter, r *http.Request) {
 	c_http.NewResponse().SendSuccess(w, g, http.StatusOK)
 }
 
-func (gc *GroupController) CreateGroup(w http.ResponseWriter, r *http.Request) {
+func (gc *GroupController) CreateGroup(w http.ResponseWriter, r *c_http.Request) {
 	var g group.Group
 	if err := json.NewDecoder(r.Body).Decode(&g); err != nil {
 		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
@@ -78,7 +86,7 @@ func (gc *GroupController) CreateGroup(w http.ResponseWriter, r *http.Request) {
 	c_http.NewResponse().SendSuccess(w, g, http.StatusCreated)
 }
 
-func (gc *GroupController) UpdateGroup(w http.ResponseWriter, r *http.Request) {
+func (gc *GroupController) UpdateGroup(w http.ResponseWriter, r *c_http.Request) {
 	var g group.Group
 	if err := json.NewDecoder(r.Body).Decode(&g); err != nil {
 		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
@@ -94,10 +102,11 @@ func (gc *GroupController) UpdateGroup(w http.ResponseWriter, r *http.Request) {
 	c_http.NewResponse().SendSuccess(w, g, http.StatusOK)
 }
 
-func (gc *GroupController) DeleteGroup(w http.ResponseWriter, r *http.Request) {
-	id, err := gc.Controller.HttpId(w, r, GroupResource)
+func (gc *GroupController) DeleteGroup(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	err = group.DeleteGroupById(gc.Controller.Dependencies.DBDecorator.GDB(), id)
