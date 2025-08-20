@@ -1,6 +1,10 @@
 package user
 
-import "gorm.io/gorm"
+import (
+	"chickChirick/pkg/chirik_gorm_tweaks/time"
+	"errors"
+	"gorm.io/gorm"
+)
 
 type Ban struct {
 	gorm.Model   `c_migrator:"enabled"`
@@ -10,7 +14,12 @@ type Ban struct {
 	BannedUserId int  `json:"banned_user_id" gorm:"type:int"`
 	Type         int  `json:"type" gorm:"type:int, notnull"`
 	BannedUser   User `json:"banned_user" gorm:"references:UserId"`
+	CreatedAt    time.TimestampWithTimeZoneMicro
+	UpdatedAt    time.TimestampWithTimeZoneMicro
+	DeletedAt    gorm.DeletedAt `gorm:"index"`
 }
+
+var BanNotFoundErr = errors.New("ban not found")
 
 func CreateBan(db *gorm.DB, b *Ban) error {
 	return db.Create(b).Error

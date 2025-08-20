@@ -60,7 +60,7 @@ func (fc FixtureCreator) writeFixtureToSqlMeta(sqlMeta *dto.Meta) error {
 			sqlFieldList = append(sqlFieldList, ")")
 		}
 
-		fixtureValue, err := chirik_faker.FakeValue(valName, valueMeta.Type)
+		fixtureValue, err := chirik_faker.FakeSQLValue(valName, valueMeta.Type)
 		if err != nil {
 			return err
 		}

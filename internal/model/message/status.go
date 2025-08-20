@@ -1,19 +1,25 @@
 package message
 
 import (
+	"chickChirick/pkg/chirik_gorm_tweaks/time"
+	"errors"
 	"gorm.io/gorm"
-	"time"
 )
 
 type Status struct {
 	gorm.Model       `c_migrator:"enabled"`
-	Id               int          `json:"id" gorm:"type:int;unique;primaryKey;autoIncrement"`
-	MessageId        int          `json:"message_id" gorm:"type:int"`
-	Message          Message      `json:"message" gorm:"references:MessageId"`
-	ReadUserId       int          `json:"read_user_id" gorm:"type:int"`
-	ReadUserRelation UserRelation `json:"read_user_relation" gorm:"references:ReadUserId"`
-	Date             time.Time    `json:"date" gorm:"type:timestamp without time zone"`
+	Id               int                             `json:"id" gorm:"type:int;unique;primaryKey;autoIncrement"`
+	MessageId        int                             `json:"message_id" gorm:"type:int"`
+	Message          Message                         `json:"message" gorm:"references:MessageId"`
+	ReadUserId       int                             `json:"read_user_id" gorm:"type:int"`
+	ReadUserRelation UserRelation                    `json:"read_user_relation" gorm:"references:ReadUserId"`
+	Date             time.TimestampWithTimeZoneMicro `json:"date" gorm:"type:timestamp without time zone"`
+	CreatedAt        time.TimestampWithTimeZoneMicro
+	UpdatedAt        time.TimestampWithTimeZoneMicro
+	DeletedAt        gorm.DeletedAt `gorm:"index"`
 }
+
+var StatusNotFoundErr = errors.New("status not found")
 
 func CreateStatus(db *gorm.DB, s *Status) error {
 	return db.Create(s).Error

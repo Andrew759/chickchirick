@@ -1,6 +1,8 @@
 package user
 
 import (
+	"chickChirick/pkg/chirik_gorm_tweaks/time"
+	"errors"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -10,13 +12,19 @@ type Photo struct {
 	FieUuid    uuid.UUID `gorm:"type:uuid"`
 	UserId     int       `json:"user_id" gorm:"type:int"`
 	User       User      `json:"user" gorm:"references:UserId"`
+	CreatedAt  time.TimestampWithTimeZoneMicro
+	UpdatedAt  time.TimestampWithTimeZoneMicro
+	DeletedAt  gorm.DeletedAt `gorm:"index"`
 }
+
+var PhotoNotFoundErr = errors.New("user not found")
 
 func CreatePhoto(db *gorm.DB, b *Photo) error {
 	return db.Create(b).Error
 }
 
-func UpdatePhoto(db *gorm.DB, p *Photo) error {
+// UpdatePhotoById TODO: доработать метод обновления и удаления. Доработать все остальные модели, где не используется id
+func UpdatePhotoById(db *gorm.DB, p *Photo, id int) error {
 	return db.Save(p).Error
 }
 

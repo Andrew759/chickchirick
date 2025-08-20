@@ -1,6 +1,8 @@
 package message
 
 import (
+	"chickChirick/pkg/chirik_gorm_tweaks/time"
+	"errors"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -14,7 +16,12 @@ type Meta struct {
 	Status           Status    `json:"status" gorm:"references:MessageStatusId"`
 	RespondMessageId *int      `json:"respond_message_id" gorm:"type:int"`
 	RespondMessage   *Message  `json:"RespondMessage" gorm:"references:RespondMessageId"`
+	CreatedAt        time.TimestampWithTimeZoneMicro
+	UpdatedAt        time.TimestampWithTimeZoneMicro
+	DeletedAt        gorm.DeletedAt `gorm:"index"`
 }
+
+var MetaNotFoundErr = errors.New("meta not found")
 
 func (Meta) TableName() string {
 	return "message_meta"

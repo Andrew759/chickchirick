@@ -1,6 +1,7 @@
 package user
 
 import (
+	"chickChirick/internal/controller/c_http"
 	"chickChirick/internal/middleware/config"
 	"chickChirick/internal/middleware/service"
 	"chickChirick/internal/model/user"
@@ -18,12 +19,14 @@ func (uv UserValidator) Validate(next http.HandlerFunc) http.HandlerFunc {
 		var u user.User
 
 		if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
-			http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+			c_http.NewResponse().SendError(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
 			return
 		}
+		if errorList := validateUser(u); len(errorList) > 0 {
+			errResponse := c_http.NewResponse()
+			errResponse.AddErrorsToErrorContainer(errorList)
 
-		if err := validateUser(u); err != nil {
-			http.Error(w, "Validation error: "+err.Error(), http.StatusBadRequest)
+			errResponse.Send(w, http.StatusBadRequest)
 			return
 		}
 
@@ -32,19 +35,21 @@ func (uv UserValidator) Validate(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func validateUser(u user.User) error {
+func validateUser(u user.User) []error {
+	var errList []error
+
 	if strings.TrimSpace(u.Name) == "" || !service.IsHasCorrectLength(u.Name, 256) {
-		return errors.New("invalid name")
+		errList = append(errList, errors.New("invalid name"))
 	}
 	if strings.TrimSpace(u.Surname) == "" || !service.IsHasCorrectLength(u.Surname, 256) {
-		return errors.New("invalid surname")
+		errList = append(errList, errors.New("invalid surname"))
 	}
 	if strings.TrimSpace(u.Login) == "" || !service.IsLogin(u.Login) || !service.IsHasCorrectLength(u.Login, 256) {
-		return errors.New("invalid login")
+		errList = append(errList, errors.New("invalid login"))
 	}
 	if strings.TrimSpace(u.Phone) == "" || !service.IsPhoneNumber(u.Phone) {
-		return errors.New("invalid phone")
+		errList = append(errList, errors.New("invalid phone"))
 	}
 
-	return nil
+	return errList
 }

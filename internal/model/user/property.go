@@ -1,6 +1,10 @@
 package user
 
-import "gorm.io/gorm"
+import (
+	"chickChirick/pkg/chirik_gorm_tweaks/time"
+	"errors"
+	"gorm.io/gorm"
+)
 
 type Property struct {
 	gorm.Model `c_migrator:"enabled"`
@@ -9,7 +13,12 @@ type Property struct {
 	Timezone   int8    `json:"timezone" gorm:"type:smallint;default:3"`
 	Email      string  `json:"email" gorm:"type:varchar(256)"`
 	Password   *string `json:"password" gorm:"type:varchar(1024)"`
+	CreatedAt  time.TimestampWithTimeZoneMicro
+	UpdatedAt  time.TimestampWithTimeZoneMicro
+	DeletedAt  gorm.DeletedAt `gorm:"index"`
 }
+
+var PropertyNotFoundErr = errors.New("property not found")
 
 func (Property) TableName() string {
 	return "properties"
@@ -19,7 +28,14 @@ func CreateProperty(db *gorm.DB, b *Property) error {
 	return db.Create(b).Error
 }
 
-func UpdateProperty(db *gorm.DB, p *Property) error {
+func UpdatePropertyById(db *gorm.DB, p *Property, id int) error {
+	var property Property
+	result := db.First(&property, id)
+
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return PropertyNotFoundErr
+	}
+
 	return db.Save(p).Error
 }
 
@@ -38,5 +54,12 @@ func GetPropertyById(db *gorm.DB, id int) (Property, error) {
 }
 
 func DeletePropertyById(db *gorm.DB, id int) error {
+	var property Property
+	result := db.First(&property, id)
+
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return PropertyNotFoundErr
+	}
+
 	return db.Delete(&Property{}, id).Error
 }

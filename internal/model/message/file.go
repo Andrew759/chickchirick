@@ -1,9 +1,10 @@
 package message
 
 import (
+	"chickChirick/pkg/chirik_gorm_tweaks/time"
+	"errors"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
-	"time"
 )
 
 type File struct {
@@ -12,15 +13,18 @@ type File struct {
 	MessageId  int       `json:"message_id" gorm:"type:int"`
 	Message    Message   `json:"message" gorm:"references:MessageId"`
 	FileUuid   uuid.UUID `json:"file_uuid" gorm:"type:uuid"`
+	CreatedAt  time.TimestampWithTimeZoneMicro
+	UpdatedAt  time.TimestampWithTimeZoneMicro
+	DeletedAt  gorm.DeletedAt `gorm:"index"`
 }
+
+var FileNotFoundErr = errors.New("file not found")
 
 func CreateFile(db *gorm.DB, f *File) error {
 	return db.Create(f).Error
 }
 
 func UpdateFile(db *gorm.DB, f *File) error {
-	f.UpdatedAt = time.Now()
-
 	return db.Save(f).Error
 }
 

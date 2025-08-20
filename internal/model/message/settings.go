@@ -1,6 +1,8 @@
 package message
 
 import (
+	"chickChirick/pkg/chirik_gorm_tweaks/time"
+	"errors"
 	"gorm.io/gorm"
 )
 
@@ -11,7 +13,12 @@ type Settings struct {
 	RuleUserId            int          `json:"rule_user_id" gorm:"type:int"`
 	RuleUserRelation      UserRelation `json:"rule_user_relation" gorm:"references:RuleUserId"`
 	Rule                  SettingRule  `json:"rule" gorm:"type:jsonb;default:'[]';not null"`
+	CreatedAt             time.TimestampWithTimeZoneMicro
+	UpdatedAt             time.TimestampWithTimeZoneMicro
+	DeletedAt             gorm.DeletedAt `gorm:"index"`
 }
+
+var SettingNotFoundErr = errors.New("setting not found")
 
 // SettingRule TODO: описать
 type SettingRule struct{}
