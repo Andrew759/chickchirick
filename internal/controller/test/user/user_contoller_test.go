@@ -6,7 +6,7 @@ import (
 	"chickChirick/cmd/factory"
 	"chickChirick/cmd/service"
 	"chickChirick/internal/controller/abstraction"
-	"chickChirick/internal/controller/http_transaction"
+	"chickChirick/internal/controller/c_http"
 	"chickChirick/internal/controller/service/user"
 	"chickChirick/internal/middleware/config"
 	userMiddleware "chickChirick/internal/middleware/validators/user"
@@ -104,7 +104,7 @@ func startTestServer(t *testing.T, db service.DBDecorator, redis service.RedisDe
 
 func doCreateUserRequest(t *testing.T, uctc UserControllerTestContainer, newUser userModels.User) (
 	*http.Response,
-	http_transaction.Response,
+	c_http.Response,
 ) {
 	t.Helper()
 
@@ -117,7 +117,25 @@ func doCreateUserRequest(t *testing.T, uctc UserControllerTestContainer, newUser
 	resp, _ := uctc.HttpClient.Do(req)
 	defer resp.Body.Close()
 
-	var decodedResponse http_transaction.Response
+	var decodedResponse c_http.Response
+	json.NewDecoder(resp.Body).Decode(&decodedResponse)
+
+	return resp, decodedResponse
+}
+
+func doUpdateUserRequest(t *testing.T, uctc UserControllerTestContainer, updatedUser userModels.User) (
+	*http.Response,
+	c_http.Response,
+) {
+	t.Helper()
+
+	body, _ := json.Marshal(updatedUser)
+	req, _ := http.NewRequest(http.MethodPut, uctc.ServerURL+"/user/"+strconv.Itoa(updatedUser.Id), bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	resp, _ := uctc.HttpClient.Do(req)
+	defer resp.Body.Close()
+
+	var decodedResponse c_http.Response
 	json.NewDecoder(resp.Body).Decode(&decodedResponse)
 
 	return resp, decodedResponse
@@ -387,13 +405,13 @@ func TestCreateAndGetUserSuccess(t *testing.T) {
 	var createdUser userModels.User
 	json.NewDecoder(createdUserDecodedResp.PayloadContainer).Decode(&createdUser)
 
-	getResp, err := uctc.HttpClient.Get(uctc.ServerURL + "/user?id=" + strconv.Itoa(createdUser.Id))
+	getResp, err := uctc.HttpClient.Get(uctc.ServerURL + "/user/" + strconv.Itoa(createdUser.Id))
 	defer getResp.Body.Close()
 
-	var getResult http_transaction.Response
-	json.NewDecoder(getResp.Body).Decode(&getResult)
+	var decodedGetResp c_http.Response
+	json.NewDecoder(getResp.Body).Decode(&decodedGetResp)
 	var gotUser userModels.User
-	json.NewDecoder(getResult.PayloadContainer).Decode(&gotUser)
+	json.NewDecoder(decodedGetResp.PayloadContainer).Decode(&gotUser)
 
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, getResp.StatusCode)
@@ -419,10 +437,10 @@ func TestCreateAndGetNotExistingUserFail(t *testing.T) {
 	json.NewDecoder(createdUserDecodedResp.PayloadContainer).Decode(&createdUser)
 
 	notExistUserId := createdUser.Id + 1
-	getResp, err := uctc.HttpClient.Get(uctc.ServerURL + "/user?id=" + strconv.Itoa(notExistUserId))
+	getResp, err := uctc.HttpClient.Get(uctc.ServerURL + "/user/" + strconv.Itoa(notExistUserId))
 	defer getResp.Body.Close()
 
-	var getResult http_transaction.Response
+	var getResult c_http.Response
 	json.NewDecoder(getResp.Body).Decode(&getResult)
 
 	assert.NoError(t, err)
@@ -452,7 +470,7 @@ func TestCreateTwoUsersAndGetAll(t *testing.T) {
 	getAllResp, err := uctc.HttpClient.Get(uctc.ServerURL + "/users")
 	defer getAllResp.Body.Close()
 
-	var getAllDecodedResp http_transaction.Response
+	var getAllDecodedResp c_http.Response
 	json.NewDecoder(getAllResp.Body).Decode(&getAllDecodedResp)
 
 	assert.NoError(t, err)
@@ -463,7 +481,96 @@ func TestCreateTwoUsersAndGetAll(t *testing.T) {
 }
 
 func TestUpdateUserSuccess(t *testing.T) {
+	uctc := initUCContainer(t)
 
+	newUser := userModels.User{
+		Name:    "Andrey",
+		Surname: "Velkov",
+		Phone:   "+79634823344",
+		Login:   "andrey_velkov",
+	}
+	_, createUserDecodedResp := doCreateUserRequest(t, uctc, newUser)
+
+	var createdUser userModels.User
+	json.NewDecoder(createUserDecodedResp.PayloadContainer).Decode(&createdUser)
+
+	updatingUser := createdUser
+	updatingUser.Name = "AndreyUpdated"
+	updatingUser.Surname = "VelkovUpdated"
+	updatingUser.Phone = "+79634823317"
+	updatingUser.Login = "velkov_andrey_updated"
+
+	updateUserResp, updateUserDecodedResp := doUpdateUserRequest(t, uctc, updatingUser)
+
+	var updatedUser userModels.User
+	json.NewDecoder(updateUserDecodedResp.PayloadContainer).Decode(&updatedUser)
+
+	assert.Equal(t, http.StatusOK, updateUserResp.StatusCode)
+	assert.Equal(t, updatingUser.Name, updatedUser.Name)
+	assert.Equal(t, updatingUser.Surname, updatedUser.Surname)
+	assert.Equal(t, updatingUser.Phone, updatedUser.Phone)
+	assert.Equal(t, updatingUser.Login, updatedUser.Login)
 }
 
-func TestUpdateUserFail(t *testing.T) {}
+func TestUpdateNotExistUserFail(t *testing.T) {
+	uctc := initUCContainer(t)
+
+	// Обновляем несуществующего пользователя
+	nonExistUser := userModels.User{
+		Id:      9999,
+		Name:    "NotExistUserName",
+		Surname: "NotExistUserName",
+		Phone:   "+79634823322",
+		Login:   "not_exists_user",
+	}
+
+	updateNotExistUserResp, updateNotExistUserDecodedResp := doUpdateUserRequest(t, uctc, nonExistUser)
+
+	assert.Equal(t, http.StatusNotFound, updateNotExistUserResp.StatusCode)
+	assert.Equal(t, userModels.UserNotFoundErr, updateNotExistUserDecodedResp.FirstError())
+}
+
+func TestDeleteUserSuccess(t *testing.T) {
+	uctc := initUCContainer(t)
+
+	newUser := userModels.User{
+		Name:    "Andrey",
+		Surname: "Velkov",
+		Phone:   "+79634823344",
+		Login:   "andrey_velkov",
+	}
+	_, decodedResp := doCreateUserRequest(t, uctc, newUser)
+
+	var createdUser userModels.User
+	json.NewDecoder(decodedResp.PayloadContainer).Decode(&createdUser)
+
+	req, _ := http.NewRequest(http.MethodDelete, uctc.ServerURL+"/user/"+strconv.Itoa(createdUser.Id), nil)
+	deleteUserResp, err := uctc.HttpClient.Do(req)
+	defer deleteUserResp.Body.Close()
+
+	getUserResp, _ := uctc.HttpClient.Get(uctc.ServerURL + "/user/" + strconv.Itoa(createdUser.Id))
+	defer getUserResp.Body.Close()
+
+	var getResult c_http.Response
+	json.NewDecoder(getUserResp.Body).Decode(&getResult)
+
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusNoContent, deleteUserResp.StatusCode)
+	assert.Equal(t, http.StatusNotFound, getUserResp.StatusCode)
+	assert.Equal(t, userModels.UserNotFoundErr, getResult.FirstError())
+}
+
+func TestDeleteUserFail(t *testing.T) {
+	uctc := initUCContainer(t)
+
+	req, _ := http.NewRequest(http.MethodDelete, uctc.ServerURL+"/user/9999", nil)
+	resp, err := uctc.HttpClient.Do(req)
+	defer resp.Body.Close()
+
+	var decodedResp c_http.Response
+	json.NewDecoder(resp.Body).Decode(&decodedResp)
+
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+	assert.Equal(t, userModels.UserNotFoundErr, decodedResp.FirstError())
+}

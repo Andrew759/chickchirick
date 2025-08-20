@@ -2,6 +2,7 @@ package message
 
 import (
 	"chickChirick/internal/controller/abstraction"
+	"chickChirick/internal/controller/c_http"
 	"chickChirick/internal/model/message"
 	"encoding/json"
 	"net/http"
@@ -17,22 +18,29 @@ func (mc *MessagesController) HandleRequest() {
 		case http.MethodGet:
 			mc.GetMessages(w)
 		default:
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
 
 	mc.Controller.ServeMux.HandleFunc("/message", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
-		case http.MethodGet:
-			mc.GetMessage(w, r)
 		case http.MethodPost:
-			mc.CreateMessage(w, r)
-		case http.MethodPut:
-			mc.UpdateMessage(w, r)
-		case http.MethodDelete:
-			mc.DeleteMessage(w, r)
+			mc.CreateMessage(w, c_http.NewRequest(r))
 		default:
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	})
+
+	mc.Controller.ServeMux.HandleFunc("/message/", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			mc.GetMessage(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/")))
+		case http.MethodPut:
+			mc.UpdateMessage(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/")))
+		case http.MethodDelete:
+			mc.DeleteMessage(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/")))
+		default:
+			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
 }
@@ -40,75 +48,70 @@ func (mc *MessagesController) HandleRequest() {
 func (mc *MessagesController) GetMessages(w http.ResponseWriter) {
 	messages, err := message.GetMessages(mc.Controller.Dependencies.DBDecorator.GDB())
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(messages)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	c_http.NewResponse().SendSuccess(w, messages, http.StatusOK)
 }
 
-func (mc *MessagesController) GetMessage(w http.ResponseWriter, r *http.Request) {
-	id := mc.Controller.GETId(w, r)
+func (mc *MessagesController) GetMessage(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	m, err := message.GetMessageById(mc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
-		http.Error(w, "Message not found: "+err.Error(), http.StatusNotFound)
+		c_http.NewResponse().SendError(w, "Message not found: "+err.Error(), http.StatusNotFound)
 		return
 	}
 
-	if err := json.NewEncoder(w).Encode(m); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	c_http.NewResponse().SendSuccess(w, m, http.StatusOK)
 }
 
-func (mc *MessagesController) CreateMessage(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
+func (mc *MessagesController) CreateMessage(w http.ResponseWriter, r *c_http.Request) {
 	var m message.Message
 	if err := json.NewDecoder(r.Body).Decode(&m); err != nil {
-		http.Error(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
+		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	if err := message.CreateMessage(mc.Controller.Dependencies.DBDecorator.GDB(), &m); err != nil {
-		http.Error(w, "Failed to create message: "+err.Error(), http.StatusInternalServerError)
+		c_http.NewResponse().SendError(w, "Failed to create message: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
-	if err := json.NewEncoder(w).Encode(m); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	c_http.NewResponse().SendSuccess(w, m, http.StatusCreated)
 }
 
-func (mc *MessagesController) UpdateMessage(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
+func (mc *MessagesController) UpdateMessage(w http.ResponseWriter, r *c_http.Request) {
 	var m message.Message
 	if err := json.NewDecoder(r.Body).Decode(&m); err != nil {
-		http.Error(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
+		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	err := message.UpdateMessage(mc.Controller.Dependencies.DBDecorator.GDB(), &m)
 	if err != nil {
-		http.Error(w, "Failed to update message: "+err.Error(), http.StatusInternalServerError)
+		c_http.NewResponse().SendError(w, "Failed to update message: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	if err := json.NewEncoder(w).Encode(m); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	c_http.NewResponse().SendSuccess(w, m, http.StatusOK)
 }
 
-func (mc *MessagesController) DeleteMessage(w http.ResponseWriter, r *http.Request) {
-	id := mc.Controller.GETId(w, r)
-	err := message.DeleteMessageById(mc.Controller.Dependencies.DBDecorator.GDB(), id)
+func (mc *MessagesController) DeleteMessage(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
 	if err != nil {
-		http.Error(w, "Failed to delete message: "+err.Error(), http.StatusInternalServerError)
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err = message.DeleteMessageById(mc.Controller.Dependencies.DBDecorator.GDB(), id)
+	if err != nil {
+		c_http.NewResponse().SendError(w, "Failed to delete message: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 

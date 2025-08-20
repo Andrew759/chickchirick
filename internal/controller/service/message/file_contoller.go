@@ -2,6 +2,7 @@ package message
 
 import (
 	"chickChirick/internal/controller/abstraction"
+	"chickChirick/internal/controller/c_http"
 	file "chickChirick/internal/model/message"
 	"encoding/json"
 	"net/http"
@@ -17,22 +18,29 @@ func (fc *FileController) HandleRequest() {
 		case http.MethodGet:
 			fc.GetFiles(w)
 		default:
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
 
 	fc.Controller.ServeMux.HandleFunc("/message/file", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
-		case http.MethodGet:
-			fc.GetFile(w, r)
 		case http.MethodPost:
-			fc.CreateFile(w, r)
-		case http.MethodPut:
-			fc.UpdateFile(w, r)
-		case http.MethodDelete:
-			fc.DeleteFile(w, r)
+			fc.CreateFile(w, c_http.NewRequest(r))
 		default:
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	})
+
+	fc.Controller.ServeMux.HandleFunc("/message/file/", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			fc.GetFile(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/file/")))
+		case http.MethodPut:
+			fc.UpdateFile(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/file/")))
+		case http.MethodDelete:
+			fc.DeleteFile(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/file/")))
+		default:
+			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
 }
@@ -40,75 +48,70 @@ func (fc *FileController) HandleRequest() {
 func (fc *FileController) GetFiles(w http.ResponseWriter) {
 	files, err := file.GetFiles(fc.Controller.Dependencies.DBDecorator.GDB())
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(files)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	c_http.NewResponse().SendSuccess(w, files, http.StatusOK)
 }
 
-func (fc *FileController) GetFile(w http.ResponseWriter, r *http.Request) {
-	id := fc.Controller.GETId(w, r)
+func (fc *FileController) GetFile(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	f, err := file.GetFileById(fc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
-		http.Error(w, "File not found: "+err.Error(), http.StatusNotFound)
+		c_http.NewResponse().SendError(w, "File not found: "+err.Error(), http.StatusNotFound)
 		return
 	}
 
-	if err := json.NewEncoder(w).Encode(f); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	c_http.NewResponse().SendSuccess(w, f, http.StatusOK)
 }
 
-func (fc *FileController) CreateFile(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
+func (fc *FileController) CreateFile(w http.ResponseWriter, r *c_http.Request) {
 	var f file.File
 	if err := json.NewDecoder(r.Body).Decode(&f); err != nil {
-		http.Error(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
+		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	if err := file.CreateFile(fc.Controller.Dependencies.DBDecorator.GDB(), &f); err != nil {
-		http.Error(w, "Failed to create file: "+err.Error(), http.StatusInternalServerError)
+		c_http.NewResponse().SendError(w, "Failed to create file: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
-	if err := json.NewEncoder(w).Encode(f); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	c_http.NewResponse().SendSuccess(w, f, http.StatusCreated)
 }
 
-func (fc *FileController) UpdateFile(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
+func (fc *FileController) UpdateFile(w http.ResponseWriter, r *c_http.Request) {
 	var f file.File
 	if err := json.NewDecoder(r.Body).Decode(&f); err != nil {
-		http.Error(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
+		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	err := file.UpdateFile(fc.Controller.Dependencies.DBDecorator.GDB(), &f)
 	if err != nil {
-		http.Error(w, "Failed to update file: "+err.Error(), http.StatusInternalServerError)
+		c_http.NewResponse().SendError(w, "Failed to update file: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	if err := json.NewEncoder(w).Encode(f); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	c_http.NewResponse().SendSuccess(w, f, http.StatusOK)
 }
 
-func (fc *FileController) DeleteFile(w http.ResponseWriter, r *http.Request) {
-	id := fc.Controller.GETId(w, r)
-	err := file.DeleteFileById(fc.Controller.Dependencies.DBDecorator.GDB(), id)
+func (fc *FileController) DeleteFile(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
 	if err != nil {
-		http.Error(w, "Failed to delete file: "+err.Error(), http.StatusInternalServerError)
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err = file.DeleteFileById(fc.Controller.Dependencies.DBDecorator.GDB(), id)
+	if err != nil {
+		c_http.NewResponse().SendError(w, "Failed to delete file: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 

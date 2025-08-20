@@ -2,6 +2,7 @@ package message
 
 import (
 	"chickChirick/pkg/chirik_gorm_tweaks/time"
+	"errors"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -15,6 +16,8 @@ type Message struct {
 	UpdatedAt  time.TimestampWithTimeZoneMicro
 	DeletedAt  gorm.DeletedAt `gorm:"index"`
 }
+
+var MessageNotFoundErr = errors.New("message not found")
 
 func CreateMessage(db *gorm.DB, m *Message) error {
 	return db.Create(m).Error

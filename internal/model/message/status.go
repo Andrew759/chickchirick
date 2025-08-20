@@ -2,6 +2,7 @@ package message
 
 import (
 	"chickChirick/pkg/chirik_gorm_tweaks/time"
+	"errors"
 	"gorm.io/gorm"
 )
 
@@ -17,6 +18,8 @@ type Status struct {
 	UpdatedAt        time.TimestampWithTimeZoneMicro
 	DeletedAt        gorm.DeletedAt `gorm:"index"`
 }
+
+var StatusNotFoundErr = errors.New("status not found")
 
 func CreateStatus(db *gorm.DB, s *Status) error {
 	return db.Create(s).Error

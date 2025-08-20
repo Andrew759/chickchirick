@@ -2,6 +2,7 @@ package message
 
 import (
 	"chickChirick/pkg/chirik_gorm_tweaks/time"
+	"errors"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -16,6 +17,8 @@ type File struct {
 	UpdatedAt  time.TimestampWithTimeZoneMicro
 	DeletedAt  gorm.DeletedAt `gorm:"index"`
 }
+
+var FileNotFoundErr = errors.New("file not found")
 
 func CreateFile(db *gorm.DB, f *File) error {
 	return db.Create(f).Error

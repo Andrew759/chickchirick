@@ -2,6 +2,7 @@ package message
 
 import (
 	"chickChirick/pkg/chirik_gorm_tweaks/time"
+	"errors"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -19,6 +20,8 @@ type Meta struct {
 	UpdatedAt        time.TimestampWithTimeZoneMicro
 	DeletedAt        gorm.DeletedAt `gorm:"index"`
 }
+
+var MetaNotFoundErr = errors.New("meta not found")
 
 func (Meta) TableName() string {
 	return "message_meta"

@@ -1,7 +1,7 @@
 package user
 
 import (
-	"chickChirick/internal/controller/http_transaction"
+	"chickChirick/internal/controller/c_http"
 	"chickChirick/internal/middleware/config"
 	"chickChirick/internal/middleware/service"
 	"chickChirick/internal/model/user"
@@ -19,12 +19,12 @@ func (pv PropertyValidator) Validate(next http.HandlerFunc) http.HandlerFunc {
 		var p user.Property
 
 		if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
-			http_transaction.NewResponse().SendError(w, http.StatusBadRequest, "Invalid JSON: "+err.Error())
+			c_http.NewResponse().SendError(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
 			return
 		}
 
 		if errorList := validateProperty(p); len(errorList) > 0 {
-			errResponse := http_transaction.NewResponse()
+			errResponse := c_http.NewResponse()
 			errResponse.AddErrorsToErrorContainer(errorList)
 
 			errResponse.Send(w, http.StatusBadRequest)

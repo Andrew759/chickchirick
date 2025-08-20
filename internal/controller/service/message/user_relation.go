@@ -2,6 +2,7 @@ package message
 
 import (
 	"chickChirick/internal/controller/abstraction"
+	"chickChirick/internal/controller/c_http"
 	userRelation "chickChirick/internal/model/message"
 	"encoding/json"
 	"net/http"
@@ -17,98 +18,101 @@ func (urc *UserRelationController) HandleRequest() {
 		case http.MethodGet:
 			urc.GetUserRelations(w)
 		default:
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
 
 	urc.Controller.ServeMux.HandleFunc("/message/user-relation", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
-		case http.MethodGet:
-			urc.GetUserRelation(w, r)
 		case http.MethodPost:
-			urc.CreateUserRelation(w, r)
-		case http.MethodPut:
-			urc.UpdateUserRelation(w, r)
-		case http.MethodDelete:
-			urc.DeleteUserRelation(w, r)
+			urc.CreateUserRelation(w, c_http.NewRequest(r))
 		default:
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
+	})
+
+	urc.Controller.ServeMux.HandleFunc("/message/user-relation/", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			urc.GetUserRelation(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/user-relation/")))
+		case http.MethodPut:
+			urc.UpdateUserRelation(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/user-relation/")))
+		case http.MethodDelete:
+			urc.DeleteUserRelation(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/user-relation/")))
+		default:
+			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+
 	})
 }
 
 func (urc *UserRelationController) GetUserRelations(w http.ResponseWriter) {
 	userRelations, err := userRelation.GetUserRelation(urc.Controller.Dependencies.DBDecorator.GDB())
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(userRelations)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	c_http.NewResponse().SendSuccess(w, userRelations, http.StatusOK)
 }
 
-func (urc *UserRelationController) GetUserRelation(w http.ResponseWriter, r *http.Request) {
-	id := urc.Controller.GETId(w, r)
-	s, err := userRelation.GetUserRelationById(urc.Controller.Dependencies.DBDecorator.GDB(), id)
+func (urc *UserRelationController) GetUserRelation(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
 	if err != nil {
-		http.Error(w, "User relation not found: "+err.Error(), http.StatusNotFound)
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	if err := json.NewEncoder(w).Encode(s); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	ur, err := userRelation.GetUserRelationById(urc.Controller.Dependencies.DBDecorator.GDB(), id)
+	if err != nil {
+		c_http.NewResponse().SendError(w, "User relation not found: "+err.Error(), http.StatusNotFound)
+		return
 	}
+
+	c_http.NewResponse().SendSuccess(w, ur, http.StatusOK)
 }
 
-func (urc *UserRelationController) CreateUserRelation(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
+func (urc *UserRelationController) CreateUserRelation(w http.ResponseWriter, r *c_http.Request) {
 	var ur userRelation.UserRelation
 	if err := json.NewDecoder(r.Body).Decode(&ur); err != nil {
-		http.Error(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
+		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	if err := userRelation.CreateUserRelation(urc.Controller.Dependencies.DBDecorator.GDB(), &ur); err != nil {
-		http.Error(w, "Failed to create user relation: "+err.Error(), http.StatusInternalServerError)
+		c_http.NewResponse().SendError(w, "Failed to create user relation: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
-	if err := json.NewEncoder(w).Encode(ur); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	c_http.NewResponse().SendSuccess(w, ur, http.StatusCreated)
 }
 
-func (urc *UserRelationController) UpdateUserRelation(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
+func (urc *UserRelationController) UpdateUserRelation(w http.ResponseWriter, r *c_http.Request) {
 	var ur userRelation.UserRelation
 	if err := json.NewDecoder(r.Body).Decode(&ur); err != nil {
-		http.Error(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
+		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	err := userRelation.UpdateUserRelation(urc.Controller.Dependencies.DBDecorator.GDB(), &ur)
 	if err != nil {
-		http.Error(w, "Failed to update user relation: "+err.Error(), http.StatusInternalServerError)
+		c_http.NewResponse().SendError(w, "Failed to update user relation: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	if err := json.NewEncoder(w).Encode(ur); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	c_http.NewResponse().SendSuccess(w, ur, http.StatusOK)
 }
 
-func (urc *UserRelationController) DeleteUserRelation(w http.ResponseWriter, r *http.Request) {
-	id := urc.Controller.GETId(w, r)
-	err := userRelation.DeleteUserRelationById(urc.Controller.Dependencies.DBDecorator.GDB(), id)
+func (urc *UserRelationController) DeleteUserRelation(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
 	if err != nil {
-		http.Error(w, "Failed to delete user relation: "+err.Error(), http.StatusInternalServerError)
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err = userRelation.DeleteUserRelationById(urc.Controller.Dependencies.DBDecorator.GDB(), id)
+	if err != nil {
+		c_http.NewResponse().SendError(w, "Failed to delete user relation: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 

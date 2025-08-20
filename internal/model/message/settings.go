@@ -2,6 +2,7 @@ package message
 
 import (
 	"chickChirick/pkg/chirik_gorm_tweaks/time"
+	"errors"
 	"gorm.io/gorm"
 )
 
@@ -16,6 +17,8 @@ type Settings struct {
 	UpdatedAt             time.TimestampWithTimeZoneMicro
 	DeletedAt             gorm.DeletedAt `gorm:"index"`
 }
+
+var SettingNotFoundErr = errors.New("setting not found")
 
 // SettingRule TODO: описать
 type SettingRule struct{}
