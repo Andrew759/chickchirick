@@ -125,9 +125,11 @@ func (uc *UserController) DeleteUser(w http.ResponseWriter, r *c_http.Request) {
 		return
 	}
 
-	//TODO: добавить ошибку, что пользователь не найден
 	err = user.DeleteUserById(uc.Controller.Dependencies.DBDecorator.GDB(), id)
-	if err != nil {
+	if err != nil && errors.Is(err, user.UserNotFoundErr) {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
+		return
+	} else if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to delete user. "+err.Error(), http.StatusInternalServerError)
 		return
 	}

@@ -2,6 +2,7 @@ package auth
 
 import (
 	"chickChirick/pkg/chirik_gorm_tweaks/time"
+	"errors"
 	"gorm.io/gorm"
 )
 
@@ -16,6 +17,8 @@ type Code struct {
 	UpdatedAt  time.TimestampWithTimeZoneMicro
 	DeletedAt  gorm.DeletedAt `gorm:"index"`
 }
+
+var CodeNotFoundErr = errors.New("code not found")
 
 func CreateCode(db *gorm.DB, c *Code) error {
 	return db.Create(c).Error

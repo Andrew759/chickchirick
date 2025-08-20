@@ -2,6 +2,7 @@ package message
 
 import (
 	"chickChirick/pkg/chirik_gorm_tweaks/time"
+	"errors"
 	"gorm.io/gorm"
 )
 
@@ -15,6 +16,8 @@ type Deleted struct {
 	UpdatedAt    time.TimestampWithTimeZoneMicro
 	DeletedAt    gorm.DeletedAt `gorm:"index"`
 }
+
+var DeletedNotFoundErr = errors.New("deleted not found")
 
 func CreateDeleted(db *gorm.DB, d *Deleted) error {
 	return db.Create(d).Error

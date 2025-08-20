@@ -79,5 +79,12 @@ func GetUserById(db *gorm.DB, id int) (User, error) {
 }
 
 func DeleteUserById(db *gorm.DB, id int) error {
+	var user User
+	result := db.First(&user, id)
+
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return UserNotFoundErr
+	}
+
 	return db.Delete(&User{}, id).Error
 }

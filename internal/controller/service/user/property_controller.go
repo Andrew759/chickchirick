@@ -98,7 +98,7 @@ func (pc *PropertyController) UpdateProperty(w http.ResponseWriter, r *c_http.Re
 
 	p := r.Context().Value(config.UserPropertyKey).(*property.Property)
 
-	err = property.UpdateProperty(pc.Controller.Dependencies.DBDecorator.GDB(), p, id)
+	err = property.UpdatePropertyById(pc.Controller.Dependencies.DBDecorator.GDB(), p, id)
 	if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to update property: "+err.Error(), http.StatusInternalServerError)
 		return

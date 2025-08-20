@@ -533,47 +533,44 @@ func TestUpdateNotExistUserFail(t *testing.T) {
 func TestDeleteUserSuccess(t *testing.T) {
 	uctc := initUCContainer(t)
 
-	// Создаём пользователя
 	newUser := userModels.User{
 		Name:    "Andrey",
 		Surname: "Velkov",
 		Phone:   "+79634823344",
 		Login:   "andrey_velkov",
 	}
-	_, createdResp := doCreateUserRequest(t, uctc, newUser)
+	_, decodedResp := doCreateUserRequest(t, uctc, newUser)
 
 	var createdUser userModels.User
-	json.NewDecoder(createdResp.PayloadContainer).Decode(&createdUser)
+	json.NewDecoder(decodedResp.PayloadContainer).Decode(&createdUser)
 
-	// Удаляем пользователя
 	req, _ := http.NewRequest(http.MethodDelete, uctc.ServerURL+"/user/"+strconv.Itoa(createdUser.Id), nil)
-	resp, err := uctc.HttpClient.Do(req)
-	assert.NoError(t, err)
-	defer resp.Body.Close()
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	deleteUserResp, err := uctc.HttpClient.Do(req)
+	defer deleteUserResp.Body.Close()
 
-	// Проверяем, что его больше нет
-	getResp, _ := uctc.HttpClient.Get(uctc.ServerURL + "/user/" + strconv.Itoa(createdUser.Id))
-	defer getResp.Body.Close()
+	getUserResp, _ := uctc.HttpClient.Get(uctc.ServerURL + "/user/" + strconv.Itoa(createdUser.Id))
+	defer getUserResp.Body.Close()
 
 	var getResult c_http.Response
-	json.NewDecoder(getResp.Body).Decode(&getResult)
-	assert.Equal(t, http.StatusNotFound, getResp.StatusCode)
+	json.NewDecoder(getUserResp.Body).Decode(&getResult)
+
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusNoContent, deleteUserResp.StatusCode)
+	assert.Equal(t, http.StatusNotFound, getUserResp.StatusCode)
 	assert.Equal(t, userModels.UserNotFoundErr, getResult.FirstError())
 }
 
 func TestDeleteUserFail(t *testing.T) {
 	uctc := initUCContainer(t)
 
-	// Удаляем несуществующего пользователя
 	req, _ := http.NewRequest(http.MethodDelete, uctc.ServerURL+"/user/9999", nil)
 	resp, err := uctc.HttpClient.Do(req)
-	assert.NoError(t, err)
 	defer resp.Body.Close()
 
 	var decodedResp c_http.Response
 	json.NewDecoder(resp.Body).Decode(&decodedResp)
 
+	assert.NoError(t, err)
 	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 	assert.Equal(t, userModels.UserNotFoundErr, decodedResp.FirstError())
 }

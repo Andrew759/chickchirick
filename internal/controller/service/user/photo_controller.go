@@ -87,13 +87,19 @@ func (pc *PhotoController) CreatePhoto(w http.ResponseWriter, r *c_http.Request)
 }
 
 func (pc *PhotoController) UpdatePhoto(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	var p photo.Photo
 	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
 		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	err := photo.UpdatePhoto(pc.Controller.Dependencies.DBDecorator.GDB(), &p)
+	err = photo.UpdatePhotoById(pc.Controller.Dependencies.DBDecorator.GDB(), &p, id)
 	if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to update photo: "+err.Error(), http.StatusInternalServerError)
 		return

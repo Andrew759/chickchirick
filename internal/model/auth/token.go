@@ -2,6 +2,7 @@ package auth
 
 import (
 	"chickChirick/pkg/chirik_gorm_tweaks/time"
+	"errors"
 	"gorm.io/gorm"
 )
 
@@ -16,6 +17,8 @@ type Token struct {
 	UpdatedAt  time.TimestampWithTimeZoneMicro
 	DeletedAt  gorm.DeletedAt `gorm:"index"`
 }
+
+var TokenNotFoundErr = errors.New("token not found")
 
 func CreateToken(db *gorm.DB, t *Token) error {
 	return db.Create(t).Error

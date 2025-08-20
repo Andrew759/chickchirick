@@ -2,6 +2,7 @@ package auth
 
 import (
 	"chickChirick/pkg/chirik_gorm_tweaks/time"
+	"errors"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -16,6 +17,8 @@ type Session struct {
 	UpdatedAt  time.TimestampWithTimeZoneMicro
 	DeletedAt  gorm.DeletedAt `gorm:"index"`
 }
+
+var SessionNotFoundErr = errors.New("session not found")
 
 func CreateSession(db *gorm.DB, s *Session) error {
 	return db.Create(s).Error

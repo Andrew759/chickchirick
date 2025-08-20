@@ -2,6 +2,7 @@ package user
 
 import (
 	"chickChirick/pkg/chirik_gorm_tweaks/time"
+	"errors"
 	"gorm.io/gorm"
 )
 
@@ -17,6 +18,8 @@ type Ban struct {
 	UpdatedAt    time.TimestampWithTimeZoneMicro
 	DeletedAt    gorm.DeletedAt `gorm:"index"`
 }
+
+var BanNotFoundErr = errors.New("ban not found")
 
 func CreateBan(db *gorm.DB, b *Ban) error {
 	return db.Create(b).Error
