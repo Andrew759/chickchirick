@@ -5,6 +5,7 @@ import (
 	"chickChirick/internal/controller/c_http"
 	status "chickChirick/internal/model/message"
 	"encoding/json"
+	"errors"
 	"net/http"
 )
 
@@ -87,7 +88,11 @@ func (sc *StatusController) CreateStatus(w http.ResponseWriter, r *c_http.Reques
 }
 
 func (sc *StatusController) UpdateStatus(w http.ResponseWriter, r *c_http.Request) {
-	//TODO: во всех остальных методах выше (по списку файлов) требуется обработка ид
+	id, err := r.HttpId()
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	var s status.Status
 	if err := json.NewDecoder(r.Body).Decode(&s); err != nil {
@@ -95,8 +100,11 @@ func (sc *StatusController) UpdateStatus(w http.ResponseWriter, r *c_http.Reques
 		return
 	}
 
-	err := status.UpdateStatus(sc.Controller.Dependencies.DBDecorator.GDB(), &s)
-	if err != nil {
+	err = status.UpdateStatusById(sc.Controller.Dependencies.DBDecorator.GDB(), &s, id)
+	if err != nil && errors.Is(err, status.StatusNotFoundErr) {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
+		return
+	} else if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to update status: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -112,7 +120,10 @@ func (sc *StatusController) DeleteStatus(w http.ResponseWriter, r *c_http.Reques
 	}
 
 	err = status.DeleteStatusById(sc.Controller.Dependencies.DBDecorator.GDB(), id)
-	if err != nil {
+	if err != nil && errors.Is(err, status.StatusNotFoundErr) {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
+		return
+	} else if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to delete status: "+err.Error(), http.StatusInternalServerError)
 		return
 	}

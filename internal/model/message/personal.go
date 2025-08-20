@@ -26,7 +26,14 @@ func CreatePersonal(db *gorm.DB, p *Personal) error {
 	return db.Create(p).Error
 }
 
-func UpdatePersonal(db *gorm.DB, p *Personal) error {
+func UpdatePersonalById(db *gorm.DB, p *Personal, id int) error {
+	var personal Personal
+	result := db.First(&personal, id)
+
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return PersonalNotFoundErr
+	}
+
 	return db.Save(p).Error
 }
 
@@ -45,5 +52,12 @@ func GetPersonalById(db *gorm.DB, id int) (Personal, error) {
 }
 
 func DeletePersonalById(db *gorm.DB, id int) error {
+	var personal Personal
+	result := db.First(&personal, id)
+
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return PersonalNotFoundErr
+	}
+
 	return db.Delete(&Personal{}, id).Error
 }

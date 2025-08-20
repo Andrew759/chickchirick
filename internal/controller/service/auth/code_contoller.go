@@ -5,6 +5,7 @@ import (
 	"chickChirick/internal/controller/c_http"
 	code "chickChirick/internal/model/auth"
 	"encoding/json"
+	"errors"
 	"net/http"
 )
 
@@ -87,14 +88,23 @@ func (cc *CodeController) CreateCode(w http.ResponseWriter, r *c_http.Request) {
 }
 
 func (cc *CodeController) UpdateCode(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	var c code.Code
 	if err := json.NewDecoder(r.Body).Decode(&c); err != nil {
 		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	err := code.UpdateCode(cc.Controller.Dependencies.DBDecorator.GDB(), &c)
-	if err != nil {
+	err = code.UpdateCodeById(cc.Controller.Dependencies.DBDecorator.GDB(), &c, id)
+	if err != nil && errors.Is(err, code.CodeNotFoundErr) {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
+		return
+	} else if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to update code: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -110,7 +120,10 @@ func (cc *CodeController) DeleteCode(w http.ResponseWriter, r *c_http.Request) {
 	}
 
 	err = code.DeleteCodeById(cc.Controller.Dependencies.DBDecorator.GDB(), id)
-	if err != nil {
+	if err != nil && errors.Is(err, code.CodeNotFoundErr) {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
+		return
+	} else if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to delete code: "+err.Error(), http.StatusInternalServerError)
 		return
 	}

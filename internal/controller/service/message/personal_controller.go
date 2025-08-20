@@ -5,6 +5,7 @@ import (
 	"chickChirick/internal/controller/c_http"
 	personal "chickChirick/internal/model/message"
 	"encoding/json"
+	"errors"
 	"net/http"
 )
 
@@ -87,14 +88,23 @@ func (pc *PersonalController) CreatePersonal(w http.ResponseWriter, r *c_http.Re
 }
 
 func (pc *PersonalController) UpdatePersonal(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	var p personal.Personal
 	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
 		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	err := personal.UpdatePersonal(pc.Controller.Dependencies.DBDecorator.GDB(), &p)
-	if err != nil {
+	err = personal.UpdatePersonalById(pc.Controller.Dependencies.DBDecorator.GDB(), &p, id)
+	if err != nil && errors.Is(err, personal.PersonalNotFoundErr) {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
+		return
+	} else if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to update personal: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -110,7 +120,10 @@ func (pc *PersonalController) DeletePersonal(w http.ResponseWriter, r *c_http.Re
 	}
 
 	err = personal.DeletePersonalById(pc.Controller.Dependencies.DBDecorator.GDB(), id)
-	if err != nil {
+	if err != nil && errors.Is(err, personal.PersonalNotFoundErr) {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
+		return
+	} else if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to delete personal: "+err.Error(), http.StatusInternalServerError)
 		return
 	}

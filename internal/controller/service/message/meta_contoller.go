@@ -5,6 +5,7 @@ import (
 	"chickChirick/internal/controller/c_http"
 	meta "chickChirick/internal/model/message"
 	"encoding/json"
+	"errors"
 	"net/http"
 )
 
@@ -87,14 +88,23 @@ func (mc *MetaController) CreateMeta(w http.ResponseWriter, r *c_http.Request) {
 }
 
 func (mc *MetaController) UpdateMeta(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	var m meta.Meta
 	if err := json.NewDecoder(r.Body).Decode(&m); err != nil {
 		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	err := meta.UpdateMeta(mc.Controller.Dependencies.DBDecorator.GDB(), &m)
-	if err != nil {
+	err = meta.UpdateMetaById(mc.Controller.Dependencies.DBDecorator.GDB(), &m, id)
+	if err != nil && errors.Is(err, meta.MetaNotFoundErr) {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
+		return
+	} else if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to update meta: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -110,7 +120,10 @@ func (mc *MetaController) DeleteMeta(w http.ResponseWriter, r *c_http.Request) {
 	}
 
 	err = meta.DeleteMetaById(mc.Controller.Dependencies.DBDecorator.GDB(), id)
-	if err != nil {
+	if err != nil && errors.Is(err, meta.MetaNotFoundErr) {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
+		return
+	} else if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to delete meta: "+err.Error(), http.StatusInternalServerError)
 		return
 	}

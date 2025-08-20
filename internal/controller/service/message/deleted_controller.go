@@ -5,6 +5,7 @@ import (
 	"chickChirick/internal/controller/c_http"
 	deleted "chickChirick/internal/model/message"
 	"encoding/json"
+	"errors"
 	"net/http"
 )
 
@@ -87,14 +88,23 @@ func (dc *DeletedController) CreateDeleted(w http.ResponseWriter, r *c_http.Requ
 }
 
 func (dc *DeletedController) UpdateDeleted(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	var d deleted.Deleted
 	if err := json.NewDecoder(r.Body).Decode(&d); err != nil {
 		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	err := deleted.UpdateDeleted(dc.Controller.Dependencies.DBDecorator.GDB(), &d)
-	if err != nil {
+	err = deleted.UpdateDeletedById(dc.Controller.Dependencies.DBDecorator.GDB(), &d, id)
+	if err != nil && errors.Is(err, deleted.DeletedNotFoundErr) {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
+		return
+	} else if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to update deleted: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -110,7 +120,10 @@ func (dc *DeletedController) DeleteDeleted(w http.ResponseWriter, r *c_http.Requ
 	}
 
 	err = deleted.DeleteDeletedById(dc.Controller.Dependencies.DBDecorator.GDB(), id)
-	if err != nil {
+	if err != nil && errors.Is(err, deleted.DeletedNotFoundErr) {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
+		return
+	} else if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to delete deleted: "+err.Error(), http.StatusInternalServerError)
 		return
 	}

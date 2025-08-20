@@ -5,6 +5,7 @@ import (
 	"chickChirick/internal/controller/c_http"
 	userRelation "chickChirick/internal/model/message"
 	"encoding/json"
+	"errors"
 	"net/http"
 )
 
@@ -88,14 +89,23 @@ func (urc *UserRelationController) CreateUserRelation(w http.ResponseWriter, r *
 }
 
 func (urc *UserRelationController) UpdateUserRelation(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	var ur userRelation.UserRelation
 	if err := json.NewDecoder(r.Body).Decode(&ur); err != nil {
 		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	err := userRelation.UpdateUserRelation(urc.Controller.Dependencies.DBDecorator.GDB(), &ur)
-	if err != nil {
+	err = userRelation.UpdateUserRelationById(urc.Controller.Dependencies.DBDecorator.GDB(), &ur, id)
+	if err != nil && errors.Is(err, userRelation.UserRelationNotFoundErr) {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
+		return
+	} else if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to update user relation: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -111,7 +121,10 @@ func (urc *UserRelationController) DeleteUserRelation(w http.ResponseWriter, r *
 	}
 
 	err = userRelation.DeleteUserRelationById(urc.Controller.Dependencies.DBDecorator.GDB(), id)
-	if err != nil {
+	if err != nil && errors.Is(err, userRelation.UserRelationNotFoundErr) {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
+		return
+	} else if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to delete user relation: "+err.Error(), http.StatusInternalServerError)
 		return
 	}

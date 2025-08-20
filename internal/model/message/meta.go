@@ -31,7 +31,14 @@ func CreateMeta(db *gorm.DB, m *Meta) error {
 	return db.Create(m).Error
 }
 
-func UpdateMeta(db *gorm.DB, m *Meta) error {
+func UpdateMetaById(db *gorm.DB, m *Meta, id int) error {
+	var meta Meta
+	result := db.First(&meta, id)
+
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return MetaNotFoundErr
+	}
+
 	return db.Save(m).Error
 }
 
@@ -50,5 +57,12 @@ func GetMetaById(db *gorm.DB, id int) (Meta, error) {
 }
 
 func DeleteMetaById(db *gorm.DB, id int) error {
+	var meta Meta
+	result := db.First(&meta, id)
+
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return MetaNotFoundErr
+	}
+
 	return db.Delete(&Meta{}, id).Error
 }

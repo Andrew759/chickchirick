@@ -24,7 +24,14 @@ func CreateToken(db *gorm.DB, t *Token) error {
 	return db.Create(t).Error
 }
 
-func UpdateToken(db *gorm.DB, t *Token) error {
+func UpdateTokenById(db *gorm.DB, t *Token, id int) error {
+	var token Token
+	result := db.First(&token, id)
+
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return TokenNotFoundErr
+	}
+
 	return db.Save(t).Error
 }
 
@@ -43,5 +50,12 @@ func GetTokenById(db *gorm.DB, id int) (Token, error) {
 }
 
 func DeleteTokenById(db *gorm.DB, id int) error {
+	var token Token
+	result := db.First(&token, id)
+
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return TokenNotFoundErr
+	}
+
 	return db.Delete(&Token{}, id).Error
 }

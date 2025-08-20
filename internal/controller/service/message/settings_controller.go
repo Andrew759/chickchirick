@@ -5,6 +5,7 @@ import (
 	"chickChirick/internal/controller/c_http"
 	settings "chickChirick/internal/model/message"
 	"encoding/json"
+	"errors"
 	"net/http"
 )
 
@@ -87,14 +88,23 @@ func (sc *SettingsController) CreateSetting(w http.ResponseWriter, r *c_http.Req
 }
 
 func (sc *SettingsController) UpdateSetting(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	var s settings.Settings
 	if err := json.NewDecoder(r.Body).Decode(&s); err != nil {
 		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	err := settings.UpdateSettings(sc.Controller.Dependencies.DBDecorator.GDB(), &s)
-	if err != nil {
+	err = settings.UpdateSettingsById(sc.Controller.Dependencies.DBDecorator.GDB(), &s, id)
+	if err != nil && errors.Is(err, settings.StatusNotFoundErr) {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
+		return
+	} else if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to update setting: "+err.Error(), http.StatusInternalServerError)
 		return
 	}

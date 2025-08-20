@@ -24,7 +24,14 @@ func CreateFile(db *gorm.DB, f *File) error {
 	return db.Create(f).Error
 }
 
-func UpdateFile(db *gorm.DB, f *File) error {
+func UpdateFileById(db *gorm.DB, f *File, id int) error {
+	var file File
+	result := db.First(&file, id)
+
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return FileNotFoundErr
+	}
+
 	return db.Save(f).Error
 }
 
@@ -43,5 +50,12 @@ func GetFileById(db *gorm.DB, id int) (File, error) {
 }
 
 func DeleteFileById(db *gorm.DB, id int) error {
+	var file File
+	result := db.First(&file, id)
+
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return FileNotFoundErr
+	}
+
 	return db.Delete(&File{}, id).Error
 }

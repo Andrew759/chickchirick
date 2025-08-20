@@ -18,7 +18,7 @@ type Settings struct {
 	DeletedAt             gorm.DeletedAt `gorm:"index"`
 }
 
-var SettingNotFoundErr = errors.New("setting not found")
+var SettingsNotFoundErr = errors.New("settings not found")
 
 // SettingRule TODO: описать
 type SettingRule struct{}
@@ -27,7 +27,14 @@ func CreateSettings(db *gorm.DB, s *Settings) error {
 	return db.Create(s).Error
 }
 
-func UpdateSettings(db *gorm.DB, s *Settings) error {
+func UpdateSettingsById(db *gorm.DB, s *Settings, id int) error {
+	var settings Settings
+	result := db.First(&settings, id)
+
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return SettingsNotFoundErr
+	}
+
 	return db.Save(s).Error
 }
 
@@ -46,5 +53,12 @@ func GetSettingsById(db *gorm.DB, id int) (Settings, error) {
 }
 
 func DeleteSettingsById(db *gorm.DB, id int) error {
+	var settings Settings
+	result := db.First(&settings, id)
+
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return SettingsNotFoundErr
+	}
+
 	return db.Delete(&Settings{}, id).Error
 }

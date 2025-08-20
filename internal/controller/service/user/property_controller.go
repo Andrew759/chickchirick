@@ -6,6 +6,7 @@ import (
 	"chickChirick/internal/middleware/config"
 	userMiddleware "chickChirick/internal/middleware/validators/user"
 	property "chickChirick/internal/model/user"
+	"errors"
 	"net/http"
 )
 
@@ -98,7 +99,10 @@ func (pc *PropertyController) UpdateProperty(w http.ResponseWriter, r *c_http.Re
 	p := r.Context().Value(config.UserPropertyKey).(*property.Property)
 
 	err = property.UpdatePropertyById(pc.Controller.Dependencies.DBDecorator.GDB(), p, id)
-	if err != nil {
+	if err != nil && errors.Is(err, property.PropertyNotFoundErr) {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
+		return
+	} else if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to update property: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -113,7 +117,10 @@ func (pc *PropertyController) DeleteProperty(w http.ResponseWriter, r *c_http.Re
 		return
 	}
 	err = property.DeletePropertyById(pc.Controller.Dependencies.DBDecorator.GDB(), id)
-	if err != nil {
+	if err != nil && errors.Is(err, property.PropertyNotFoundErr) {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
+		return
+	} else if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to delete property: "+err.Error(), http.StatusInternalServerError)
 		return
 	}

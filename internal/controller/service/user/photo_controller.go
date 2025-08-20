@@ -5,6 +5,7 @@ import (
 	"chickChirick/internal/controller/c_http"
 	photo "chickChirick/internal/model/user"
 	"encoding/json"
+	"errors"
 	"net/http"
 )
 
@@ -100,7 +101,10 @@ func (pc *PhotoController) UpdatePhoto(w http.ResponseWriter, r *c_http.Request)
 	}
 
 	err = photo.UpdatePhotoById(pc.Controller.Dependencies.DBDecorator.GDB(), &p, id)
-	if err != nil {
+	if err != nil && errors.Is(err, photo.PhotoNotFoundErr) {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
+		return
+	} else if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to update photo: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -116,7 +120,10 @@ func (pc *PhotoController) DeletePhoto(w http.ResponseWriter, r *c_http.Request)
 	}
 
 	err = photo.DeletePhotoById(pc.Controller.Dependencies.DBDecorator.GDB(), id)
-	if err != nil {
+	if err != nil && errors.Is(err, photo.PhotoNotFoundErr) {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
+		return
+	} else if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to delete photo: "+err.Error(), http.StatusInternalServerError)
 		return
 	}

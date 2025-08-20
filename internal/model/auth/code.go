@@ -24,7 +24,14 @@ func CreateCode(db *gorm.DB, c *Code) error {
 	return db.Create(c).Error
 }
 
-func UpdateCode(db *gorm.DB, c *Code) error {
+func UpdateCodeById(db *gorm.DB, c *Code, id int) error {
+	var code Code
+	result := db.First(&code, id)
+
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return CodeNotFoundErr
+	}
+
 	return db.Save(c).Error
 }
 
@@ -43,5 +50,12 @@ func GetCodeById(db *gorm.DB, id int) (Code, error) {
 }
 
 func DeleteCodeById(db *gorm.DB, id int) error {
+	var code Code
+	result := db.First(&code, id)
+
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return CodeNotFoundErr
+	}
+
 	return db.Delete(&Code{}, id).Error
 }

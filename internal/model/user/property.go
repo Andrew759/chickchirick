@@ -47,6 +47,8 @@ func GetProperties(db *gorm.DB) ([]Property, error) {
 }
 
 func GetPropertyById(db *gorm.DB, id int) (Property, error) {
+	//TODO: доработать на подобии модели пользователя - добавить выбрасывание конкретного исключения,
+	// что свойство не найдено. Затем поправить все остальные модели и контроллеры
 	var property Property
 	result := db.First(&property, id)
 

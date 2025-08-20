@@ -25,7 +25,14 @@ func CreateBan(db *gorm.DB, b *Ban) error {
 	return db.Create(b).Error
 }
 
-func UpdateBan(db *gorm.DB, b *Ban) error {
+func UpdateBanById(db *gorm.DB, b *Ban, id int) error {
+	var ban Ban
+	result := db.First(&ban, id)
+
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return BanNotFoundErr
+	}
+
 	return db.Save(b).Error
 }
 
@@ -44,5 +51,12 @@ func GetBanById(db *gorm.DB, id int) (Ban, error) {
 }
 
 func DeleteBanById(db *gorm.DB, id int) error {
+	var ban Ban
+	result := db.First(&ban, id)
+
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return BanNotFoundErr
+	}
+
 	return db.Delete(&Ban{}, id).Error
 }

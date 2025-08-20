@@ -23,7 +23,14 @@ func CreateMessage(db *gorm.DB, m *Message) error {
 	return db.Create(m).Error
 }
 
-func UpdateMessage(db *gorm.DB, m *Message) error {
+func UpdateMessageById(db *gorm.DB, m *Message, id int) error {
+	var message Message
+	result := db.First(&message, id)
+
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return MessageNotFoundErr
+	}
+
 	return db.Save(m).Error
 }
 
@@ -42,5 +49,12 @@ func GetMessageById(db *gorm.DB, id int) (Message, error) {
 }
 
 func DeleteMessageById(db *gorm.DB, id int) error {
+	var message Message
+	result := db.First(&message, id)
+
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return MessageNotFoundErr
+	}
+
 	return db.Delete(&Message{}, id).Error
 }

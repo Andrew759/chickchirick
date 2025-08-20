@@ -5,6 +5,7 @@ import (
 	"chickChirick/internal/controller/c_http"
 	ban "chickChirick/internal/model/user"
 	"encoding/json"
+	"errors"
 	"net/http"
 )
 
@@ -87,14 +88,23 @@ func (bc *BanController) CreateBan(w http.ResponseWriter, r *c_http.Request) {
 }
 
 func (bc *BanController) UpdateBan(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	var b ban.Ban
-	if err := json.NewDecoder(r.Body).Decode(&b); err != nil {
+	if err = json.NewDecoder(r.Body).Decode(&b); err != nil {
 		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	err := ban.UpdateBan(bc.Controller.Dependencies.DBDecorator.GDB(), &b)
-	if err != nil {
+	err = ban.UpdateBanById(bc.Controller.Dependencies.DBDecorator.GDB(), &b, id)
+	if err != nil && errors.Is(err, ban.BanNotFoundErr) {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
+		return
+	} else if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to update ban: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -110,7 +120,10 @@ func (bc *BanController) DeleteBan(w http.ResponseWriter, r *c_http.Request) {
 	}
 
 	err = ban.DeleteBanById(bc.Controller.Dependencies.DBDecorator.GDB(), id)
-	if err != nil {
+	if err != nil && errors.Is(err, ban.BanNotFoundErr) {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
+		return
+	} else if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to delete ban: "+err.Error(), http.StatusInternalServerError)
 		return
 	}

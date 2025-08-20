@@ -23,7 +23,14 @@ func CreateGroup(db *gorm.DB, g *Group) error {
 	return db.Create(g).Error
 }
 
-func UpdateGroup(db *gorm.DB, g *Group) error {
+func UpdateGroupById(db *gorm.DB, g *Group, id int) error {
+	var group Group
+	result := db.First(&group, id)
+
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return GroupNotFoundErr
+	}
+
 	return db.Save(g).Error
 }
 
@@ -42,5 +49,12 @@ func GetGroupById(db *gorm.DB, id int) (Group, error) {
 }
 
 func DeleteGroupById(db *gorm.DB, id int) error {
+	var group Group
+	result := db.First(&group, id)
+
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return GroupNotFoundErr
+	}
+
 	return db.Delete(&Group{}, id).Error
 }

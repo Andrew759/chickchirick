@@ -5,6 +5,7 @@ import (
 	"chickChirick/internal/controller/c_http"
 	token "chickChirick/internal/model/auth"
 	"encoding/json"
+	"errors"
 	"net/http"
 )
 
@@ -87,14 +88,23 @@ func (tc *TokenController) CreateToken(w http.ResponseWriter, r *c_http.Request)
 }
 
 func (tc *TokenController) UpdateToken(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	var t token.Token
 	if err := json.NewDecoder(r.Body).Decode(&t); err != nil {
 		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	err := token.UpdateToken(tc.Controller.Dependencies.DBDecorator.GDB(), &t)
-	if err != nil {
+	err = token.UpdateTokenById(tc.Controller.Dependencies.DBDecorator.GDB(), &t, id)
+	if err != nil && errors.Is(err, token.TokenNotFoundErr) {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
+		return
+	} else if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to update token: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -110,7 +120,10 @@ func (tc *TokenController) DeleteToken(w http.ResponseWriter, r *c_http.Request)
 	}
 
 	err = token.DeleteTokenById(tc.Controller.Dependencies.DBDecorator.GDB(), id)
-	if err != nil {
+	if err != nil && errors.Is(err, token.TokenNotFoundErr) {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
+		return
+	} else if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to delete token: "+err.Error(), http.StatusInternalServerError)
 		return
 	}

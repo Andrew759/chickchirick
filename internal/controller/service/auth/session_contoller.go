@@ -5,6 +5,7 @@ import (
 	"chickChirick/internal/controller/c_http"
 	session "chickChirick/internal/model/auth"
 	"encoding/json"
+	"errors"
 	"net/http"
 )
 
@@ -87,14 +88,23 @@ func (sc *SessionController) CreateSession(w http.ResponseWriter, r *c_http.Requ
 }
 
 func (sc *SessionController) UpdateSession(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	var s session.Session
 	if err := json.NewDecoder(r.Body).Decode(&s); err != nil {
 		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	err := session.UpdateSession(sc.Controller.Dependencies.DBDecorator.GDB(), &s)
-	if err != nil {
+	err = session.UpdateSessionById(sc.Controller.Dependencies.DBDecorator.GDB(), &s, id)
+	if err != nil && errors.Is(err, session.SessionNotFoundErr) {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
+		return
+	} else if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to update session: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -110,7 +120,10 @@ func (sc *SessionController) DeleteSession(w http.ResponseWriter, r *c_http.Requ
 	}
 
 	err = session.DeleteSessionById(sc.Controller.Dependencies.DBDecorator.GDB(), id)
-	if err != nil {
+	if err != nil && errors.Is(err, session.SessionNotFoundErr) {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
+		return
+	} else if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to delete session: "+err.Error(), http.StatusInternalServerError)
 		return
 	}

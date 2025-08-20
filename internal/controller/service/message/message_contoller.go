@@ -5,6 +5,7 @@ import (
 	"chickChirick/internal/controller/c_http"
 	"chickChirick/internal/model/message"
 	"encoding/json"
+	"errors"
 	"net/http"
 )
 
@@ -87,14 +88,23 @@ func (mc *MessagesController) CreateMessage(w http.ResponseWriter, r *c_http.Req
 }
 
 func (mc *MessagesController) UpdateMessage(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	var m message.Message
 	if err := json.NewDecoder(r.Body).Decode(&m); err != nil {
 		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	err := message.UpdateMessage(mc.Controller.Dependencies.DBDecorator.GDB(), &m)
-	if err != nil {
+	err = message.UpdateMessageById(mc.Controller.Dependencies.DBDecorator.GDB(), &m, id)
+	if err != nil && errors.Is(err, message.MessageNotFoundErr) {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
+		return
+	} else if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to update message: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -110,7 +120,10 @@ func (mc *MessagesController) DeleteMessage(w http.ResponseWriter, r *c_http.Req
 	}
 
 	err = message.DeleteMessageById(mc.Controller.Dependencies.DBDecorator.GDB(), id)
-	if err != nil {
+	if err != nil && errors.Is(err, message.MessageNotFoundErr) {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
+		return
+	} else if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to delete message: "+err.Error(), http.StatusInternalServerError)
 		return
 	}

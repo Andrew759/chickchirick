@@ -16,13 +16,20 @@ type UserRelation struct {
 	DeletedAt  gorm.DeletedAt `gorm:"index"`
 }
 
-var UserRelationNotFoundErr = errors.New("user Relation not found")
+var UserRelationNotFoundErr = errors.New("user relation not found")
 
 func CreateUserRelation(db *gorm.DB, ur *UserRelation) error {
 	return db.Create(ur).Error
 }
 
-func UpdateUserRelation(db *gorm.DB, ur *UserRelation) error {
+func UpdateUserRelationById(db *gorm.DB, ur *UserRelation, id int) error {
+	var userRelation UserRelation
+	result := db.First(&userRelation, id)
+
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return UserRelationNotFoundErr
+	}
+
 	return db.Save(ur).Error
 }
 
@@ -41,5 +48,12 @@ func GetUserRelationById(db *gorm.DB, id int) (UserRelation, error) {
 }
 
 func DeleteUserRelationById(db *gorm.DB, id int) error {
+	var userRelation UserRelation
+	result := db.First(&userRelation, id)
+
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return UserRelationNotFoundErr
+	}
+
 	return db.Delete(&UserRelation{}, id).Error
 }

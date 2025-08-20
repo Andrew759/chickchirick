@@ -24,7 +24,14 @@ func CreateSession(db *gorm.DB, s *Session) error {
 	return db.Create(s).Error
 }
 
-func UpdateSession(db *gorm.DB, s *Session) error {
+func UpdateSessionById(db *gorm.DB, s *Session, id int) error {
+	var session Session
+	result := db.First(&session, id)
+
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return SessionNotFoundErr
+	}
+
 	return db.Save(s).Error
 }
 
@@ -43,5 +50,12 @@ func GetSessionById(db *gorm.DB, id int) (Session, error) {
 }
 
 func DeleteSessionById(db *gorm.DB, id int) error {
+	var session Session
+	result := db.First(&session, id)
+
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return SessionNotFoundErr
+	}
+
 	return db.Delete(&Session{}, id).Error
 }

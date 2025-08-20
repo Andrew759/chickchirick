@@ -23,8 +23,14 @@ func CreatePhoto(db *gorm.DB, b *Photo) error {
 	return db.Create(b).Error
 }
 
-// UpdatePhotoById TODO: доработать метод обновления и удаления. Доработать все остальные модели, где не используется id
 func UpdatePhotoById(db *gorm.DB, p *Photo, id int) error {
+	var photo Photo
+	result := db.First(&photo, id)
+
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return PhotoNotFoundErr
+	}
+
 	return db.Save(p).Error
 }
 
@@ -43,5 +49,12 @@ func GetPhotoById(db *gorm.DB, id int) (Photo, error) {
 }
 
 func DeletePhotoById(db *gorm.DB, id int) error {
+	var photo Photo
+	result := db.First(&photo, id)
+
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return PhotoNotFoundErr
+	}
+
 	return db.Delete(&Photo{}, id).Error
 }

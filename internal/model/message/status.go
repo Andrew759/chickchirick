@@ -25,7 +25,14 @@ func CreateStatus(db *gorm.DB, s *Status) error {
 	return db.Create(s).Error
 }
 
-func UpdateStatus(db *gorm.DB, s *Status) error {
+func UpdateStatusById(db *gorm.DB, s *Status, id int) error {
+	var status Status
+	result := db.First(&status, id)
+
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return StatusNotFoundErr
+	}
+
 	return db.Save(s).Error
 }
 
@@ -44,5 +51,12 @@ func GetStatusById(db *gorm.DB, id int) (Status, error) {
 }
 
 func DeleteStatusById(db *gorm.DB, id int) error {
+	var status Status
+	result := db.First(&status, id)
+
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return StatusNotFoundErr
+	}
+
 	return db.Delete(&Status{}, id).Error
 }

@@ -5,6 +5,7 @@ import (
 	"chickChirick/internal/controller/c_http"
 	file "chickChirick/internal/model/message"
 	"encoding/json"
+	"errors"
 	"net/http"
 )
 
@@ -87,14 +88,23 @@ func (fc *FileController) CreateFile(w http.ResponseWriter, r *c_http.Request) {
 }
 
 func (fc *FileController) UpdateFile(w http.ResponseWriter, r *c_http.Request) {
+	id, err := r.HttpId()
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	var f file.File
 	if err := json.NewDecoder(r.Body).Decode(&f); err != nil {
 		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	err := file.UpdateFile(fc.Controller.Dependencies.DBDecorator.GDB(), &f)
-	if err != nil {
+	err = file.UpdateFileById(fc.Controller.Dependencies.DBDecorator.GDB(), &f, id)
+	if err != nil && errors.Is(err, file.FileNotFoundErr) {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
+		return
+	} else if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to update file: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -110,7 +120,10 @@ func (fc *FileController) DeleteFile(w http.ResponseWriter, r *c_http.Request) {
 	}
 
 	err = file.DeleteFileById(fc.Controller.Dependencies.DBDecorator.GDB(), id)
-	if err != nil {
+	if err != nil && errors.Is(err, file.FileNotFoundErr) {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
+		return
+	} else if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to delete file: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
