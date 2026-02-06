@@ -8,6 +8,7 @@ import (
 	"chickChirick/internal/controller/abstraction"
 	"chickChirick/internal/controller/c_http"
 	"chickChirick/internal/controller/service/user"
+	testAbstraction "chickChirick/internal/controller/test/abstraction"
 	"chickChirick/internal/middleware/config"
 	userMiddleware "chickChirick/internal/middleware/validators/user"
 	userModels "chickChirick/internal/model/user"
@@ -17,21 +18,12 @@ import (
 	"encoding/json"
 	"github.com/stretchr/testify/assert"
 	"net/http"
-	"net/http/httptest"
 	"strconv"
 	"testing"
 )
 
-type ExternalServices struct {
-	service.DBDecorator
-	service.RedisDecorator
-}
-
 type UserControllerTestContainer struct {
-	ServerURL string
-	ExternalServices
-	HttpServer *httptest.Server
-	HttpClient *http.Client
+	testAbstraction.ControllerTestContainer
 	*user.UserController
 }
 
@@ -43,9 +35,9 @@ func initUCContainer(t *testing.T) UserControllerTestContainer {
 	db := service.InitORM(&appCfg.DatabaseConfig)
 	redis := service.InitRedis(appCfg.RedisConfig)
 
-	createUserTable(db)
+	CreateUserTable(db)
 
-	server := startTestServer(t, db, redis)
+	server := testAbstraction.StartTestServer(t, db, redis)
 
 	ac := abstraction.Controller{
 		Dependencies: abstraction.DIContainer{
@@ -55,21 +47,23 @@ func initUCContainer(t *testing.T) UserControllerTestContainer {
 	uv := userMiddleware.UserValidator{}
 
 	uCTC := UserControllerTestContainer{
-		ServerURL: appCfg.ServerURL,
-		ExternalServices: ExternalServices{
-			DBDecorator:    db,
-			RedisDecorator: redis,
+		ControllerTestContainer: testAbstraction.ControllerTestContainer{
+			ServerURL: appCfg.ServerURL,
+			ExternalServices: testAbstraction.ExternalServices{
+				DBDecorator:    db,
+				RedisDecorator: redis,
+			},
+			HttpServer: server,
+			HttpClient: factory.InitHttpClient(),
 		},
-		HttpServer: server,
-		HttpClient: factory.InitHttpClient(),
 		UserController: &user.UserController{
-			Controller:    ac,
-			UserValidator: uv,
+			Controller: ac,
+			Validator:  uv,
 		},
 	}
 
 	t.Cleanup(func() {
-		dropUserTable(uCTC)
+		DropUserTable(db)
 		uCTC.HttpServer.Close()
 		uCTC.DBDecorator.CloseDB()
 		uCTC.RedisDecorator.RedisClose()
@@ -78,28 +72,22 @@ func initUCContainer(t *testing.T) UserControllerTestContainer {
 	return uCTC
 }
 
-// TODO: перевести на работу с мигратором. Отказаться от мигратора Gorm
-func createUserTable(db service.DBDecorator) {
+// TODO: перевести на работу с мигратором. Отказаться от мигратора Gorm (во всех тестах)
+func CreateUserTable(db service.DBDecorator) {
 	if err := db.GDB().AutoMigrate(&userModels.User{}); err != nil {
 		panic("failed to migrate user table: " + err.Error())
 	}
 }
 
-func dropUserTable(uCTC UserControllerTestContainer) {
-	tableName, err := schema.GetTableName(uCTC.GDB(), userModels.User{})
+func DropUserTable(db service.DBDecorator) {
+	tableName, err := schema.GetTableName(db.GDB(), userModels.User{})
 	if err != nil {
 		panic("failed to get table name: " + err.Error())
 	}
-	_, err = uCTC.NativeDB().Exec("DROP TABLE IF EXISTS " + tableName + " CASCADE;")
+	_, err = db.NativeDB().Exec("DROP TABLE IF EXISTS " + tableName + " CASCADE;")
 	if err != nil {
 		panic("failed to drop schema: " + err.Error())
 	}
-}
-
-func startTestServer(t *testing.T, db service.DBDecorator, redis service.RedisDecorator) *httptest.Server {
-	t.Helper()
-	mux := factory.BuildServer(db, redis)
-	return httptest.NewServer(mux)
 }
 
 func doCreateUserRequest(t *testing.T, uctc UserControllerTestContainer, newUser userModels.User) (
@@ -123,14 +111,14 @@ func doCreateUserRequest(t *testing.T, uctc UserControllerTestContainer, newUser
 	return resp, decodedResponse
 }
 
-func doUpdateUserRequest(t *testing.T, uctc UserControllerTestContainer, updatedUser userModels.User) (
+func doUpdateUserRequest(t *testing.T, uctc UserControllerTestContainer, updatingUser userModels.User) (
 	*http.Response,
 	c_http.Response,
 ) {
 	t.Helper()
 
-	body, _ := json.Marshal(updatedUser)
-	req, _ := http.NewRequest(http.MethodPut, uctc.ServerURL+"/user/"+strconv.Itoa(updatedUser.Id), bytes.NewBuffer(body))
+	body, _ := json.Marshal(updatingUser)
+	req, _ := http.NewRequest(http.MethodPut, uctc.ServerURL+"/user/"+strconv.Itoa(updatingUser.Id), bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
 	resp, _ := uctc.HttpClient.Do(req)
 	defer resp.Body.Close()

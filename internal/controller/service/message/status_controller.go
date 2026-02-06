@@ -14,35 +14,24 @@ type StatusController struct {
 }
 
 func (sc *StatusController) HandleRequest() {
-	sc.Controller.ServeMux.HandleFunc("/message/statuses", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			sc.GetStatuses(w)
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	sc.Controller.ServeMux.HandleFunc("GET /statuses", func(w http.ResponseWriter, r *http.Request) {
+		sc.GetStatuses(w)
 	})
 
-	sc.Controller.ServeMux.HandleFunc("/message/status", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodPost:
-			sc.CreateStatus(w, c_http.NewRequest(r))
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	sc.Controller.ServeMux.HandleFunc("POST /status", func(w http.ResponseWriter, r *http.Request) {
+		sc.CreateStatus(w, c_http.NewRequest(r))
 	})
 
-	sc.Controller.ServeMux.HandleFunc("/message/status/", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			sc.GetStatus(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/status/")))
-		case http.MethodPut:
-			sc.UpdateStatus(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/status/")))
-		case http.MethodDelete:
-			sc.DeleteStatus(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/status/")))
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	sc.Controller.ServeMux.HandleFunc("GET /status/{id}", func(w http.ResponseWriter, r *http.Request) {
+		sc.GetStatus(w, c_http.NewRequest(r))
+	})
+
+	sc.Controller.ServeMux.HandleFunc("PUT /status/{id}", func(w http.ResponseWriter, r *http.Request) {
+		sc.UpdateStatus(w, c_http.NewRequest(r))
+	})
+
+	sc.Controller.ServeMux.HandleFunc("DELETE /status/{id}", func(w http.ResponseWriter, r *http.Request) {
+		sc.DeleteStatus(w, c_http.NewRequest(r))
 	})
 }
 
@@ -57,7 +46,7 @@ func (sc *StatusController) GetStatuses(w http.ResponseWriter) {
 }
 
 func (sc *StatusController) GetStatus(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return
@@ -88,7 +77,7 @@ func (sc *StatusController) CreateStatus(w http.ResponseWriter, r *c_http.Reques
 }
 
 func (sc *StatusController) UpdateStatus(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return
@@ -113,7 +102,7 @@ func (sc *StatusController) UpdateStatus(w http.ResponseWriter, r *c_http.Reques
 }
 
 func (sc *StatusController) DeleteStatus(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return

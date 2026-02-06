@@ -14,35 +14,24 @@ type MetaController struct {
 }
 
 func (mc *MetaController) HandleRequest() {
-	mc.Controller.ServeMux.HandleFunc("/message/metas", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			mc.GetMetas(w)
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	mc.Controller.ServeMux.HandleFunc("GET /metas", func(w http.ResponseWriter, r *http.Request) {
+		mc.GetMetas(w)
 	})
 
-	mc.Controller.ServeMux.HandleFunc("/message/meta", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodPost:
-			mc.CreateMeta(w, c_http.NewRequest(r))
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	mc.Controller.ServeMux.HandleFunc("POST /meta", func(w http.ResponseWriter, r *http.Request) {
+		mc.CreateMeta(w, c_http.NewRequest(r))
 	})
 
-	mc.Controller.ServeMux.HandleFunc("/message/meta/", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			mc.GetMeta(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/meta/")))
-		case http.MethodPut:
-			mc.UpdateMeta(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/meta/")))
-		case http.MethodDelete:
-			mc.DeleteMeta(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/meta/")))
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	mc.Controller.ServeMux.HandleFunc("GET /meta/{id}", func(w http.ResponseWriter, r *http.Request) {
+		mc.GetMeta(w, c_http.NewRequest(r))
+	})
+
+	mc.Controller.ServeMux.HandleFunc("PUT /meta/{id}", func(w http.ResponseWriter, r *http.Request) {
+		mc.UpdateMeta(w, c_http.NewRequest(r))
+	})
+
+	mc.Controller.ServeMux.HandleFunc("DELETE /meta/{id}", func(w http.ResponseWriter, r *http.Request) {
+		mc.DeleteMeta(w, c_http.NewRequest(r))
 	})
 }
 
@@ -57,7 +46,7 @@ func (mc *MetaController) GetMetas(w http.ResponseWriter) {
 }
 
 func (mc *MetaController) GetMeta(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return
@@ -88,7 +77,7 @@ func (mc *MetaController) CreateMeta(w http.ResponseWriter, r *c_http.Request) {
 }
 
 func (mc *MetaController) UpdateMeta(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return
@@ -113,7 +102,7 @@ func (mc *MetaController) UpdateMeta(w http.ResponseWriter, r *c_http.Request) {
 }
 
 func (mc *MetaController) DeleteMeta(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return

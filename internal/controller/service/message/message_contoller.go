@@ -14,35 +14,24 @@ type MessagesController struct {
 }
 
 func (mc *MessagesController) HandleRequest() {
-	mc.Controller.ServeMux.HandleFunc("/messages", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			mc.GetMessages(w)
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	mc.Controller.ServeMux.HandleFunc("GET /messages", func(w http.ResponseWriter, r *http.Request) {
+		mc.GetMessages(w)
 	})
 
-	mc.Controller.ServeMux.HandleFunc("/message", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodPost:
-			mc.CreateMessage(w, c_http.NewRequest(r))
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	mc.Controller.ServeMux.HandleFunc("POST /message", func(w http.ResponseWriter, r *http.Request) {
+		mc.CreateMessage(w, c_http.NewRequest(r))
 	})
 
-	mc.Controller.ServeMux.HandleFunc("/message/", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			mc.GetMessage(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/")))
-		case http.MethodPut:
-			mc.UpdateMessage(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/")))
-		case http.MethodDelete:
-			mc.DeleteMessage(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/")))
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	mc.Controller.ServeMux.HandleFunc("GET /message/{id}", func(w http.ResponseWriter, r *http.Request) {
+		mc.GetMessage(w, c_http.NewRequest(r))
+	})
+
+	mc.Controller.ServeMux.HandleFunc("PUT /message/{id}", func(w http.ResponseWriter, r *http.Request) {
+		mc.UpdateMessage(w, c_http.NewRequest(r))
+	})
+
+	mc.Controller.ServeMux.HandleFunc("DELETE /message/{id}", func(w http.ResponseWriter, r *http.Request) {
+		mc.DeleteMessage(w, c_http.NewRequest(r))
 	})
 }
 
@@ -57,7 +46,7 @@ func (mc *MessagesController) GetMessages(w http.ResponseWriter) {
 }
 
 func (mc *MessagesController) GetMessage(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return
@@ -88,7 +77,7 @@ func (mc *MessagesController) CreateMessage(w http.ResponseWriter, r *c_http.Req
 }
 
 func (mc *MessagesController) UpdateMessage(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return
@@ -113,7 +102,7 @@ func (mc *MessagesController) UpdateMessage(w http.ResponseWriter, r *c_http.Req
 }
 
 func (mc *MessagesController) DeleteMessage(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return

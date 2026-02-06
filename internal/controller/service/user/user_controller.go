@@ -3,8 +3,8 @@ package user
 import (
 	"chickChirick/internal/controller/abstraction"
 	"chickChirick/internal/controller/c_http"
+	"chickChirick/internal/middleware"
 	"chickChirick/internal/middleware/config"
-	userMiddleware "chickChirick/internal/middleware/validators/user"
 	"chickChirick/internal/model/user"
 	"errors"
 	"net/http"
@@ -12,43 +12,30 @@ import (
 
 type UserController struct {
 	Controller abstraction.Controller
-	userMiddleware.UserValidator
+	middleware.Validator
 }
 
 func (uc *UserController) HandleRequest() {
-	uc.Controller.ServeMux.HandleFunc("/users", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			uc.GetUsers(w)
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	uc.Controller.ServeMux.HandleFunc("GET /users", func(w http.ResponseWriter, r *http.Request) {
+		uc.GetUsers(w)
 	})
 
-	uc.Controller.ServeMux.HandleFunc("/user", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodPost:
-			uc.Validate(func(w http.ResponseWriter, r *http.Request) {
-				uc.CreateUser(w, c_http.NewRequest(r))
-			})(w, r)
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	uc.Controller.ServeMux.HandleFunc("POST /user",
+		uc.Validate(func(w http.ResponseWriter, r *http.Request) {
+			uc.CreateUser(w, c_http.NewRequest(r))
+		}))
+
+	uc.Controller.ServeMux.HandleFunc("GET /user/{id}", func(w http.ResponseWriter, r *http.Request) {
+		uc.GetUser(w, c_http.NewRequest(r))
 	})
 
-	uc.Controller.ServeMux.HandleFunc("/user/", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			uc.GetUser(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/user/")))
-		case http.MethodPut:
-			uc.Validate(func(w http.ResponseWriter, r *http.Request) {
-				uc.UpdateUser(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/user/")))
-			})(w, r)
-		case http.MethodDelete:
-			uc.DeleteUser(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/user/")))
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	uc.Controller.ServeMux.HandleFunc("PUT /user/{id}",
+		uc.Validate(func(w http.ResponseWriter, r *http.Request) {
+			uc.UpdateUser(w, c_http.NewRequest(r))
+		}))
+
+	uc.Controller.ServeMux.HandleFunc("DELETE /user/{id}", func(w http.ResponseWriter, r *http.Request) {
+		uc.DeleteUser(w, c_http.NewRequest(r))
 	})
 }
 
@@ -63,7 +50,7 @@ func (uc *UserController) GetUsers(w http.ResponseWriter) {
 }
 
 func (uc *UserController) GetUser(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 	}
@@ -98,7 +85,7 @@ func (uc *UserController) CreateUser(w http.ResponseWriter, r *c_http.Request) {
 }
 
 func (uc *UserController) UpdateUser(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return
@@ -119,7 +106,7 @@ func (uc *UserController) UpdateUser(w http.ResponseWriter, r *c_http.Request) {
 }
 
 func (uc *UserController) DeleteUser(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return

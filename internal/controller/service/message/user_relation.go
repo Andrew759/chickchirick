@@ -13,37 +13,26 @@ type UserRelationController struct {
 	Controller abstraction.Controller
 }
 
+// TODO: тут скорее всего баг
 func (urc *UserRelationController) HandleRequest() {
-	urc.Controller.ServeMux.HandleFunc("/message/user-relations", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			urc.GetUserRelations(w)
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	urc.Controller.ServeMux.HandleFunc("GET /user-relations", func(w http.ResponseWriter, r *http.Request) {
+		urc.GetUserRelations(w)
 	})
 
-	urc.Controller.ServeMux.HandleFunc("/message/user-relation", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodPost:
-			urc.CreateUserRelation(w, c_http.NewRequest(r))
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	urc.Controller.ServeMux.HandleFunc("POST /user-relation", func(w http.ResponseWriter, r *http.Request) {
+		urc.CreateUserRelation(w, c_http.NewRequest(r))
 	})
 
-	urc.Controller.ServeMux.HandleFunc("/message/user-relation/", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			urc.GetUserRelation(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/user-relation/")))
-		case http.MethodPut:
-			urc.UpdateUserRelation(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/user-relation/")))
-		case http.MethodDelete:
-			urc.DeleteUserRelation(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/user-relation/")))
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	urc.Controller.ServeMux.HandleFunc("GET /user-relation/{id}", func(w http.ResponseWriter, r *http.Request) {
+		urc.GetUserRelation(w, c_http.NewRequest(r))
+	})
 
+	urc.Controller.ServeMux.HandleFunc("PUT /user-relation/{id}", func(w http.ResponseWriter, r *http.Request) {
+		urc.UpdateUserRelation(w, c_http.NewRequest(r))
+	})
+
+	urc.Controller.ServeMux.HandleFunc("DELETE /user-relation/{id}", func(w http.ResponseWriter, r *http.Request) {
+		urc.DeleteUserRelation(w, c_http.NewRequest(r))
 	})
 }
 
@@ -58,7 +47,7 @@ func (urc *UserRelationController) GetUserRelations(w http.ResponseWriter) {
 }
 
 func (urc *UserRelationController) GetUserRelation(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return
@@ -89,7 +78,7 @@ func (urc *UserRelationController) CreateUserRelation(w http.ResponseWriter, r *
 }
 
 func (urc *UserRelationController) UpdateUserRelation(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return
@@ -114,7 +103,7 @@ func (urc *UserRelationController) UpdateUserRelation(w http.ResponseWriter, r *
 }
 
 func (urc *UserRelationController) DeleteUserRelation(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return

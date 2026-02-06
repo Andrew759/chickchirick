@@ -9,11 +9,11 @@ import (
 type Ban struct {
 	gorm.Model   `c_migrator:"enabled"`
 	Id           int  `json:"id" gorm:"type:int;unique;primaryKey;autoIncrement"`
-	UserId       int  `json:"user_id" gorm:"type:int"`
-	User         User `json:"user" gorm:"references:UserId"`
+	UserId       int  `json:"user_id" gorm:"type:int;not null;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	User         User `json:"user" gorm:"foreignKey:UserId;references:Id"`
 	BannedUserId int  `json:"banned_user_id" gorm:"type:int"`
-	Type         int  `json:"type" gorm:"type:int, notnull"`
 	BannedUser   User `json:"banned_user" gorm:"references:UserId"`
+	Type         int  `json:"type" gorm:"type:int, not null"`
 	CreatedAt    time.TimestampWithTimeZoneMicro
 	UpdatedAt    time.TimestampWithTimeZoneMicro
 	DeletedAt    gorm.DeletedAt `gorm:"index"`

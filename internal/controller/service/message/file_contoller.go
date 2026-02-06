@@ -14,35 +14,24 @@ type FileController struct {
 }
 
 func (fc *FileController) HandleRequest() {
-	fc.Controller.ServeMux.HandleFunc("/message/files", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			fc.GetFiles(w)
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	fc.Controller.ServeMux.HandleFunc("GET /files", func(w http.ResponseWriter, r *http.Request) {
+		fc.GetFiles(w)
 	})
 
-	fc.Controller.ServeMux.HandleFunc("/message/file", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodPost:
-			fc.CreateFile(w, c_http.NewRequest(r))
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	fc.Controller.ServeMux.HandleFunc("POST /file", func(w http.ResponseWriter, r *http.Request) {
+		fc.CreateFile(w, c_http.NewRequest(r))
 	})
 
-	fc.Controller.ServeMux.HandleFunc("/message/file/", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			fc.GetFile(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/file/")))
-		case http.MethodPut:
-			fc.UpdateFile(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/file/")))
-		case http.MethodDelete:
-			fc.DeleteFile(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/file/")))
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	fc.Controller.ServeMux.HandleFunc("GET /file/{id}", func(w http.ResponseWriter, r *http.Request) {
+		fc.GetFile(w, c_http.NewRequest(r))
+	})
+
+	fc.Controller.ServeMux.HandleFunc("PUT /file/{id}", func(w http.ResponseWriter, r *http.Request) {
+		fc.UpdateFile(w, c_http.NewRequest(r))
+	})
+
+	fc.Controller.ServeMux.HandleFunc("DELETE /file/{id}", func(w http.ResponseWriter, r *http.Request) {
+		fc.DeleteFile(w, c_http.NewRequest(r))
 	})
 }
 
@@ -57,7 +46,7 @@ func (fc *FileController) GetFiles(w http.ResponseWriter) {
 }
 
 func (fc *FileController) GetFile(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return
@@ -88,7 +77,7 @@ func (fc *FileController) CreateFile(w http.ResponseWriter, r *c_http.Request) {
 }
 
 func (fc *FileController) UpdateFile(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return
@@ -113,7 +102,7 @@ func (fc *FileController) UpdateFile(w http.ResponseWriter, r *c_http.Request) {
 }
 
 func (fc *FileController) DeleteFile(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return

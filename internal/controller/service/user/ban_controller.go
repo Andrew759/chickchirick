@@ -14,35 +14,24 @@ type BanController struct {
 }
 
 func (bc *BanController) HandleRequest() {
-	bc.Controller.ServeMux.HandleFunc("/user/bans", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			bc.GetBans(w)
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	bc.Controller.ServeMux.HandleFunc("GET /bans", func(w http.ResponseWriter, r *http.Request) {
+		bc.GetBans(w)
 	})
 
-	bc.Controller.ServeMux.HandleFunc("/user/ban", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodPost:
-			bc.CreateBan(w, c_http.NewRequest(r))
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	bc.Controller.ServeMux.HandleFunc("POST /ban", func(w http.ResponseWriter, r *http.Request) {
+		bc.CreateBan(w, c_http.NewRequest(r))
 	})
 
-	bc.Controller.ServeMux.HandleFunc("/user/ban/", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			bc.GetBan(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/user/ban/")))
-		case http.MethodPut:
-			bc.UpdateBan(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/user/ban/")))
-		case http.MethodDelete:
-			bc.DeleteBan(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/user/ban/")))
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	bc.Controller.ServeMux.HandleFunc("GET /ban/{id}", func(w http.ResponseWriter, r *http.Request) {
+		bc.GetBan(w, c_http.NewRequest(r))
+	})
+
+	bc.Controller.ServeMux.HandleFunc("PUT /ban/{id}", func(w http.ResponseWriter, r *http.Request) {
+		bc.UpdateBan(w, c_http.NewRequest(r))
+	})
+
+	bc.Controller.ServeMux.HandleFunc("DELETE /ban/{id}", func(w http.ResponseWriter, r *http.Request) {
+		bc.DeleteBan(w, c_http.NewRequest(r))
 	})
 }
 
@@ -57,7 +46,7 @@ func (bc *BanController) GetBans(w http.ResponseWriter) {
 }
 
 func (bc *BanController) GetBan(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return
@@ -88,7 +77,7 @@ func (bc *BanController) CreateBan(w http.ResponseWriter, r *c_http.Request) {
 }
 
 func (bc *BanController) UpdateBan(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return
@@ -113,7 +102,7 @@ func (bc *BanController) UpdateBan(w http.ResponseWriter, r *c_http.Request) {
 }
 
 func (bc *BanController) DeleteBan(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return

@@ -1,7 +1,9 @@
 package user
 
 import (
+	mainService "chickChirick/cmd/service"
 	"chickChirick/internal/controller/c_http"
+	"chickChirick/internal/middleware"
 	"chickChirick/internal/middleware/config"
 	"chickChirick/internal/middleware/service"
 	"chickChirick/internal/model/user"
@@ -12,7 +14,24 @@ import (
 	"strings"
 )
 
-type UserValidator struct{}
+type UserValidatorFactory struct{}
+
+func (uvf UserValidatorFactory) NewValidator(dbDecorator mainService.DBDecorator, opts ...middleware.ValidatorOption) middleware.Validator {
+	var vOptions middleware.ValidatorOptions
+	for _, opt := range opts {
+		opt(&vOptions)
+	}
+
+	return &UserValidator{
+		DBDecorator:      dbDecorator,
+		ValidatorOptions: vOptions,
+	}
+}
+
+type UserValidator struct {
+	DBDecorator mainService.DBDecorator
+	middleware.ValidatorOptions
+}
 
 func (uv UserValidator) Validate(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -22,7 +41,7 @@ func (uv UserValidator) Validate(next http.HandlerFunc) http.HandlerFunc {
 			c_http.NewResponse().SendError(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
 			return
 		}
-		if errorList := validateUser(u); len(errorList) > 0 {
+		if errorList := validateRequestRules(u); len(errorList) > 0 {
 			errResponse := c_http.NewResponse()
 			errResponse.AddErrorsToErrorContainer(errorList)
 
@@ -35,7 +54,7 @@ func (uv UserValidator) Validate(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func validateUser(u user.User) []error {
+func validateRequestRules(u user.User) []error {
 	var errList []error
 
 	if strings.TrimSpace(u.Name) == "" || !service.IsHasCorrectLength(u.Name, 256) {

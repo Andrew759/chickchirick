@@ -3,6 +3,8 @@ package factory
 import (
 	"chickChirick/internal/controller/abstraction"
 	internalService "chickChirick/internal/controller/service/user"
+	"chickChirick/internal/middleware"
+	"chickChirick/internal/middleware/validators/user"
 	"net/http"
 )
 
@@ -32,6 +34,7 @@ func (us *UserServer) initUserService() internalService.UserController {
 			ServeMux:     us.ServeMux,
 			Dependencies: us.DIContainer,
 		},
+		Validator: user.UserValidatorFactory{}.NewValidator(us.DIContainer.DBDecorator),
 	}
 	userService.HandleRequest()
 
@@ -80,6 +83,7 @@ func (us *UserServer) initPropertyService() internalService.PropertyController {
 			ServeMux:     us.ServeMux,
 			Dependencies: us.DIContainer,
 		},
+		Validator: user.PropertyValidatorFactory{}.NewValidator(us.DIContainer.DBDecorator, middleware.ActivateDBValidation()),
 	}
 	propertyService.HandleRequest()
 

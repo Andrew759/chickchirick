@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-if ! command -v docker-compose &> /dev/null; then
+if ! command -v docker compose &> /dev/null; then
   echo "Ошибка: docker-compose не найден"
   exit 1
 fi
@@ -59,47 +59,54 @@ if [ "$COMMAND" = "build_no_cache" ]; then
     echo "Операция запрещена"
     exit 1
   elif [ "$C_FILE_PATH" = "build/automated/docker-compose.yml" ]; then
-    docker-compose -f docker-compose-automated.yml -f "$C_FILE_PATH" build --no-cache
+    docker compose -f docker-compose-automated.yml -f "$C_FILE_PATH" build --no-cache
   else
-    docker-compose -f "$BASE_COMPOSE" -f "$C_FILE_PATH" build --no-cache
+    docker compose -f "$BASE_COMPOSE" -f "$C_FILE_PATH" build --no-cache
   fi
 
 elif [ "$COMMAND" = "build_with_cache" ]; then
   if [ "$C_FILE_PATH" = "build/automated/docker-compose-cache.yml" ]; then
-    COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 docker-compose -f docker-compose-automated.yml -f "$C_FILE_PATH" build
+    COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 docker compose -f docker-compose-automated.yml -f "$C_FILE_PATH" build
   else
-    docker-compose -f "$BASE_COMPOSE" -f "$C_FILE_PATH" build
+    docker compose -f "$BASE_COMPOSE" -f "$C_FILE_PATH" build
   fi
 
 elif [ "$COMMAND" = "up" ]; then
   if [ "$IS_AUTOMATED_TEST_OPERATION" = false ]; then
-    docker-compose -f "$BASE_COMPOSE" -f "$C_FILE_PATH" up
+    docker compose -f "$BASE_COMPOSE" -f "$C_FILE_PATH" up
   else
-    docker-compose -f "docker-compose-automated.yml" -f "$C_FILE_PATH" up
+    docker compose -f "docker-compose-automated.yml" -f "$C_FILE_PATH" up
   fi
+
 elif [ "$COMMAND" = "down" ]; then
   if [ "$IS_AUTOMATED_TEST_OPERATION" = false ]; then
-    docker-compose -f "$BASE_COMPOSE" -f "$C_FILE_PATH" down
+    docker compose -f "$BASE_COMPOSE" -f "$C_FILE_PATH" down
   else
-    docker-compose -f "docker-compose-automated.yml" -f "$C_FILE_PATH" down
+    docker compose -f "docker-compose-automated.yml" -f "$C_FILE_PATH" down
   fi
+
 elif [ "$COMMAND" = "unpack_env_by_environment" ]; then
   if  [ "$C_FILE_PATH" = "build/prod/docker-compose.yml" ]; then
     echo "Операция запрещена"
     exit 1
   elif [ "$C_FILE_PATH" = "build/dev/docker-compose.yml" ]; then
     cp .env.dev .env
-    cp .env /app/.env
+    sudo cp .env /app/.env
   elif [ "$C_FILE_PATH" = "build/stage/docker-compose.yml" ]; then
     cp .env.stage .env
-    cp .env /app/.env
+    sudo cp .env /app/.env
   elif [ "$IS_AUTOMATED_TEST_OPERATION" = true ]; then
     cp .env.automated .env
-    cp .env /app/.env
+    sudo cp .env /app/.env
   fi
+
 elif [ "$COMMAND" = "build_main_only" ]; then
-  docker cp ./local-dir chickchirick_api_1:/app/target-dir
-  docker-compose -f "$BASE_COMPOSE" -f "$C_FILE_PATH" exec api go build -o main app/cmd/main.go
+  echo "Введите имя контейнера"
+  read CONTAINER_NAME
+  docker cp ./ "$CONTAINER_NAME":/app/
+  docker compose -f "$BASE_COMPOSE" -f "$C_FILE_PATH" exec api go mod init chickChirick
+  docker compose -f "$BASE_COMPOSE" -f "$C_FILE_PATH" exec api go mod tidy
+  docker compose -f "$BASE_COMPOSE" -f "$C_FILE_PATH" exec api go build -o main app/cmd/main.go
 
 elif [ "$COMMAND" = "docker_clear" ]; then
   read -p "Удалить все контейнеры, образы, волюмы и т.д? (y/n): " answer

@@ -9,11 +9,12 @@ import (
 
 type User struct {
 	gorm.Model `c_migrator:"enabled"`
-	Id         int    `json:"id" gorm:"type:int;unique;primaryKey;autoIncrement"`
-	Phone      string `json:"phone" gorm:"type:varchar(30)"`
-	Name       string `json:"name" gorm:"type:varchar(256)"`
-	Surname    string `json:"surname" gorm:"type:varchar(256)"`
-	Login      string `json:"login" gorm:"type:varchar(256);unique"`
+	Id         int       `json:"id" gorm:"type:int;unique;primaryKey;autoIncrement"`
+	Phone      string    `json:"phone" gorm:"type:varchar(30)"`
+	Name       string    `json:"name" gorm:"type:varchar(256);not null"`
+	Surname    string    `json:"surname" gorm:"type:varchar(256);not null"`
+	Login      string    `json:"login" gorm:"type:varchar(256);unique; not null"`
+	Property   *Property `json:"property" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	CreatedAt  time.TimestampWithTimeZoneMicro
 	UpdatedAt  time.TimestampWithTimeZoneMicro
 	DeletedAt  gorm.DeletedAt `gorm:"index"`

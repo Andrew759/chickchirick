@@ -3,13 +3,15 @@ package user
 import (
 	"chickChirick/pkg/chirik_gorm_tweaks/time"
 	"errors"
+
 	"gorm.io/gorm"
 )
 
 type Property struct {
-	gorm.Model `c_migrator:"enabled"`
-	UserId     int     `json:"user_id" gorm:"type:int"`
-	User       User    `json:"user" gorm:"references:UserId"`
+	//TODO: нужно указывать c_migrator_t_name сразу в двух местах при использовании GORM. Переделать
+	gorm.Model `c_migrator:"enabled" c_migrator_t_name:"properties"`
+	UserId     int     `json:"user_id" gorm:"unique;not null"`
+	User       User    `json:"user" gorm:"foreignKey:UserId;references:Id"`
 	Timezone   int8    `json:"timezone" gorm:"type:smallint;default:3"`
 	Email      string  `json:"email" gorm:"type:varchar(256)"`
 	Password   *string `json:"password" gorm:"type:varchar(1024)"`
@@ -20,11 +22,25 @@ type Property struct {
 
 var PropertyNotFoundErr = errors.New("property not found")
 
-func (Property) TableName() string {
+var PropertyForUserAlreadyExistsErr = errors.New("property for user already exists")
+
+func (p *Property) TableName() string {
 	return "properties"
 }
 
+func (p *Property) SetPassword(password string) {
+	p.Password = &password
+}
+
 func CreateProperty(db *gorm.DB, b *Property) error {
+	hasProperty, err := HasPropertyByUserId(db, b.UserId)
+	if err != nil {
+		return err
+	}
+	if hasProperty {
+		return PropertyForUserAlreadyExistsErr
+	}
+
 	return db.Create(b).Error
 }
 
@@ -53,6 +69,20 @@ func GetPropertyById(db *gorm.DB, id int) (Property, error) {
 	result := db.First(&property, id)
 
 	return property, result.Error
+}
+
+func HasPropertyByUserId(db *gorm.DB, userId int) (bool, error) {
+	var count int64
+	err := db.Model(&Property{}).Where("user_id = ?", userId).Count(&count).Error
+
+	if err != nil {
+		return false, err
+	}
+	if count > 0 {
+		return true, nil
+	}
+
+	return false, nil
 }
 
 func DeletePropertyById(db *gorm.DB, id int) error {

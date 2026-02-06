@@ -14,35 +14,24 @@ type TokenController struct {
 }
 
 func (tc *TokenController) HandleRequest() {
-	tc.Controller.ServeMux.HandleFunc("/auth/tokens", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			tc.GetTokens(w)
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	tc.Controller.ServeMux.HandleFunc("GET /tokens", func(w http.ResponseWriter, r *http.Request) {
+		tc.GetTokens(w)
 	})
 
-	tc.Controller.ServeMux.HandleFunc("/auth/token", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodPost:
-			tc.CreateToken(w, c_http.NewRequest(r))
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	tc.Controller.ServeMux.HandleFunc("POST /token", func(w http.ResponseWriter, r *http.Request) {
+		tc.CreateToken(w, c_http.NewRequest(r))
 	})
 
-	tc.Controller.ServeMux.HandleFunc("/auth/token/", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			tc.GetToken(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/auth/token/")))
-		case http.MethodPut:
-			tc.UpdateToken(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/auth/token/")))
-		case http.MethodDelete:
-			tc.DeleteToken(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/auth/token/")))
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	tc.Controller.ServeMux.HandleFunc("GET /token/{id}", func(w http.ResponseWriter, r *http.Request) {
+		tc.GetToken(w, c_http.NewRequest(r))
+	})
+
+	tc.Controller.ServeMux.HandleFunc("PUT /token/{id}", func(w http.ResponseWriter, r *http.Request) {
+		tc.UpdateToken(w, c_http.NewRequest(r))
+	})
+
+	tc.Controller.ServeMux.HandleFunc("DELETE /token/{id}", func(w http.ResponseWriter, r *http.Request) {
+		tc.DeleteToken(w, c_http.NewRequest(r))
 	})
 }
 
@@ -57,7 +46,7 @@ func (tc *TokenController) GetTokens(w http.ResponseWriter) {
 }
 
 func (tc *TokenController) GetToken(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return
@@ -88,7 +77,7 @@ func (tc *TokenController) CreateToken(w http.ResponseWriter, r *c_http.Request)
 }
 
 func (tc *TokenController) UpdateToken(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return
@@ -113,7 +102,7 @@ func (tc *TokenController) UpdateToken(w http.ResponseWriter, r *c_http.Request)
 }
 
 func (tc *TokenController) DeleteToken(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return

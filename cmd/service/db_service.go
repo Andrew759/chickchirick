@@ -10,6 +10,7 @@ import (
 	"strings"
 )
 
+// DBDecorator TODO: отрефакторить. Выбрать имя без постфикса интерфейс. Сделать также во всём приложении
 type DBDecorator struct {
 	GormInterface   *gorm.DB
 	NativeInterface *sql.DB

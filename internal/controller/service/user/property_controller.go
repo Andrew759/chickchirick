@@ -3,8 +3,8 @@ package user
 import (
 	"chickChirick/internal/controller/abstraction"
 	"chickChirick/internal/controller/c_http"
+	"chickChirick/internal/middleware"
 	"chickChirick/internal/middleware/config"
-	userMiddleware "chickChirick/internal/middleware/validators/user"
 	property "chickChirick/internal/model/user"
 	"errors"
 	"net/http"
@@ -12,43 +12,31 @@ import (
 
 type PropertyController struct {
 	Controller abstraction.Controller
-	userMiddleware.PropertyValidator
+	middleware.Validator
 }
 
 func (pc *PropertyController) HandleRequest() {
-	pc.Controller.ServeMux.HandleFunc("/user/properties", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			pc.GetProperties(w)
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	pc.Controller.ServeMux.HandleFunc("GET /properties", func(w http.ResponseWriter, r *http.Request) {
+		pc.GetProperties(w)
 	})
 
-	pc.Controller.ServeMux.HandleFunc("/user/property", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodPost:
-			pc.Validate(func(w http.ResponseWriter, r *http.Request) {
-				pc.CreateProperty(w, c_http.NewRequest(r))
-			})(w, r)
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	pc.Controller.ServeMux.HandleFunc("POST /property",
+		pc.Validate(func(w http.ResponseWriter, r *http.Request) {
+			pc.CreateProperty(w, c_http.NewRequest(r))
+		}))
+
+	pc.Controller.ServeMux.HandleFunc("GET /property/{id}", func(w http.ResponseWriter, r *http.Request) {
+		pc.GetProperty(w, c_http.NewRequest(r))
+
 	})
 
-	pc.Controller.ServeMux.HandleFunc("/user/property/", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			pc.GetProperty(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/property/")))
-		case http.MethodPut:
-			pc.Validate(func(w http.ResponseWriter, r *http.Request) {
-				pc.UpdateProperty(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/property/")))
-			})(w, r)
-		case http.MethodDelete:
-			pc.DeleteProperty(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/property/")))
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	pc.Controller.ServeMux.HandleFunc("PUT /property/{id}",
+		pc.Validate(func(w http.ResponseWriter, r *http.Request) {
+			pc.UpdateProperty(w, c_http.NewRequest(r))
+		}))
+
+	pc.Controller.ServeMux.HandleFunc("DELETE /property/{id}", func(w http.ResponseWriter, r *http.Request) {
+		pc.DeleteProperty(w, c_http.NewRequest(r))
 	})
 }
 
@@ -63,7 +51,7 @@ func (pc *PropertyController) GetProperties(w http.ResponseWriter) {
 }
 
 func (pc *PropertyController) GetProperty(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return
@@ -81,7 +69,10 @@ func (pc *PropertyController) GetProperty(w http.ResponseWriter, r *c_http.Reque
 func (pc *PropertyController) CreateProperty(w http.ResponseWriter, r *c_http.Request) {
 	p := r.Context().Value(config.UserPropertyKey).(*property.Property)
 
-	if err := property.CreateProperty(pc.Controller.Dependencies.DBDecorator.GDB(), p); err != nil {
+	err := property.CreateProperty(pc.Controller.Dependencies.DBDecorator.GDB(), p)
+	if err != nil && errors.Is(err, property.PropertyForUserAlreadyExistsErr) {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusConflict)
+	} else if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to create property: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -90,7 +81,7 @@ func (pc *PropertyController) CreateProperty(w http.ResponseWriter, r *c_http.Re
 }
 
 func (pc *PropertyController) UpdateProperty(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return
@@ -111,7 +102,7 @@ func (pc *PropertyController) UpdateProperty(w http.ResponseWriter, r *c_http.Re
 }
 
 func (pc *PropertyController) DeleteProperty(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return

@@ -14,35 +14,24 @@ type DeletedController struct {
 }
 
 func (dc *DeletedController) HandleRequest() {
-	dc.Controller.ServeMux.HandleFunc("/message/deleted-list", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			dc.GetDeletedList(w)
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	dc.Controller.ServeMux.HandleFunc("GET /deleted-list", func(w http.ResponseWriter, r *http.Request) {
+		dc.GetDeletedList(w)
 	})
 
-	dc.Controller.ServeMux.HandleFunc("/message/deleted", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodPost:
-			dc.CreateDeleted(w, c_http.NewRequest(r))
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	dc.Controller.ServeMux.HandleFunc("POST /deleted", func(w http.ResponseWriter, r *http.Request) {
+		dc.CreateDeleted(w, c_http.NewRequest(r))
 	})
 
-	dc.Controller.ServeMux.HandleFunc("/message/deleted/", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			dc.GetDeleted(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/deleted/")))
-		case http.MethodDelete:
-			dc.DeleteDeleted(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/deleted/")))
-		case http.MethodPut:
-			dc.UpdateDeleted(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/deleted/")))
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	dc.Controller.ServeMux.HandleFunc("GET /deleted/{id}", func(w http.ResponseWriter, r *http.Request) {
+		dc.GetDeleted(w, c_http.NewRequest(r))
+	})
+
+	dc.Controller.ServeMux.HandleFunc("PUT /deleted/{id}", func(w http.ResponseWriter, r *http.Request) {
+		dc.UpdateDeleted(w, c_http.NewRequest(r))
+	})
+
+	dc.Controller.ServeMux.HandleFunc("DELETE /deleted/{id}", func(w http.ResponseWriter, r *http.Request) {
+		dc.DeleteDeleted(w, c_http.NewRequest(r))
 	})
 }
 
@@ -57,7 +46,7 @@ func (dc *DeletedController) GetDeletedList(w http.ResponseWriter) {
 }
 
 func (dc *DeletedController) GetDeleted(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return
@@ -88,7 +77,7 @@ func (dc *DeletedController) CreateDeleted(w http.ResponseWriter, r *c_http.Requ
 }
 
 func (dc *DeletedController) UpdateDeleted(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return
@@ -113,7 +102,7 @@ func (dc *DeletedController) UpdateDeleted(w http.ResponseWriter, r *c_http.Requ
 }
 
 func (dc *DeletedController) DeleteDeleted(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return

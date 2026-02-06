@@ -1,4 +1,5 @@
 DB_TYPE: postgres
+#DB_MIGRATION_PATH. Перед запуском нужно вручную создать директорию, если она не существует
 DB_MIGRATION_PATH: ./pkg/chirik_migrator/sql
 DB_ENTITY_PATH: ./internal/model
 ENABLE_TABLE_NAMESPACE: false
@@ -7,5 +8,5 @@ ENABLE_UPDATED_AT_COLUMN: true
 ENABLE_DELETE_AT_COLUMN: true
 FIXTURE_COUNT: 5
 FIXTURE_PREFIX: fixture
-#Пример заполнения FIXTURE_NIL_COLUMNS: deleted_at, created_at, updated
+#FIXTURE_NIL_COLUMNS. Пример заполнения: deleted_at, created_at, updated_at
 FIXTURE_NIL_COLUMNS: deleted_at

@@ -14,35 +14,24 @@ type PersonalController struct {
 }
 
 func (pc *PersonalController) HandleRequest() {
-	pc.Controller.ServeMux.HandleFunc("/message/personals", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			pc.GetPersonals(w)
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	pc.Controller.ServeMux.HandleFunc("GET /personals", func(w http.ResponseWriter, r *http.Request) {
+		pc.GetPersonals(w)
 	})
 
-	pc.Controller.ServeMux.HandleFunc("/message/personal", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodPost:
-			pc.CreatePersonal(w, c_http.NewRequest(r))
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	pc.Controller.ServeMux.HandleFunc("POST /personal", func(w http.ResponseWriter, r *http.Request) {
+		pc.CreatePersonal(w, c_http.NewRequest(r))
 	})
 
-	pc.Controller.ServeMux.HandleFunc("/message/personal/", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			pc.GetPersonal(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/personal/")))
-		case http.MethodPut:
-			pc.UpdatePersonal(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/personal/")))
-		case http.MethodDelete:
-			pc.DeletePersonal(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/personal/")))
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	pc.Controller.ServeMux.HandleFunc("GET /personal/{id}", func(w http.ResponseWriter, r *http.Request) {
+		pc.GetPersonal(w, c_http.NewRequest(r))
+	})
+
+	pc.Controller.ServeMux.HandleFunc("PUT /personal/{id}", func(w http.ResponseWriter, r *http.Request) {
+		pc.UpdatePersonal(w, c_http.NewRequest(r))
+	})
+
+	pc.Controller.ServeMux.HandleFunc("DELETE /personal/{id}", func(w http.ResponseWriter, r *http.Request) {
+		pc.DeletePersonal(w, c_http.NewRequest(r))
 	})
 }
 
@@ -57,7 +46,7 @@ func (pc *PersonalController) GetPersonals(w http.ResponseWriter) {
 }
 
 func (pc *PersonalController) GetPersonal(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return
@@ -88,7 +77,7 @@ func (pc *PersonalController) CreatePersonal(w http.ResponseWriter, r *c_http.Re
 }
 
 func (pc *PersonalController) UpdatePersonal(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return
@@ -113,7 +102,7 @@ func (pc *PersonalController) UpdatePersonal(w http.ResponseWriter, r *c_http.Re
 }
 
 func (pc *PersonalController) DeletePersonal(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return

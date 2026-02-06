@@ -14,35 +14,24 @@ type PhotoController struct {
 }
 
 func (pc *PhotoController) HandleRequest() {
-	pc.Controller.ServeMux.HandleFunc("/user/photos", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			pc.GetPhotos(w)
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	pc.Controller.ServeMux.HandleFunc("GET /photos", func(w http.ResponseWriter, r *http.Request) {
+		pc.GetPhotos(w)
 	})
 
-	pc.Controller.ServeMux.HandleFunc("/user/photo", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodPost:
-			pc.CreatePhoto(w, c_http.NewRequest(r))
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	pc.Controller.ServeMux.HandleFunc("POST /photo", func(w http.ResponseWriter, r *http.Request) {
+		pc.CreatePhoto(w, c_http.NewRequest(r))
 	})
 
-	pc.Controller.ServeMux.HandleFunc("/user/photo/", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			pc.GetPhoto(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/user/photo/")))
-		case http.MethodPut:
-			pc.UpdatePhoto(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/user/photo/")))
-		case http.MethodDelete:
-			pc.DeletePhoto(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/user/photo/")))
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	pc.Controller.ServeMux.HandleFunc("GET /photo/{id}", func(w http.ResponseWriter, r *http.Request) {
+		pc.GetPhoto(w, c_http.NewRequest(r))
+	})
+
+	pc.Controller.ServeMux.HandleFunc("PUT /photo/{id}", func(w http.ResponseWriter, r *http.Request) {
+		pc.UpdatePhoto(w, c_http.NewRequest(r))
+	})
+
+	pc.Controller.ServeMux.HandleFunc("DELETE /photo/{id}", func(w http.ResponseWriter, r *http.Request) {
+		pc.UpdatePhoto(w, c_http.NewRequest(r))
 	})
 }
 
@@ -57,7 +46,7 @@ func (pc *PhotoController) GetPhotos(w http.ResponseWriter) {
 }
 
 func (pc *PhotoController) GetPhoto(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return
@@ -88,7 +77,7 @@ func (pc *PhotoController) CreatePhoto(w http.ResponseWriter, r *c_http.Request)
 }
 
 func (pc *PhotoController) UpdatePhoto(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return
@@ -113,7 +102,7 @@ func (pc *PhotoController) UpdatePhoto(w http.ResponseWriter, r *c_http.Request)
 }
 
 func (pc *PhotoController) DeletePhoto(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return

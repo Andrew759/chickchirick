@@ -14,35 +14,24 @@ type SettingsController struct {
 }
 
 func (sc *SettingsController) HandleRequest() {
-	sc.Controller.ServeMux.HandleFunc("/message/settings", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			sc.GetSettings(w)
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	sc.Controller.ServeMux.HandleFunc("GET /settings", func(w http.ResponseWriter, r *http.Request) {
+		sc.GetSettings(w)
 	})
 
-	sc.Controller.ServeMux.HandleFunc("/message/setting", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodPost:
-			sc.CreateSetting(w, c_http.NewRequest(r))
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	sc.Controller.ServeMux.HandleFunc("POST /setting", func(w http.ResponseWriter, r *http.Request) {
+		sc.GetSetting(w, c_http.NewRequest(r))
 	})
 
-	sc.Controller.ServeMux.HandleFunc("/message/setting/", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			sc.GetSetting(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/setting/")))
-		case http.MethodPut:
-			sc.UpdateSetting(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/setting/")))
-		case http.MethodDelete:
-			sc.DeleteSetting(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/setting/")))
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	sc.Controller.ServeMux.HandleFunc("GET /setting/{id}", func(w http.ResponseWriter, r *http.Request) {
+		sc.GetSetting(w, c_http.NewRequest(r))
+	})
+
+	sc.Controller.ServeMux.HandleFunc("PUT /setting/{id}", func(w http.ResponseWriter, r *http.Request) {
+		sc.UpdateSetting(w, c_http.NewRequest(r))
+	})
+
+	sc.Controller.ServeMux.HandleFunc("DELETE /setting/{id}", func(w http.ResponseWriter, r *http.Request) {
+		sc.DeleteSetting(w, c_http.NewRequest(r))
 	})
 }
 
@@ -57,7 +46,7 @@ func (sc *SettingsController) GetSettings(w http.ResponseWriter) {
 }
 
 func (sc *SettingsController) GetSetting(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return
@@ -88,7 +77,7 @@ func (sc *SettingsController) CreateSetting(w http.ResponseWriter, r *c_http.Req
 }
 
 func (sc *SettingsController) UpdateSetting(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return
@@ -113,7 +102,7 @@ func (sc *SettingsController) UpdateSetting(w http.ResponseWriter, r *c_http.Req
 }
 
 func (sc *SettingsController) DeleteSetting(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return

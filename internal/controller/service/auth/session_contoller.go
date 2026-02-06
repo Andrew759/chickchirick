@@ -14,35 +14,24 @@ type SessionController struct {
 }
 
 func (sc *SessionController) HandleRequest() {
-	sc.Controller.ServeMux.HandleFunc("/auth/sessions", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			sc.GetSessions(w)
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	sc.Controller.ServeMux.HandleFunc("GET /sessions", func(w http.ResponseWriter, r *http.Request) {
+		sc.GetSessions(w)
 	})
 
-	sc.Controller.ServeMux.HandleFunc("/auth/session", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodPost:
-			sc.CreateSession(w, c_http.NewRequest(r))
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	sc.Controller.ServeMux.HandleFunc("POST /session", func(w http.ResponseWriter, r *http.Request) {
+		sc.CreateSession(w, c_http.NewRequest(r))
 	})
 
-	sc.Controller.ServeMux.HandleFunc("/auth/session/", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			sc.GetSession(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/auth/session/")))
-		case http.MethodPut:
-			sc.UpdateSession(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/auth/session/")))
-		case http.MethodDelete:
-			sc.DeleteSession(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/auth/session/")))
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	sc.Controller.ServeMux.HandleFunc("GET /session/{id}", func(w http.ResponseWriter, r *http.Request) {
+		sc.GetSession(w, c_http.NewRequest(r))
+	})
+
+	sc.Controller.ServeMux.HandleFunc("PUT /session/{id}", func(w http.ResponseWriter, r *http.Request) {
+		sc.UpdateSession(w, c_http.NewRequest(r))
+	})
+
+	sc.Controller.ServeMux.HandleFunc("DELETE /session/{id}", func(w http.ResponseWriter, r *http.Request) {
+		sc.DeleteSession(w, c_http.NewRequest(r))
 	})
 }
 
@@ -57,7 +46,7 @@ func (sc *SessionController) GetSessions(w http.ResponseWriter) {
 }
 
 func (sc *SessionController) GetSession(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return
@@ -88,7 +77,7 @@ func (sc *SessionController) CreateSession(w http.ResponseWriter, r *c_http.Requ
 }
 
 func (sc *SessionController) UpdateSession(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return
@@ -113,7 +102,7 @@ func (sc *SessionController) UpdateSession(w http.ResponseWriter, r *c_http.Requ
 }
 
 func (sc *SessionController) DeleteSession(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return

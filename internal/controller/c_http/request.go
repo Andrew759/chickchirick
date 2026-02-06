@@ -7,13 +7,14 @@ import (
 	"strings"
 )
 
-type requestOptions struct { //Конфигурация структуры
+type requestOptions struct {
 	requestPrefix string
 }
 
 type RequestOption func(options *requestOptions)
 
-func SetRequestPrefix(requestPrefix string) RequestOption { //Функция конфигурации,
+// SetRequestPrefix deprecated
+func SetRequestPrefix(requestPrefix string) RequestOption {
 	return func(rOptions *requestOptions) {
 		rOptions.requestPrefix = requestPrefix
 	}
@@ -36,7 +37,8 @@ func NewRequest(r *http.Request, opts ...RequestOption) *Request {
 	}
 }
 
-// HttpId - достаёт id из URL. Метод предполагает, что ID передается в согласовании с правилами REST API
+// HttpId TODO: удалить
+// deprecated - достаёт id из URL. Метод предполагает, что ID передается в согласовании с правилами REST API в конце
 func (r *Request) HttpId() (int, error) {
 	if r.requestPrefix == "" {
 		return 0, fmt.Errorf("request prefix not set during request initialization")
@@ -55,4 +57,12 @@ func (r *Request) HttpId() (int, error) {
 	}
 
 	return id, nil
+}
+
+func (r *Request) HTTPId() (id int, err error) {
+	id, err = strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		err = fmt.Errorf("invalid URL")
+	}
+	return
 }

@@ -14,35 +14,24 @@ type CodeController struct {
 }
 
 func (cc *CodeController) HandleRequest() {
-	cc.Controller.ServeMux.HandleFunc("/auth/codes", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			cc.GetCodes(w)
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	cc.Controller.ServeMux.HandleFunc("GET /codes", func(w http.ResponseWriter, r *http.Request) {
+		cc.GetCodes(w)
 	})
 
-	cc.Controller.ServeMux.HandleFunc("/auth/code", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodPost:
-			cc.CreateCode(w, c_http.NewRequest(r))
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	cc.Controller.ServeMux.HandleFunc("POST /code", func(w http.ResponseWriter, r *http.Request) {
+		cc.CreateCode(w, c_http.NewRequest(r))
 	})
 
-	cc.Controller.ServeMux.HandleFunc("/auth/code/", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			cc.GetCode(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/auth/code/")))
-		case http.MethodPut:
-			cc.UpdateCode(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/auth/code/")))
-		case http.MethodDelete:
-			cc.DeleteCode(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/auth/code/")))
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	cc.Controller.ServeMux.HandleFunc("GET /code/{id}", func(w http.ResponseWriter, r *http.Request) {
+		cc.GetCode(w, c_http.NewRequest(r))
+	})
+
+	cc.Controller.ServeMux.HandleFunc("PUT /code/{id}", func(w http.ResponseWriter, r *http.Request) {
+		cc.UpdateCode(w, c_http.NewRequest(r))
+	})
+
+	cc.Controller.ServeMux.HandleFunc("DELETE /code/{id}", func(w http.ResponseWriter, r *http.Request) {
+		cc.DeleteCode(w, c_http.NewRequest(r))
 	})
 }
 
@@ -57,7 +46,7 @@ func (cc *CodeController) GetCodes(w http.ResponseWriter) {
 }
 
 func (cc *CodeController) GetCode(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return
@@ -88,7 +77,7 @@ func (cc *CodeController) CreateCode(w http.ResponseWriter, r *c_http.Request) {
 }
 
 func (cc *CodeController) UpdateCode(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return
@@ -113,7 +102,7 @@ func (cc *CodeController) UpdateCode(w http.ResponseWriter, r *c_http.Request) {
 }
 
 func (cc *CodeController) DeleteCode(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return

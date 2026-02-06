@@ -14,35 +14,24 @@ type GroupController struct {
 }
 
 func (gc *GroupController) HandleRequest() {
-	gc.Controller.ServeMux.HandleFunc("/message/groups", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			gc.GetGroups(w)
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	gc.Controller.ServeMux.HandleFunc("GET /groups", func(w http.ResponseWriter, r *http.Request) {
+		gc.GetGroups(w)
 	})
 
-	gc.Controller.ServeMux.HandleFunc("/message/group", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodPost:
-			gc.CreateGroup(w, c_http.NewRequest(r))
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	gc.Controller.ServeMux.HandleFunc("POST /group", func(w http.ResponseWriter, r *http.Request) {
+		gc.CreateGroup(w, c_http.NewRequest(r))
 	})
 
-	gc.Controller.ServeMux.HandleFunc("/message/group/", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			gc.GetGroup(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/group/")))
-		case http.MethodPut:
-			gc.UpdateGroup(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/group/")))
-		case http.MethodDelete:
-			gc.DeleteGroup(w, c_http.NewRequest(r, c_http.SetRequestPrefix("/message/group/")))
-		default:
-			c_http.NewResponse().SendError(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
+	gc.Controller.ServeMux.HandleFunc("GET /group/{id}", func(w http.ResponseWriter, r *http.Request) {
+		gc.GetGroup(w, c_http.NewRequest(r))
+	})
+
+	gc.Controller.ServeMux.HandleFunc("PUT /group/{id}", func(w http.ResponseWriter, r *http.Request) {
+		gc.UpdateGroup(w, c_http.NewRequest(r))
+	})
+
+	gc.Controller.ServeMux.HandleFunc("DELETE /group/{id}", func(w http.ResponseWriter, r *http.Request) {
+		gc.DeleteGroup(w, c_http.NewRequest(r))
 	})
 }
 
@@ -57,7 +46,7 @@ func (gc *GroupController) GetGroups(w http.ResponseWriter) {
 }
 
 func (gc *GroupController) GetGroup(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return
@@ -88,7 +77,7 @@ func (gc *GroupController) CreateGroup(w http.ResponseWriter, r *c_http.Request)
 }
 
 func (gc *GroupController) UpdateGroup(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return
@@ -113,7 +102,7 @@ func (gc *GroupController) UpdateGroup(w http.ResponseWriter, r *c_http.Request)
 }
 
 func (gc *GroupController) DeleteGroup(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HttpId()
+	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return

@@ -10,8 +10,8 @@ import (
 type Meta struct {
 	gorm.Model `c_migrator:"enabled"  c_migrator_t_name:"user_meta"`
 	UserUuid   uuid.UUID `json:"user_uuid" gorm:"type:uuid;default:gen_random_uuid()"`
-	UserId     int       `json:"user_id" gorm:"type:int"`
-	User       User      `json:"user" gorm:"references:UserId"`
+	UserId     int       `json:"user_id" gorm:"type:int;not null;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	User       User      `json:"user" gorm:"foreignKey:UserId;references:Id"`
 	CreatedAt  time.TimestampWithTimeZoneMicro
 	UpdatedAt  time.TimestampWithTimeZoneMicro
 	DeletedAt  gorm.DeletedAt `gorm:"index"`
