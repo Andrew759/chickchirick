@@ -1,7 +1,7 @@
 package message
 
 import (
-	"chickChirick/internal/controller/abstraction"
+	"chickChirick/internal/controller/c_controller"
 	"chickChirick/internal/controller/c_http"
 	status "chickChirick/internal/model/message"
 	"encoding/json"
@@ -10,7 +10,7 @@ import (
 )
 
 type StatusController struct {
-	Controller abstraction.Controller
+	Controller c_controller.Controller
 }
 
 func (sc *StatusController) HandleRequest() {

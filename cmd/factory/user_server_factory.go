@@ -1,7 +1,7 @@
 package factory
 
 import (
-	"chickChirick/internal/controller/abstraction"
+	"chickChirick/internal/controller/c_controller"
 	internalService "chickChirick/internal/controller/service/user"
 	"chickChirick/internal/middleware"
 	"chickChirick/internal/middleware/validators/user"
@@ -10,10 +10,10 @@ import (
 
 type UserServer struct {
 	*http.ServeMux
-	abstraction.DIContainer
+	c_controller.DIContainer
 }
 
-func InitUserServer(mux *http.ServeMux, abstractDiContainer abstraction.DIContainer) UserServer {
+func InitUserServer(mux *http.ServeMux, abstractDiContainer c_controller.DIContainer) UserServer {
 	userServer := UserServer{
 		ServeMux:    mux,
 		DIContainer: abstractDiContainer,
@@ -30,7 +30,7 @@ func InitUserServer(mux *http.ServeMux, abstractDiContainer abstraction.DIContai
 
 func (us *UserServer) initUserService() internalService.UserController {
 	userService := internalService.UserController{
-		Controller: abstraction.Controller{
+		Controller: c_controller.Controller{
 			ServeMux:     us.ServeMux,
 			Dependencies: us.DIContainer,
 		},
@@ -43,10 +43,11 @@ func (us *UserServer) initUserService() internalService.UserController {
 
 func (us *UserServer) initBanService() internalService.BanController {
 	banService := internalService.BanController{
-		Controller: abstraction.Controller{
+		Controller: c_controller.Controller{
 			ServeMux:     us.ServeMux,
 			Dependencies: us.DIContainer,
 		},
+		Validator: user.BanValidatorFactory{}.NewValidator(us.DIContainer.DBDecorator, middleware.ActivateDBValidation()),
 	}
 	banService.HandleRequest()
 
@@ -55,10 +56,11 @@ func (us *UserServer) initBanService() internalService.BanController {
 
 func (us *UserServer) initUserMetaService() internalService.MetaController {
 	metaService := internalService.MetaController{
-		Controller: abstraction.Controller{
+		Controller: c_controller.Controller{
 			ServeMux:     us.ServeMux,
 			Dependencies: us.DIContainer,
 		},
+		Validator: user.MetaValidatorFactory{}.NewValidator(us.DIContainer.DBDecorator, middleware.ActivateDBValidation()),
 	}
 	metaService.HandleRequest()
 
@@ -67,10 +69,11 @@ func (us *UserServer) initUserMetaService() internalService.MetaController {
 
 func (us *UserServer) initPhotoService() internalService.PhotoController {
 	photoService := internalService.PhotoController{
-		Controller: abstraction.Controller{
+		Controller: c_controller.Controller{
 			ServeMux:     us.ServeMux,
 			Dependencies: us.DIContainer,
 		},
+		Validator: user.PhotoValidatorFactory{}.NewValidator(us.DIContainer.DBDecorator, middleware.ActivateDBValidation()),
 	}
 	photoService.HandleRequest()
 
@@ -79,7 +82,7 @@ func (us *UserServer) initPhotoService() internalService.PhotoController {
 
 func (us *UserServer) initPropertyService() internalService.PropertyController {
 	propertyService := internalService.PropertyController{
-		Controller: abstraction.Controller{
+		Controller: c_controller.Controller{
 			ServeMux:     us.ServeMux,
 			Dependencies: us.DIContainer,
 		},

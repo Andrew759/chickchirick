@@ -7,12 +7,18 @@ services:
       - api
     networks:
       - backend
+
   api:
     build:
       context: .
       dockerfile: ./build/dev/Dockerfile
     ports:
       - "8081:8080"
+      - "40000:40000" # Порт для подключения IDE к отладчику
+    cap_add:
+      - SYS_PTRACE # Разрешает Delve управлять процессом
+    security_opt:
+      - "seccomp=unconfined" # Отключает фильтрацию системных вызовов
     depends_on:
       postgres:
         condition: service_healthy

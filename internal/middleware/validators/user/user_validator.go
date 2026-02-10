@@ -22,7 +22,7 @@ func (uvf UserValidatorFactory) NewValidator(dbDecorator mainService.DBDecorator
 		opt(&vOptions)
 	}
 
-	return &UserValidator{
+	return UserValidator{
 		DBDecorator:      dbDecorator,
 		ValidatorOptions: vOptions,
 	}

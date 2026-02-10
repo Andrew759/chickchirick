@@ -1,36 +1,42 @@
 package user
 
 import (
-	"chickChirick/internal/controller/abstraction"
+	"chickChirick/internal/controller/c_controller"
 	"chickChirick/internal/controller/c_http"
+	"chickChirick/internal/middleware"
+	"chickChirick/internal/middleware/config"
 	meta "chickChirick/internal/model/user"
-	"encoding/json"
 	"errors"
 	"net/http"
 )
 
 type MetaController struct {
-	Controller abstraction.Controller
+	Controller c_controller.Controller
+	middleware.Validator
 }
 
+// HandleRequest TODO: здесь временно определяется путь user для будущего микросервиса, т.к существует пересечение с
+// meta_controller в message
 func (mc *MetaController) HandleRequest() {
 	mc.Controller.ServeMux.HandleFunc("GET /user/metas", func(w http.ResponseWriter, r *http.Request) {
 		mc.GetMetas(w)
 	})
 
-	mc.Controller.ServeMux.HandleFunc("POST /user/meta", func(w http.ResponseWriter, r *http.Request) {
-		mc.CreateMeta(w, c_http.NewRequest(r))
-	})
+	mc.Controller.ServeMux.HandleFunc("POST /user/meta",
+		mc.Validate(func(w http.ResponseWriter, r *http.Request) {
+			mc.CreateMeta(w, c_http.NewRequest(r))
+		}))
 
-	mc.Controller.ServeMux.HandleFunc("GET /user/meta/{id}", func(w http.ResponseWriter, r *http.Request) {
+	mc.Controller.ServeMux.HandleFunc("GET /user/{id}/meta", func(w http.ResponseWriter, r *http.Request) {
 		mc.GetMeta(w, c_http.NewRequest(r))
 	})
 
-	mc.Controller.ServeMux.HandleFunc("PUT /user/meta/{id}", func(w http.ResponseWriter, r *http.Request) {
-		mc.UpdateMeta(w, c_http.NewRequest(r))
-	})
+	mc.Controller.ServeMux.HandleFunc("PUT /user/{id}/meta",
+		mc.Validate(func(w http.ResponseWriter, r *http.Request) {
+			mc.UpdateMeta(w, c_http.NewRequest(r))
+		}))
 
-	mc.Controller.ServeMux.HandleFunc("DELETE /user/meta/{id}", func(w http.ResponseWriter, r *http.Request) {
+	mc.Controller.ServeMux.HandleFunc("DELETE /user/{id}/meta", func(w http.ResponseWriter, r *http.Request) {
 		mc.DeleteMeta(w, c_http.NewRequest(r))
 	})
 }
@@ -52,7 +58,7 @@ func (mc *MetaController) GetMeta(w http.ResponseWriter, r *c_http.Request) {
 		return
 	}
 
-	m, err := meta.GetMetaById(mc.Controller.Dependencies.DBDecorator.GDB(), id)
+	m, err := meta.GetMetaByUserId(mc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		c_http.NewResponse().SendError(w, "Meta not found: "+err.Error(), http.StatusNotFound)
 		return
@@ -62,13 +68,9 @@ func (mc *MetaController) GetMeta(w http.ResponseWriter, r *c_http.Request) {
 }
 
 func (mc *MetaController) CreateMeta(w http.ResponseWriter, r *c_http.Request) {
-	var m meta.Meta
-	if err := json.NewDecoder(r.Body).Decode(&m); err != nil {
-		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusCreated)
-		return
-	}
+	m := r.Context().Value(config.UserMetaKey).(*meta.Meta)
 
-	if err := meta.CreateMeta(mc.Controller.Dependencies.DBDecorator.GDB(), &m); err != nil {
+	if err := meta.CreateMeta(mc.Controller.Dependencies.DBDecorator.GDB(), m); err != nil {
 		c_http.NewResponse().SendError(w, "Failed to create meta: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -77,19 +79,15 @@ func (mc *MetaController) CreateMeta(w http.ResponseWriter, r *c_http.Request) {
 }
 
 func (mc *MetaController) UpdateMeta(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HTTPId()
+	userId, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	var m meta.Meta
-	if err := json.NewDecoder(r.Body).Decode(&m); err != nil {
-		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
-		return
-	}
+	m := r.Context().Value(config.UserMetaKey).(*meta.Meta)
 
-	err = meta.UpdateMetaById(mc.Controller.Dependencies.DBDecorator.GDB(), &m, id)
+	err = meta.UpdateMetaByUserId(mc.Controller.Dependencies.DBDecorator.GDB(), m, userId)
 	if err != nil && errors.Is(err, meta.MetaNotFoundErr) {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
 		return
@@ -102,13 +100,13 @@ func (mc *MetaController) UpdateMeta(w http.ResponseWriter, r *c_http.Request) {
 }
 
 func (mc *MetaController) DeleteMeta(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HTTPId()
+	userId, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	err = meta.DeleteMetaById(mc.Controller.Dependencies.DBDecorator.GDB(), id)
+	err = meta.DeleteMetaByUserId(mc.Controller.Dependencies.DBDecorator.GDB(), userId)
 	if err != nil && errors.Is(err, meta.MetaNotFoundErr) {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
 		return

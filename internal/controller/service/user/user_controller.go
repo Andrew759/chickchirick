@@ -1,7 +1,7 @@
 package user
 
 import (
-	"chickChirick/internal/controller/abstraction"
+	"chickChirick/internal/controller/c_controller"
 	"chickChirick/internal/controller/c_http"
 	"chickChirick/internal/middleware"
 	"chickChirick/internal/middleware/config"
@@ -11,7 +11,7 @@ import (
 )
 
 type UserController struct {
-	Controller abstraction.Controller
+	Controller c_controller.Controller
 	middleware.Validator
 }
 

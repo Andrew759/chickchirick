@@ -5,7 +5,7 @@ import (
 	appConfig "chickChirick/cmd/config"
 	"chickChirick/cmd/factory"
 	"chickChirick/cmd/service"
-	"chickChirick/internal/controller/abstraction"
+	"chickChirick/internal/controller/c_controller"
 	"chickChirick/internal/controller/c_http"
 	"chickChirick/internal/controller/service/user"
 	testAbstraction "chickChirick/internal/controller/test/abstraction"
@@ -39,8 +39,8 @@ func initUCContainer(t *testing.T) UserControllerTestContainer {
 
 	server := testAbstraction.StartTestServer(t, db, redis)
 
-	ac := abstraction.Controller{
-		Dependencies: abstraction.DIContainer{
+	ac := c_controller.Controller{
+		Dependencies: c_controller.DIContainer{
 			DBDecorator: db,
 		},
 	}

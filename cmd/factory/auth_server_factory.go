@@ -1,17 +1,17 @@
 package factory
 
 import (
-	"chickChirick/internal/controller/abstraction"
+	"chickChirick/internal/controller/c_controller"
 	internalService "chickChirick/internal/controller/service/auth"
 	"net/http"
 )
 
 type AuthServer struct {
 	*http.ServeMux
-	abstraction.DIContainer
+	c_controller.DIContainer
 }
 
-func InitAuthServer(mux *http.ServeMux, abstractDiContainer abstraction.DIContainer) AuthServer {
+func InitAuthServer(mux *http.ServeMux, abstractDiContainer c_controller.DIContainer) AuthServer {
 	authServer := AuthServer{
 		ServeMux:    mux,
 		DIContainer: abstractDiContainer,
@@ -26,7 +26,7 @@ func InitAuthServer(mux *http.ServeMux, abstractDiContainer abstraction.DIContai
 
 func (as AuthServer) initCodeService() internalService.CodeController {
 	codeService := internalService.CodeController{
-		Controller: abstraction.Controller{
+		Controller: c_controller.Controller{
 			ServeMux:     as.ServeMux,
 			Dependencies: as.DIContainer,
 		},
@@ -38,7 +38,7 @@ func (as AuthServer) initCodeService() internalService.CodeController {
 
 func (as AuthServer) initSessionService() internalService.SessionController {
 	sessionService := internalService.SessionController{
-		Controller: abstraction.Controller{
+		Controller: c_controller.Controller{
 			ServeMux:     as.ServeMux,
 			Dependencies: as.DIContainer,
 		},
@@ -50,7 +50,7 @@ func (as AuthServer) initSessionService() internalService.SessionController {
 
 func (as AuthServer) initTokenService() internalService.TokenController {
 	tokenService := internalService.TokenController{
-		Controller: abstraction.Controller{
+		Controller: c_controller.Controller{
 			ServeMux:     as.ServeMux,
 			Dependencies: as.DIContainer,
 		},

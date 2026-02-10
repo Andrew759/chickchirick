@@ -1,7 +1,7 @@
 package user
 
 import (
-	"chickChirick/internal/controller/abstraction"
+	"chickChirick/internal/controller/c_controller"
 	"chickChirick/internal/controller/c_http"
 	"chickChirick/internal/middleware"
 	"chickChirick/internal/middleware/config"
@@ -11,7 +11,7 @@ import (
 )
 
 type PropertyController struct {
-	Controller abstraction.Controller
+	Controller c_controller.Controller
 	middleware.Validator
 }
 
@@ -25,17 +25,16 @@ func (pc *PropertyController) HandleRequest() {
 			pc.CreateProperty(w, c_http.NewRequest(r))
 		}))
 
-	pc.Controller.ServeMux.HandleFunc("GET /property/{id}", func(w http.ResponseWriter, r *http.Request) {
-		pc.GetProperty(w, c_http.NewRequest(r))
-
+	pc.Controller.ServeMux.HandleFunc("GET /user/{id}/property", func(w http.ResponseWriter, r *http.Request) {
+		pc.GetPropertyByUserId(w, c_http.NewRequest(r))
 	})
 
-	pc.Controller.ServeMux.HandleFunc("PUT /property/{id}",
+	pc.Controller.ServeMux.HandleFunc("PUT /user/{id}/property",
 		pc.Validate(func(w http.ResponseWriter, r *http.Request) {
 			pc.UpdateProperty(w, c_http.NewRequest(r))
 		}))
 
-	pc.Controller.ServeMux.HandleFunc("DELETE /property/{id}", func(w http.ResponseWriter, r *http.Request) {
+	pc.Controller.ServeMux.HandleFunc("DELETE /user/{id}/property", func(w http.ResponseWriter, r *http.Request) {
 		pc.DeleteProperty(w, c_http.NewRequest(r))
 	})
 }
@@ -50,14 +49,14 @@ func (pc *PropertyController) GetProperties(w http.ResponseWriter) {
 	c_http.NewResponse().SendSuccess(w, properties, http.StatusOK)
 }
 
-func (pc *PropertyController) GetProperty(w http.ResponseWriter, r *c_http.Request) {
-	id, err := r.HTTPId()
+func (pc *PropertyController) GetPropertyByUserId(w http.ResponseWriter, r *c_http.Request) {
+	userId, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	p, err := property.GetPropertyById(pc.Controller.Dependencies.DBDecorator.GDB(), id)
+	p, err := property.GetPropertyByUserId(pc.Controller.Dependencies.DBDecorator.GDB(), userId)
 	if err != nil {
 		c_http.NewResponse().SendError(w, "Property not found: "+err.Error(), http.StatusNotFound)
 		return
@@ -89,7 +88,7 @@ func (pc *PropertyController) UpdateProperty(w http.ResponseWriter, r *c_http.Re
 
 	p := r.Context().Value(config.UserPropertyKey).(*property.Property)
 
-	err = property.UpdatePropertyById(pc.Controller.Dependencies.DBDecorator.GDB(), p, id)
+	err = property.UpdatePropertyByUserId(pc.Controller.Dependencies.DBDecorator.GDB(), p, id)
 	if err != nil && errors.Is(err, property.PropertyNotFoundErr) {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
 		return
@@ -107,7 +106,7 @@ func (pc *PropertyController) DeleteProperty(w http.ResponseWriter, r *c_http.Re
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	err = property.DeletePropertyById(pc.Controller.Dependencies.DBDecorator.GDB(), id)
+	err = property.DeletePropertyByUserId(pc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil && errors.Is(err, property.PropertyNotFoundErr) {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
 		return

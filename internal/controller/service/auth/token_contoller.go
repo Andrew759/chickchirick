@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"chickChirick/internal/controller/abstraction"
+	"chickChirick/internal/controller/c_controller"
 	"chickChirick/internal/controller/c_http"
 	token "chickChirick/internal/model/auth"
 	"encoding/json"
@@ -10,7 +10,7 @@ import (
 )
 
 type TokenController struct {
-	Controller abstraction.Controller
+	Controller c_controller.Controller
 }
 
 func (tc *TokenController) HandleRequest() {

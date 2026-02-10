@@ -5,7 +5,6 @@ import (
 	"chickChirick/internal/controller/c_http"
 	"chickChirick/internal/middleware"
 	"chickChirick/internal/middleware/config"
-	"chickChirick/internal/middleware/service"
 	"chickChirick/internal/model/user"
 	"context"
 	"encoding/json"
@@ -14,28 +13,28 @@ import (
 	"strings"
 )
 
-type PropertyValidatorFactory struct{}
+type PhotoValidatorFactory struct{}
 
-func (pvf PropertyValidatorFactory) NewValidator(dbDecorator mainService.DBDecorator, opts ...middleware.ValidatorOption) middleware.Validator {
+func (pvf PhotoValidatorFactory) NewValidator(dbDecorator mainService.DBDecorator, opts ...middleware.ValidatorOption) middleware.Validator {
 	var vOptions middleware.ValidatorOptions
 	for _, opt := range opts {
 		opt(&vOptions)
 	}
 
-	return &PropertyValidator{
+	return &PhotoValidator{
 		DBDecorator:      dbDecorator,
 		ValidatorOptions: vOptions,
 	}
 }
 
-type PropertyValidator struct {
+type PhotoValidator struct {
 	DBDecorator mainService.DBDecorator
 	middleware.ValidatorOptions
 }
 
-func (pv PropertyValidator) Validate(next http.HandlerFunc) http.HandlerFunc {
+func (pv PhotoValidator) Validate(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var p user.Property
+		var p user.Photo
 
 		if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
 			c_http.NewResponse().SendError(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
@@ -54,33 +53,24 @@ func (pv PropertyValidator) Validate(next http.HandlerFunc) http.HandlerFunc {
 			pv.validateAndSendResponseByDBRules(w, p)
 		}
 
-		ctx := context.WithValue(r.Context(), config.UserPropertyKey, &p)
+		ctx := context.WithValue(r.Context(), config.UserPhotoKey, &p)
 		next(w, r.WithContext(ctx))
 	}
 }
 
-func (pv PropertyValidator) validateRequestRules(p user.Property) []error {
+func (pv PhotoValidator) validateRequestRules(p user.Photo) []error {
 	var errList []error
 
-	if strings.TrimSpace(p.Email) != "" && !service.IsEmail(p.Email) {
-		errList = append(errList, errors.New("invalid email"))
+	if strings.TrimSpace(p.FileUuid.String()) == "" {
+		errList = append(errList, errors.New("invalid uuid"))
 	}
-	if p.Password != nil && !service.IsHasCorrectLength(*p.Password, 1024) {
-		errList = append(errList, errors.New("invalid password"))
-	}
-	//TODO: валидация таймзон, после того, как появится ENUM
 
 	return errList
 }
 
-func (pv PropertyValidator) validateAndSendResponseByDBRules(w http.ResponseWriter, p user.Property) {
+func (pv PhotoValidator) validateAndSendResponseByDBRules(w http.ResponseWriter, p user.Photo) {
 	_, err := user.GetUserById(pv.DBDecorator.GormInterface, p.UserId)
 	if err != nil && errors.Is(err, user.UserNotFoundErr) {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
 	}
-	_, err = user.HasProperty(pv.DBDecorator.GormInterface, p)
-	if err != nil && errors.Is(err, user.PropertyForUserAlreadyExistsErr) {
-		c_http.NewResponse().SendError(w, err.Error(), http.StatusConflict)
-	}
-
 }

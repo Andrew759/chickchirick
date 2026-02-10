@@ -3,6 +3,9 @@ package config
 type contextKey string
 
 const (
-	UserUserKey     contextKey = "validatedUser"
-	UserPropertyKey contextKey = "validatedUserProperty"
+	UserUserKey     contextKey = "validateUser"
+	UserPropertyKey contextKey = "validateUserProperty"
+	UserPhotoKey    contextKey = "validateUserPhoto"
+	UserMetaKey     contextKey = "validateUserMeta"
+	UserBanKey      contextKey = "validateUserBan"
 )

@@ -1,12 +1,11 @@
-# Dockerfile References: https://docs.docker.com/engine/reference/builder/
+ARG GOLANG_VERSION='1.24'
 
-ARG GOLANG_VERSION='1.24.4'
+FROM golang:${GOLANG_VERSION}-alpine
 
-FROM golang:${GOLANG_VERSION}-alpine as builder
-
-#Устанавливаются нужные пакеты
+# Устанавливаем зависимости и Delve
 RUN apk update && apk upgrade && \
-    apk add --no-cache bash git openssh
+    apk add --no-cache bash git openssh build-base && \
+    go install github.com/go-delve/delve/cmd/dlv@master
 
 # Устанавливается рабочая директория
 WORKDIR /app
@@ -19,38 +18,11 @@ RUN go mod download
 
 # Копируется исходный код
 COPY ./ ./
-COPY ./.env.dev .env
 
-# Компилируется приложение
-RUN go build -o main ./cmd/main.go
+# Компилируем бинарник В КОРЕНЬ (/main), а не в текущую папку (/app/main)
+RUN go build -gcflags="all=-N -l" -o /main ./cmd/main.go
 
-# Создается финальный образ
-FROM alpine:latest
+EXPOSE 8080 40000
 
-ENV GOLANG_VERSION=1.24.4
-
-# Устанавливается рабочая директория
-WORKDIR /root/
-
-# Копируются файлы из стадии сборки
-COPY --from=builder . .
-
-# Открывается порт
-EXPOSE 8080
-
-# Запуск бинарника
-CMD ["./app/main"]
-
-USER root
-
-#Подготовка финального образа
-RUN apk add --no-cache curl tar
-
-# Установка golang
-RUN apk add --no-cache curl tar git build-base && \
-    curl -LO https://go.dev/dl/go${GOLANG_VERSION}.linux-amd64.tar.gz && \
-    rm -rf /usr/local/go && \
-    tar -C /usr/local -xzf go${GOLANG_VERSION}.linux-amd64.tar.gz && \
-    rm go${GOLANG_VERSION}.linux-amd64.tar.gz
-
-ENV PATH="/usr/local/go/bin:${PATH}"z
+# Запускаем бинарник из корня
+CMD ["dlv", "--listen=:40000", "--headless=true", "--api-version=2", "--accept-multiclient", "exec", "/main", "--continue"]

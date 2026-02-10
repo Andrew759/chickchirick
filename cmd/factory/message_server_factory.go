@@ -1,17 +1,17 @@
 package factory
 
 import (
-	"chickChirick/internal/controller/abstraction"
+	"chickChirick/internal/controller/c_controller"
 	internalService "chickChirick/internal/controller/service/message"
 	"net/http"
 )
 
 type MessageServer struct {
 	*http.ServeMux
-	abstraction.DIContainer
+	c_controller.DIContainer
 }
 
-func InitMessageServer(mux *http.ServeMux, abstractDiContainer abstraction.DIContainer) MessageServer {
+func InitMessageServer(mux *http.ServeMux, abstractDiContainer c_controller.DIContainer) MessageServer {
 	messageServer := MessageServer{
 		ServeMux:    mux,
 		DIContainer: abstractDiContainer,
@@ -32,7 +32,7 @@ func InitMessageServer(mux *http.ServeMux, abstractDiContainer abstraction.DICon
 
 func (ms MessageServer) initDeletedService() internalService.DeletedController {
 	deletedService := internalService.DeletedController{
-		Controller: abstraction.Controller{
+		Controller: c_controller.Controller{
 			ServeMux:     ms.ServeMux,
 			Dependencies: ms.DIContainer,
 		},
@@ -44,7 +44,7 @@ func (ms MessageServer) initDeletedService() internalService.DeletedController {
 
 func (ms MessageServer) initFileService() internalService.FileController {
 	fileService := internalService.FileController{
-		Controller: abstraction.Controller{
+		Controller: c_controller.Controller{
 			ServeMux:     ms.ServeMux,
 			Dependencies: ms.DIContainer,
 		},
@@ -56,7 +56,7 @@ func (ms MessageServer) initFileService() internalService.FileController {
 
 func (ms MessageServer) initGroupService() internalService.GroupController {
 	groupService := internalService.GroupController{
-		Controller: abstraction.Controller{
+		Controller: c_controller.Controller{
 			ServeMux:     ms.ServeMux,
 			Dependencies: ms.DIContainer,
 		},
@@ -68,7 +68,7 @@ func (ms MessageServer) initGroupService() internalService.GroupController {
 
 func (ms MessageServer) initMessageService() internalService.MessagesController {
 	messageService := internalService.MessagesController{
-		Controller: abstraction.Controller{
+		Controller: c_controller.Controller{
 			ServeMux:     ms.ServeMux,
 			Dependencies: ms.DIContainer,
 		},
@@ -80,7 +80,7 @@ func (ms MessageServer) initMessageService() internalService.MessagesController 
 
 func (ms MessageServer) initMessageMetaService() internalService.MetaController {
 	metaService := internalService.MetaController{
-		Controller: abstraction.Controller{
+		Controller: c_controller.Controller{
 			ServeMux:     ms.ServeMux,
 			Dependencies: ms.DIContainer,
 		},
@@ -92,7 +92,7 @@ func (ms MessageServer) initMessageMetaService() internalService.MetaController 
 
 func (ms MessageServer) initPersonalService() internalService.PersonalController {
 	personalService := internalService.PersonalController{
-		Controller: abstraction.Controller{
+		Controller: c_controller.Controller{
 			ServeMux:     ms.ServeMux,
 			Dependencies: ms.DIContainer,
 		},
@@ -104,7 +104,7 @@ func (ms MessageServer) initPersonalService() internalService.PersonalController
 
 func (ms MessageServer) initSettingsService() internalService.SettingsController {
 	settingsService := internalService.SettingsController{
-		Controller: abstraction.Controller{
+		Controller: c_controller.Controller{
 			ServeMux:     ms.ServeMux,
 			Dependencies: ms.DIContainer,
 		},
@@ -116,7 +116,7 @@ func (ms MessageServer) initSettingsService() internalService.SettingsController
 
 func (ms MessageServer) initStatusService() internalService.StatusController {
 	statusService := internalService.StatusController{
-		Controller: abstraction.Controller{
+		Controller: c_controller.Controller{
 			ServeMux:     ms.ServeMux,
 			Dependencies: ms.DIContainer,
 		},
@@ -128,7 +128,7 @@ func (ms MessageServer) initStatusService() internalService.StatusController {
 
 func (ms MessageServer) initUserRelationService() internalService.UserRelationController {
 	userRelationService := internalService.UserRelationController{
-		Controller: abstraction.Controller{
+		Controller: c_controller.Controller{
 			ServeMux:     ms.ServeMux,
 			Dependencies: ms.DIContainer,
 		},

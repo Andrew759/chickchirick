@@ -1,7 +1,7 @@
 package message
 
 import (
-	"chickChirick/internal/controller/abstraction"
+	"chickChirick/internal/controller/c_controller"
 	"chickChirick/internal/controller/c_http"
 	file "chickChirick/internal/model/message"
 	"encoding/json"
@@ -10,7 +10,7 @@ import (
 )
 
 type FileController struct {
-	Controller abstraction.Controller
+	Controller c_controller.Controller
 }
 
 func (fc *FileController) HandleRequest() {

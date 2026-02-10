@@ -2,7 +2,7 @@ package factory
 
 import (
 	"chickChirick/cmd/service"
-	"chickChirick/internal/controller/abstraction"
+	"chickChirick/internal/controller/c_controller"
 	"net/http"
 )
 
@@ -28,7 +28,7 @@ func BuildServer(dbDecorator service.DBDecorator, redisDecorator service.RedisDe
 	//Регистрация обработчиков для конечных точек
 	mux.HandleFunc("/ping", pingHandler)
 
-	container := abstraction.DIContainer{
+	container := c_controller.DIContainer{
 		DBDecorator:    dbDecorator,
 		RedisDecorator: redisDecorator,
 	}

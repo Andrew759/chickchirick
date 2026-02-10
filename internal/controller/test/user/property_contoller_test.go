@@ -5,7 +5,7 @@ import (
 	appConfig "chickChirick/cmd/config"
 	"chickChirick/cmd/factory"
 	"chickChirick/cmd/service"
-	"chickChirick/internal/controller/abstraction"
+	"chickChirick/internal/controller/c_controller"
 	"chickChirick/internal/controller/c_http"
 	"chickChirick/internal/controller/service/user"
 	testAbstraction "chickChirick/internal/controller/test/abstraction"
@@ -41,8 +41,8 @@ func initPCContainer(t *testing.T) PropertyControllerTestContainer {
 
 	server := testAbstraction.StartTestServer(t, db, redis)
 
-	ac := abstraction.Controller{
-		Dependencies: abstraction.DIContainer{
+	ac := c_controller.Controller{
+		Dependencies: c_controller.DIContainer{
 			DBDecorator: db,
 		},
 	}
@@ -113,14 +113,17 @@ func doCreatePropertyRequest(t *testing.T, pctc PropertyControllerTestContainer,
 	return resp, decodedResponse
 }
 
-func doUpdatePropertyRequest(t *testing.T, pctc UserControllerTestContainer, userId uint64, updatingProperty userModels.Property) (
+func doUpdatePropertyRequest(t *testing.T, pctc PropertyControllerTestContainer, userId int, updatingProperty userModels.Property) (
 	*http.Response,
 	c_http.Response,
 ) {
 	t.Helper()
 
 	body, _ := json.Marshal(updatingProperty)
-	req, _ := http.NewRequest(http.MethodPut, pctc.ServerURL+"/property/"+strconv.FormatUint(userId, 10), bytes.NewBuffer(body))
+	req, _ := http.NewRequest(http.MethodPut,
+		pctc.ServerURL+"/user/"+strconv.Itoa(userId)+"/property",
+		bytes.NewBuffer(body),
+	)
 	req.Header.Set("Content-Type", "application/json")
 	resp, _ := pctc.HttpClient.Do(req)
 	defer resp.Body.Close()
@@ -273,7 +276,7 @@ func TestCreateAndGetPropertySuccess(t *testing.T) {
 	userModels.CreateUser(pctc.GormInterface, &user)
 
 	newProperty := userModels.Property{
-		UserId:   1,
+		UserId:   user.Id,
 		Timezone: 3,
 		Email:    "Andreyvelkov@chirik.com",
 	}
@@ -289,3 +292,95 @@ func TestCreateAndGetPropertySuccess(t *testing.T) {
 	assert.Equal(t, newProperty.Email, createdProperty.Email)
 	assert.Equal(t, newProperty.Password, createdProperty.Password)
 }
+
+func TestCreteTwoPropertiesAndGetAll(t *testing.T) {
+	pctc := initPCContainer(t)
+	firstUser := userModels.User{
+		Id:      1,
+		Name:    "Andrey",
+		Surname: "Velkov",
+		Phone:   "+79634823344",
+		Login:   "andrey_velkov",
+	}
+	userModels.CreateUser(pctc.GormInterface, &firstUser)
+
+	firstProperty := userModels.Property{
+		UserId:   firstUser.Id,
+		Timezone: 3,
+		Email:    "Andreyvelkov@chirik.com",
+	}
+	firstProperty.SetPassword("p@ssWoR_D1!")
+	userModels.CreateProperty(pctc.GormInterface, &firstProperty)
+
+	secondUser := userModels.User{
+		Id:      2,
+		Name:    "Andrey",
+		Surname: "Velkov",
+		Phone:   "+79634823345",
+		Login:   "andrey_velkov2",
+	}
+	userModels.CreateUser(pctc.GormInterface, &secondUser)
+
+	secondProperty := userModels.Property{
+		UserId:   secondUser.Id,
+		Timezone: 4,
+		Email:    "Andreyvelkov2@chirik.com",
+	}
+	secondProperty.SetPassword("p@ssWoR_D2!")
+	userModels.CreateProperty(pctc.GormInterface, &secondProperty)
+
+	getAllResp, err := pctc.HttpClient.Get(pctc.ServerURL + "/properties")
+	defer getAllResp.Body.Close()
+
+	var getAllDecodedResp c_http.Response
+	json.NewDecoder(getAllResp.Body).Decode(&getAllDecodedResp)
+
+	assert.NoError(t, err)
+	assert.Len(t, getAllDecodedResp.Payload, 2)
+}
+
+func TestUpdatePropertySuccess(t *testing.T) {
+	pctc := initPCContainer(t)
+
+	user := userModels.User{
+		Id:      1,
+		Name:    "Andrey",
+		Surname: "Velkov",
+		Phone:   "+79634823344",
+		Login:   "andrey_velkov",
+	}
+	userModels.CreateUser(pctc.GormInterface, &user)
+
+	Property := userModels.Property{
+		UserId:   user.Id,
+		Timezone: 3,
+		Email:    "Andreyvelkov@chirik.com",
+	}
+	Property.SetPassword("p@ssWoR_D1!")
+
+	_, createPropertyDecodedResp := doCreatePropertyRequest(t, pctc, Property)
+
+	var createdProperty userModels.Property
+	json.NewDecoder(createPropertyDecodedResp.PayloadContainer).Decode(&createdProperty)
+
+	updatingProperty := Property
+	updatingProperty.Timezone = 4
+	updatingProperty.Email = "Andreyvelkov@chirik.com"
+	updatingProperty.SetPassword("NewP@ssWoR_D1!")
+
+	updatePropertyResp, updatePropertyDecodedResp := doUpdatePropertyRequest(t, pctc, updatingProperty.UserId, updatingProperty)
+
+	var updatedProperty userModels.Property
+	json.NewDecoder(updatePropertyDecodedResp.PayloadContainer).Decode(&updatedProperty)
+
+	assert.Equal(t, http.StatusOK, updatePropertyResp.StatusCode)
+	assert.Equal(t, updatingProperty.Timezone, updatedProperty.Timezone)
+	assert.Equal(t, updatingProperty.Email, updatedProperty.Email)
+}
+
+// TODO: попытаться использовать тут табличный тест
+func testUpdatePropertyFail() {
+
+}
+
+func deletePropertySuccess() {}

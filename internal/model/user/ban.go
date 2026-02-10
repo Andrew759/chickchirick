@@ -3,6 +3,7 @@ package user
 import (
 	"chickChirick/pkg/chirik_gorm_tweaks/time"
 	"errors"
+
 	"gorm.io/gorm"
 )
 
@@ -48,6 +49,13 @@ func GetBanById(db *gorm.DB, id int) (Ban, error) {
 	result := db.First(&ban, id)
 
 	return ban, result.Error
+}
+
+func GetBansByUserId(db *gorm.DB, userId int) ([]Ban, error) {
+	var bans []Ban
+	result := db.Model(&Ban{}).Where("user_id = ?", userId).Find(&bans)
+
+	return bans, result.Error
 }
 
 func DeleteBanById(db *gorm.DB, id int) error {

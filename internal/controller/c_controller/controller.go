@@ -1,4 +1,4 @@
-package abstraction
+package c_controller
 
 import (
 	"chickChirick/cmd/service"
@@ -23,14 +23,3 @@ type ControllerInterface interface {
 	RequestHandler
 	Router()
 }
-
-//TODO: подумать как реализовать или удалить
-//type RouteContainer struct {
-//	DomainRoute string
-//	Routes      []Route
-//}
-//
-//type Route struct {
-//	Name       string
-//	UrlPattern *regexp.Regexp
-//}

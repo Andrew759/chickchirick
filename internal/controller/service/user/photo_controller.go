@@ -1,16 +1,18 @@
 package user
 
 import (
-	"chickChirick/internal/controller/abstraction"
+	"chickChirick/internal/controller/c_controller"
 	"chickChirick/internal/controller/c_http"
+	"chickChirick/internal/middleware"
+	"chickChirick/internal/middleware/config"
 	photo "chickChirick/internal/model/user"
-	"encoding/json"
 	"errors"
 	"net/http"
 )
 
 type PhotoController struct {
-	Controller abstraction.Controller
+	Controller c_controller.Controller
+	middleware.Validator
 }
 
 func (pc *PhotoController) HandleRequest() {
@@ -18,17 +20,23 @@ func (pc *PhotoController) HandleRequest() {
 		pc.GetPhotos(w)
 	})
 
-	pc.Controller.ServeMux.HandleFunc("POST /photo", func(w http.ResponseWriter, r *http.Request) {
-		pc.CreatePhoto(w, c_http.NewRequest(r))
-	})
+	pc.Controller.ServeMux.HandleFunc("POST /photo",
+		pc.Validate(func(w http.ResponseWriter, r *http.Request) {
+			pc.CreatePhoto(w, c_http.NewRequest(r))
+		}))
 
 	pc.Controller.ServeMux.HandleFunc("GET /photo/{id}", func(w http.ResponseWriter, r *http.Request) {
 		pc.GetPhoto(w, c_http.NewRequest(r))
 	})
 
-	pc.Controller.ServeMux.HandleFunc("PUT /photo/{id}", func(w http.ResponseWriter, r *http.Request) {
-		pc.UpdatePhoto(w, c_http.NewRequest(r))
+	pc.Controller.ServeMux.HandleFunc("GET /user/{id}/photos", func(w http.ResponseWriter, r *http.Request) {
+		pc.GetPhotosByUserId(w, c_http.NewRequest(r))
 	})
+
+	pc.Controller.ServeMux.HandleFunc("PUT /photo/{id}",
+		pc.Validate(func(w http.ResponseWriter, r *http.Request) {
+			pc.UpdatePhoto(w, c_http.NewRequest(r))
+		}))
 
 	pc.Controller.ServeMux.HandleFunc("DELETE /photo/{id}", func(w http.ResponseWriter, r *http.Request) {
 		pc.UpdatePhoto(w, c_http.NewRequest(r))
@@ -61,14 +69,27 @@ func (pc *PhotoController) GetPhoto(w http.ResponseWriter, r *c_http.Request) {
 	c_http.NewResponse().SendSuccess(w, p, http.StatusOK)
 }
 
-func (pc *PhotoController) CreatePhoto(w http.ResponseWriter, r *c_http.Request) {
-	var p photo.Photo
-	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
-		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
+func (pc *PhotoController) GetPhotosByUserId(w http.ResponseWriter, r *c_http.Request) {
+	userId, err := r.HTTPId()
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	if err := photo.CreatePhoto(pc.Controller.Dependencies.DBDecorator.GDB(), &p); err != nil {
+	photos, err := photo.GetPhotosByUserId(pc.Controller.Dependencies.DBDecorator.GDB(), userId)
+	if err != nil {
+		c_http.NewResponse().SendError(w, "Photos by user id not found: "+err.Error(), http.StatusNotFound)
+		return
+	}
+
+	c_http.NewResponse().SendSuccess(w, photos, http.StatusOK)
+}
+
+func (pc *PhotoController) CreatePhoto(w http.ResponseWriter, r *c_http.Request) {
+	p := r.Context().Value(config.UserPhotoKey).(*photo.Photo)
+
+	//TODO: доработать ошибки
+	if err := photo.CreatePhoto(pc.Controller.Dependencies.DBDecorator.GDB(), p); err != nil {
 		c_http.NewResponse().SendError(w, "Failed to create photo: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -83,13 +104,9 @@ func (pc *PhotoController) UpdatePhoto(w http.ResponseWriter, r *c_http.Request)
 		return
 	}
 
-	var p photo.Photo
-	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
-		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
-		return
-	}
+	p := r.Context().Value(config.UserPhotoKey).(*photo.Photo)
 
-	err = photo.UpdatePhotoById(pc.Controller.Dependencies.DBDecorator.GDB(), &p, id)
+	err = photo.UpdatePhotoById(pc.Controller.Dependencies.DBDecorator.GDB(), p, id)
 	if err != nil && errors.Is(err, photo.PhotoNotFoundErr) {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
 		return

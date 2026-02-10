@@ -1,16 +1,18 @@
 package user
 
 import (
-	"chickChirick/internal/controller/abstraction"
+	"chickChirick/internal/controller/c_controller"
 	"chickChirick/internal/controller/c_http"
+	"chickChirick/internal/middleware"
+	"chickChirick/internal/middleware/config"
 	ban "chickChirick/internal/model/user"
-	"encoding/json"
 	"errors"
 	"net/http"
 )
 
 type BanController struct {
-	Controller abstraction.Controller
+	Controller c_controller.Controller
+	middleware.Validator
 }
 
 func (bc *BanController) HandleRequest() {
@@ -24,6 +26,10 @@ func (bc *BanController) HandleRequest() {
 
 	bc.Controller.ServeMux.HandleFunc("GET /ban/{id}", func(w http.ResponseWriter, r *http.Request) {
 		bc.GetBan(w, c_http.NewRequest(r))
+	})
+
+	bc.Controller.ServeMux.HandleFunc("GET /user/{id}/bans", func(w http.ResponseWriter, r *http.Request) {
+		bc.GetBansByUserId(w, c_http.NewRequest(r))
 	})
 
 	bc.Controller.ServeMux.HandleFunc("PUT /ban/{id}", func(w http.ResponseWriter, r *http.Request) {
@@ -61,14 +67,26 @@ func (bc *BanController) GetBan(w http.ResponseWriter, r *c_http.Request) {
 	c_http.NewResponse().SendSuccess(w, b, http.StatusOK)
 }
 
-func (bc *BanController) CreateBan(w http.ResponseWriter, r *c_http.Request) {
-	var b ban.Ban
-	if err := json.NewDecoder(r.Body).Decode(&b); err != nil {
-		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
+func (bc *BanController) GetBansByUserId(w http.ResponseWriter, r *c_http.Request) {
+	userId, err := r.HTTPId()
+	if err != nil {
+		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	if err := ban.CreateBan(bc.Controller.Dependencies.DBDecorator.GDB(), &b); err != nil {
+	b, err := ban.GetBansByUserId(bc.Controller.Dependencies.DBDecorator.GDB(), userId)
+	if err != nil {
+		c_http.NewResponse().SendError(w, "Ban not found: "+err.Error(), http.StatusNotFound)
+		return
+	}
+
+	c_http.NewResponse().SendSuccess(w, b, http.StatusOK)
+}
+
+func (bc *BanController) CreateBan(w http.ResponseWriter, r *c_http.Request) {
+	b := r.Context().Value(config.UserBanKey).(*ban.Ban)
+
+	if err := ban.CreateBan(bc.Controller.Dependencies.DBDecorator.GDB(), b); err != nil {
 		c_http.NewResponse().SendError(w, "Failed to create ban: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -83,13 +101,9 @@ func (bc *BanController) UpdateBan(w http.ResponseWriter, r *c_http.Request) {
 		return
 	}
 
-	var b ban.Ban
-	if err = json.NewDecoder(r.Body).Decode(&b); err != nil {
-		c_http.NewResponse().SendError(w, "Invalid input: "+err.Error(), http.StatusBadRequest)
-		return
-	}
+	b := r.Context().Value(config.UserBanKey).(*ban.Ban)
 
-	err = ban.UpdateBanById(bc.Controller.Dependencies.DBDecorator.GDB(), &b, id)
+	err = ban.UpdateBanById(bc.Controller.Dependencies.DBDecorator.GDB(), b, id)
 	if err != nil && errors.Is(err, ban.BanNotFoundErr) {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
 		return

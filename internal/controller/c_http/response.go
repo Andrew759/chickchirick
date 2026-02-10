@@ -66,7 +66,6 @@ func (r *Response) AddErrorsToErrorContainer(errors []error) {
 
 // Send отправка данных, записанных в структуру Response
 func (r *Response) Send(w http.ResponseWriter, code int) {
-	//TODO: убедиться, что всегда будет такой хэдер
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 
