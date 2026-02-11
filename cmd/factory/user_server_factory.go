@@ -86,7 +86,8 @@ func (us *UserServer) initPropertyService() internalService.PropertyController {
 			ServeMux:     us.ServeMux,
 			Dependencies: us.DIContainer,
 		},
-		Validator: user.PropertyValidatorFactory{}.NewValidator(us.DIContainer.DBDecorator, middleware.ActivateDBValidation()),
+		CPV: user.CreatePropertyValidatorFactory{}.NewValidator(us.DIContainer.DBDecorator, middleware.ActivateDBValidation()),
+		UPV: user.UpdatePropertyValidatorFactory{}.NewValidator(us.DIContainer.DBDecorator, middleware.ActivateDBValidation()),
 	}
 	propertyService.HandleRequest()
 

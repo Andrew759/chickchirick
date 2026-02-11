@@ -12,7 +12,8 @@ import (
 
 type PropertyController struct {
 	Controller c_controller.Controller
-	middleware.Validator
+	CPV        middleware.Validator
+	UPV        middleware.Validator
 }
 
 func (pc *PropertyController) HandleRequest() {
@@ -21,7 +22,7 @@ func (pc *PropertyController) HandleRequest() {
 	})
 
 	pc.Controller.ServeMux.HandleFunc("POST /property",
-		pc.Validate(func(w http.ResponseWriter, r *http.Request) {
+		pc.CPV.Validate(func(w http.ResponseWriter, r *http.Request) {
 			pc.CreateProperty(w, c_http.NewRequest(r))
 		}))
 
@@ -30,7 +31,7 @@ func (pc *PropertyController) HandleRequest() {
 	})
 
 	pc.Controller.ServeMux.HandleFunc("PUT /user/{id}/property",
-		pc.Validate(func(w http.ResponseWriter, r *http.Request) {
+		pc.UPV.Validate(func(w http.ResponseWriter, r *http.Request) {
 			pc.UpdateProperty(w, c_http.NewRequest(r))
 		}))
 

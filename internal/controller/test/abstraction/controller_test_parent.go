@@ -24,6 +24,7 @@ type ControllerTestContainer struct {
 	ServerURL string
 	ExternalServices
 	HttpServer *httptest.Server
+	//TODO: возможно тут использовать свой клиент?
 	HttpClient *http.Client
 }
 

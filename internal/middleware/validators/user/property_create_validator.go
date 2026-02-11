@@ -14,26 +14,26 @@ import (
 	"strings"
 )
 
-type PropertyValidatorFactory struct{}
+type CreatePropertyValidatorFactory struct{}
 
-func (pvf PropertyValidatorFactory) NewValidator(dbDecorator mainService.DBDecorator, opts ...middleware.ValidatorOption) middleware.Validator {
+func (pvf CreatePropertyValidatorFactory) NewValidator(dbDecorator mainService.DBDecorator, opts ...middleware.ValidatorOption) middleware.Validator {
 	var vOptions middleware.ValidatorOptions
 	for _, opt := range opts {
 		opt(&vOptions)
 	}
 
-	return &PropertyValidator{
+	return &CreatePropertyValidator{
 		DBDecorator:      dbDecorator,
 		ValidatorOptions: vOptions,
 	}
 }
 
-type PropertyValidator struct {
+type CreatePropertyValidator struct {
 	DBDecorator mainService.DBDecorator
 	middleware.ValidatorOptions
 }
 
-func (pv PropertyValidator) Validate(next http.HandlerFunc) http.HandlerFunc {
+func (pv CreatePropertyValidator) Validate(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var p user.Property
 
@@ -51,7 +51,11 @@ func (pv PropertyValidator) Validate(next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		if pv.IsDBValidationActivated() {
-			pv.validateAndSendResponseByDBRules(w, p)
+			errContext := pv.validateAndSendResponseByDBRules(p)
+			if errContext != nil {
+				c_http.NewResponse().SendError(w, errContext.Message, errContext.Code)
+				return
+			}
 		}
 
 		ctx := context.WithValue(r.Context(), config.UserPropertyKey, &p)
@@ -59,7 +63,7 @@ func (pv PropertyValidator) Validate(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func (pv PropertyValidator) validateRequestRules(p user.Property) []error {
+func (pv CreatePropertyValidator) validateRequestRules(p user.Property) []error {
 	var errList []error
 
 	if strings.TrimSpace(p.Email) != "" && !service.IsEmail(p.Email) {
@@ -68,19 +72,31 @@ func (pv PropertyValidator) validateRequestRules(p user.Property) []error {
 	if p.Password != nil && !service.IsHasCorrectLength(*p.Password, 1024) {
 		errList = append(errList, errors.New("invalid password"))
 	}
-	//TODO: валидация таймзон, после того, как появится ENUM
 
 	return errList
 }
 
-func (pv PropertyValidator) validateAndSendResponseByDBRules(w http.ResponseWriter, p user.Property) {
+func (pv CreatePropertyValidator) validateAndSendResponseByDBRules(p user.Property) *middleware.ValidatorErrorContext {
 	_, err := user.GetUserById(pv.DBDecorator.GormInterface, p.UserId)
 	if err != nil && errors.Is(err, user.UserNotFoundErr) {
-		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
+		return &middleware.ValidatorErrorContext{
+			Message: err.Error(),
+			Code:    http.StatusNotFound,
+		}
 	}
 	_, err = user.HasProperty(pv.DBDecorator.GormInterface, p)
 	if err != nil && errors.Is(err, user.PropertyForUserAlreadyExistsErr) {
-		c_http.NewResponse().SendError(w, err.Error(), http.StatusConflict)
+		return &middleware.ValidatorErrorContext{
+			Message: err.Error(),
+			Code:    http.StatusConflict,
+		}
+	}
+	if err != nil {
+		return &middleware.ValidatorErrorContext{
+			Message: err.Error(),
+			Code:    http.StatusInternalServerError,
+		}
 	}
 
+	return nil
 }

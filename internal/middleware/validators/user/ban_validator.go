@@ -49,7 +49,11 @@ func (bv BanValidator) Validate(next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		if bv.IsDBValidationActivated() {
-			bv.validateAndSendResponseByDBRules(w, b)
+			errContext := bv.validateAndSendResponseByDBRules(b)
+			if errContext != nil {
+				c_http.NewResponse().SendError(w, errContext.Message, errContext.Code)
+				return
+			}
 		}
 
 		ctx := context.WithValue(r.Context(), config.UserBanKey, &b)
@@ -67,14 +71,19 @@ func (bv BanValidator) validateRequestRules(b user.Ban) []error {
 	return errList
 }
 
-func (bv BanValidator) validateAndSendResponseByDBRules(w http.ResponseWriter, b user.Ban) {
+func (bv BanValidator) validateAndSendResponseByDBRules(b user.Ban) *middleware.ValidatorErrorContext {
 	_, err := user.GetUserById(bv.DBDecorator.GormInterface, b.UserId)
 	if err != nil && errors.Is(err, user.UserNotFoundErr) {
-		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
+		return &middleware.ValidatorErrorContext{
+			Message: err.Error(),
+			Code:    http.StatusNotFound,
+		}
 	}
-
-	_, err = user.GetUserById(bv.DBDecorator.GormInterface, b.BannedUserId)
-	if err != nil && errors.Is(err, user.UserNotFoundErr) {
-		c_http.NewResponse().SendError(w, "Ban "+err.Error(), http.StatusNotFound)
+	if err != nil {
+		return &middleware.ValidatorErrorContext{
+			Message: err.Error(),
+			Code:    http.StatusInternalServerError,
+		}
 	}
+	return nil
 }

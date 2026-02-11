@@ -12,13 +12,16 @@ services:
     build:
       context: .
       dockerfile: ./build/automated/Dockerfile-cache
+    # Переменные окружения для ускорения BuildKit
+    environment:
+      - DOCKER_BUILDKIT=1
     ports:
       - "8081:8080"
     depends_on:
       postgres-automated:
         condition: service_healthy
-    volumes:
-      - .:/app
+    # volumes:
+    #   - .:/app
     networks:
       - backend
 

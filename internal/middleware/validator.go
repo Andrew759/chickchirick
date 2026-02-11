@@ -12,6 +12,10 @@ type ValidatorFactory interface {
 type Validator interface {
 	Validate(next http.HandlerFunc) http.HandlerFunc
 }
+type ValidatorErrorContext struct {
+	Message string
+	Code    int
+}
 
 type ValidatorOptions struct { //Конфигурация структуры
 	validateDB bool

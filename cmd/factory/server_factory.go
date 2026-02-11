@@ -3,7 +3,10 @@ package factory
 import (
 	"chickChirick/cmd/service"
 	"chickChirick/internal/controller/c_controller"
+	"log"
 	"net/http"
+	//TODO: подумать - оставить или удалить профилировщик
+	_ "net/http/pprof"
 )
 
 func pingHandler(w http.ResponseWriter, r *http.Request) {
@@ -15,6 +18,10 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 
 func BuildAndServe(dbDecorator service.DBDecorator, redisDecorator service.RedisDecorator) {
 	mux := BuildServer(dbDecorator, redisDecorator)
+	go func() {
+		log.Println("Pprof server started on :6060")
+		log.Fatal(http.ListenAndServe(":6060", nil))
+	}()
 
 	err := http.ListenAndServe(":8080", mux)
 	if err != nil {

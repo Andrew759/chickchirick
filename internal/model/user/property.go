@@ -11,14 +11,15 @@ import (
 type Property struct {
 	//TODO: нужно указывать c_migrator_t_name сразу в двух местах при использовании GORM. Переделать
 	c_model.Model `c_migrator:"enabled" c_migrator_t_name:"properties"`
-	UserId        int     `json:"user_id" gorm:"primaryKey;unique;not null"`
-	User          User    `json:"user" gorm:"foreignKey:UserId;references:Id"`
-	Timezone      int16   `json:"timezone" gorm:"type:smallint;default:3"`
-	Email         string  `json:"email" gorm:"unique;type:varchar(256)"`
-	Password      *string `json:"password" gorm:"type:varchar(1024)"`
-	CreatedAt     time.TimestampWithTimeZoneMicro
-	UpdatedAt     time.TimestampWithTimeZoneMicro
-	DeletedAt     gorm.DeletedAt `gorm:"index"`
+	UserId        int `json:"user_id" gorm:"primaryKey;unique;not null"`
+	//TODO: структура пользователя не должна попадать в ответы методов properties
+	User      User    `json:"user" gorm:"foreignKey:UserId;references:Id"`
+	Timezone  int16   `json:"timezone" gorm:"type:smallint;default:3"`
+	Email     string  `json:"email" gorm:"unique;type:varchar(256)"`
+	Password  *string `json:"password" gorm:"type:varchar(1024)"`
+	CreatedAt time.TimestampWithTimeZoneMicro
+	UpdatedAt time.TimestampWithTimeZoneMicro
+	DeletedAt gorm.DeletedAt `gorm:"index"`
 }
 
 var PropertyNotFoundErr = errors.New("property not found")
@@ -66,6 +67,16 @@ func GetPropertyByUserId(db *gorm.DB, userId int) (Property, error) {
 	return property, result.Error
 }
 
+func GetPropertyToAnotherUserByEmail(db *gorm.DB, userId int, email string) (Property, error) {
+	var property Property
+	result := db.Model(&Property{}).Where("user_id != ? AND email = ?", userId, email).Take(&property)
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return property, PropertyNotFoundErr
+	}
+
+	return property, result.Error
+}
+
 func HasProperty(db *gorm.DB, p Property) (bool, error) {
 	var count int64
 	err := db.Model(&Property{}).Where("user_id = ? OR email = ?", p.UserId, p.Email).Count(&count).Error
@@ -80,7 +91,17 @@ func HasProperty(db *gorm.DB, p Property) (bool, error) {
 }
 
 func DeletePropertyByUserId(db *gorm.DB, userId int) error {
-	var property Property
+	result := db.Where("user_id = ?", userId).Delete(&Property{})
 
-	return db.Model(&Property{}).Where("user_id = ?", userId).Delete(&property).Error
+	if result.Error != nil {
+		return result.Error
+	}
+
+	// Если ни одна запись не была затронута (удалена),
+	// значит свойств у этого пользователя не было
+	if result.RowsAffected == 0 {
+		return PropertyNotFoundErr
+	}
+
+	return nil
 }

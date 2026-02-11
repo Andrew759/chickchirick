@@ -5,6 +5,7 @@ import (
 	"chickChirick/internal/controller/c_http"
 	"chickChirick/internal/middleware"
 	"chickChirick/internal/middleware/config"
+	"chickChirick/internal/middleware/service"
 	"chickChirick/internal/model/user"
 	"context"
 	"encoding/json"
@@ -13,28 +14,28 @@ import (
 	"strings"
 )
 
-type PhotoValidatorFactory struct{}
+type UpdatePropertyValidatorFactory struct{}
 
-func (pvf PhotoValidatorFactory) NewValidator(dbDecorator mainService.DBDecorator, opts ...middleware.ValidatorOption) middleware.Validator {
+func (pvf UpdatePropertyValidatorFactory) NewValidator(dbDecorator mainService.DBDecorator, opts ...middleware.ValidatorOption) middleware.Validator {
 	var vOptions middleware.ValidatorOptions
 	for _, opt := range opts {
 		opt(&vOptions)
 	}
 
-	return &PhotoValidator{
+	return &UpdatePropertyValidator{
 		DBDecorator:      dbDecorator,
 		ValidatorOptions: vOptions,
 	}
 }
 
-type PhotoValidator struct {
+type UpdatePropertyValidator struct {
 	DBDecorator mainService.DBDecorator
 	middleware.ValidatorOptions
 }
 
-func (pv PhotoValidator) Validate(next http.HandlerFunc) http.HandlerFunc {
+func (pv UpdatePropertyValidator) Validate(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var p user.Photo
+		var p user.Property
 
 		if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
 			c_http.NewResponse().SendError(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
@@ -57,27 +58,41 @@ func (pv PhotoValidator) Validate(next http.HandlerFunc) http.HandlerFunc {
 			}
 		}
 
-		ctx := context.WithValue(r.Context(), config.UserPhotoKey, &p)
+		ctx := context.WithValue(r.Context(), config.UserPropertyKey, &p)
 		next(w, r.WithContext(ctx))
 	}
 }
 
-func (pv PhotoValidator) validateRequestRules(p user.Photo) []error {
+// TODO: перевести все методы валидации тела запроса на middleware.ValidatorErrorContext
+func (pv UpdatePropertyValidator) validateRequestRules(p user.Property) []error {
 	var errList []error
 
-	if strings.TrimSpace(p.FileUuid.String()) == "" {
-		errList = append(errList, errors.New("invalid uuid"))
+	if strings.TrimSpace(p.Email) != "" && !service.IsEmail(p.Email) {
+		errList = append(errList, errors.New("invalid email"))
 	}
+	if p.Password != nil && !service.IsHasCorrectLength(*p.Password, 1024) {
+		errList = append(errList, errors.New("invalid password"))
+	}
+	//TODO: валидация таймзон, в том числе в property create validator после того, как появится ENUM
 
 	return errList
 }
 
-func (pv PhotoValidator) validateAndSendResponseByDBRules(p user.Photo) *middleware.ValidatorErrorContext {
+func (pv UpdatePropertyValidator) validateAndSendResponseByDBRules(p user.Property) *middleware.ValidatorErrorContext {
 	_, err := user.GetUserById(pv.DBDecorator.GormInterface, p.UserId)
 	if err != nil && errors.Is(err, user.UserNotFoundErr) {
 		return &middleware.ValidatorErrorContext{
 			Message: err.Error(),
 			Code:    http.StatusNotFound,
+		}
+	}
+	property, err := user.GetPropertyToAnotherUserByEmail(pv.DBDecorator.GormInterface, p.UserId, p.Email)
+	if err != nil && errors.Is(err, user.PropertyNotFoundErr) {
+		err = nil
+	} else if property.Email == p.Email {
+		return &middleware.ValidatorErrorContext{
+			Message: user.PropertyForUserAlreadyExistsErr.Error(),
+			Code:    http.StatusConflict,
 		}
 	}
 	if err != nil {
@@ -86,5 +101,6 @@ func (pv PhotoValidator) validateAndSendResponseByDBRules(p user.Photo) *middlew
 			Code:    http.StatusInternalServerError,
 		}
 	}
+
 	return nil
 }

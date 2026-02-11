@@ -46,7 +46,8 @@ func initPCContainer(t *testing.T) PropertyControllerTestContainer {
 			DBDecorator: db,
 		},
 	}
-	pv := userMiddleware.PropertyValidator{}
+	cpv := userMiddleware.CreatePropertyValidator{}
+	upv := userMiddleware.UpdatePropertyValidator{}
 
 	pCTC := PropertyControllerTestContainer{
 		ControllerTestContainer: testAbstraction.ControllerTestContainer{
@@ -60,7 +61,8 @@ func initPCContainer(t *testing.T) PropertyControllerTestContainer {
 		},
 		PropertyController: &user.PropertyController{
 			Controller: ac,
-			Validator:  pv,
+			CPV:        cpv,
+			UPV:        upv,
 		},
 	}
 
@@ -125,6 +127,26 @@ func doUpdatePropertyRequest(t *testing.T, pctc PropertyControllerTestContainer,
 		bytes.NewBuffer(body),
 	)
 	req.Header.Set("Content-Type", "application/json")
+	resp, _ := pctc.HttpClient.Do(req)
+	defer resp.Body.Close()
+
+	var decodedResponse c_http.Response
+	json.NewDecoder(resp.Body).Decode(&decodedResponse)
+
+	return resp, decodedResponse
+}
+
+func doDeletePropertyRequest(t *testing.T, pctc PropertyControllerTestContainer, userId int) (
+	*http.Response,
+	c_http.Response,
+) {
+	t.Helper()
+
+	req, _ := http.NewRequest(http.MethodDelete,
+		pctc.ServerURL+"/user/"+strconv.Itoa(userId)+"/property",
+		nil,
+	)
+
 	resp, _ := pctc.HttpClient.Do(req)
 	defer resp.Body.Close()
 
@@ -358,10 +380,7 @@ func TestUpdatePropertySuccess(t *testing.T) {
 	}
 	Property.SetPassword("p@ssWoR_D1!")
 
-	_, createPropertyDecodedResp := doCreatePropertyRequest(t, pctc, Property)
-
-	var createdProperty userModels.Property
-	json.NewDecoder(createPropertyDecodedResp.PayloadContainer).Decode(&createdProperty)
+	_, _ = doCreatePropertyRequest(t, pctc, Property)
 
 	updatingProperty := Property
 	updatingProperty.Timezone = 4
@@ -378,9 +397,98 @@ func TestUpdatePropertySuccess(t *testing.T) {
 	assert.Equal(t, updatingProperty.Email, updatedProperty.Email)
 }
 
-// TODO: попытаться использовать тут табличный тест
-func testUpdatePropertyFail() {
+func TestUpdatePropertyFail(t *testing.T) {
+	pctc := initPCContainer(t)
+	firstUser := userModels.User{
+		Id:      1,
+		Name:    "Andrey",
+		Surname: "Velkov",
+		Phone:   "+79634823344",
+		Login:   "andrey_velkov",
+	}
+	userModels.CreateUser(pctc.GormInterface, &firstUser)
 
+	firstProperty := userModels.Property{
+		UserId:   firstUser.Id,
+		Timezone: 3,
+		Email:    "ihaveuniqueemailassall@chirik.com",
+	}
+	firstProperty.SetPassword("p@ssWoR_D1!")
+	userModels.CreateProperty(pctc.GormInterface, &firstProperty)
+
+	secondUser := userModels.User{
+		Id:      2,
+		Name:    "Andrey",
+		Surname: "Velkov",
+		Phone:   "+79634823345",
+		Login:   "andrey_velkov2",
+	}
+	userModels.CreateUser(pctc.GormInterface, &secondUser)
+
+	secondProperty := userModels.Property{
+		UserId:   secondUser.Id,
+		Timezone: 4,
+		Email:    "ihaveuniqueemailassall2@chirik.com",
+	}
+	secondProperty.SetPassword("p@ssWoR_D2!")
+	userModels.CreateProperty(pctc.GormInterface, &secondProperty)
+
+	updatingProperty := secondProperty
+	updatingProperty.Timezone = secondProperty.Timezone
+	updatingProperty.Email = "ihaveuniqueemailassall@chirik.com"
+	updatingProperty.SetPassword("NewP@ssWoR_D1!")
+
+	updatePropertyResp, updatePropertyDecodedResp := doUpdatePropertyRequest(t, pctc, updatingProperty.UserId, updatingProperty)
+
+	assert.Equal(t, http.StatusConflict, updatePropertyResp.StatusCode)
+	assert.Equal(t, updatePropertyDecodedResp.FirstError(), userModels.PropertyForUserAlreadyExistsErr)
 }
 
-func deletePropertySuccess() {}
+func TestDeletePropertySuccess(t *testing.T) {
+	pctc := initPCContainer(t)
+
+	user := userModels.User{
+		Id:      1,
+		Name:    "Andrey",
+		Surname: "Velkov",
+		Phone:   "+79634823344",
+		Login:   "andrey_velkov",
+	}
+	userModels.CreateUser(pctc.GormInterface, &user)
+
+	property := userModels.Property{
+		UserId:   user.Id,
+		Timezone: 3,
+		Email:    "Andreyvelkov@chirik.com",
+	}
+	property.SetPassword("p@ssWoR_D1!")
+
+	userModels.CreateProperty(pctc.GormInterface, &property)
+
+	resp, _ := doDeletePropertyRequest(t, pctc, user.Id)
+
+	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
+
+	var foundProperty userModels.Property
+	result := pctc.GormInterface.Where("user_id = ?", user.Id).First(&foundProperty)
+
+	assert.Error(t, result.Error)
+}
+
+func TestDeleteNotExistingProperty(t *testing.T) {
+	pctc := initPCContainer(t)
+
+	user := userModels.User{
+		Id:      1,
+		Name:    "Andrey",
+		Surname: "Velkov",
+		Login:   "andrey_velkov",
+	}
+
+	userModels.CreateUser(pctc.GormInterface, &user)
+
+	resp, decodedResponse := doDeletePropertyRequest(t, pctc, user.Id)
+
+	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+	assert.Equal(t, userModels.PropertyNotFoundErr, decodedResponse.FirstError())
+}

@@ -1,39 +1,25 @@
-# Dockerfile References: https://docs.docker.com/engine/reference/builder/
-
-ARG GOLANG_VERSION='1.24.4'
-
-FROM golang:${GOLANG_VERSION}-alpine as builder
-
-# Устанавливается рабочая директория
+ARG GOLANG_VERSION='1.26'
+FROM golang:${GOLANG_VERSION}-alpine AS builder
 WORKDIR /app
 
-# Копируется go.mod и go.sum из корневой директории
-COPY ./go.mod ./go.sum ./
-
-# Загружаются зависимости go. Кэши используются даже для пакетов Go
+COPY go.mod go.sum ./
 RUN --mount=type=cache,target=/go/pkg/mod \
- go mod download
+    go mod download
 
-# Копируется исходный код
-COPY ./ ./
-COPY ./.env.automated .env
+COPY . .
 
-# Компилируется приложение
-RUN go build -o main ./cmd/main.go
+# Компилируем бинарник сразу в корень или в /app
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg/mod \
+    go build -ldflags="-s -w" -o /app/main ./cmd/main.go
 
-# Создается финальный образ
-FROM alpine:latest
+FROM alpine:3.21
+# Используем /app, так как Viper настроен на этот путь
+WORKDIR /app
 
-ENV GOLANG_VERSION=1.24.4
+# Копируем бинарник и переименовываем конфиг в .env, как того требует код
+COPY --from=builder /app/main .
+COPY --from=builder /app/.env.automated ./.env
 
-# Устанавливается рабочая директория
-WORKDIR /root/
-
-# Копируется файлы из стадии сборки
-COPY --from=builder . .
-
-# Открывается порт
 EXPOSE 8080
-
-# Запуск бинарника
-CMD ["./app/main"]
+CMD ["./main"]
