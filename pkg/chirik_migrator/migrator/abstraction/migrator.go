@@ -7,7 +7,6 @@ import (
 type Migrator interface {
 	// Tables
 	CreateTables(entities map[string][]migratorDto.MigratorInfo) error
-	CreateTable(entity migratorDto.MigratorInfo) error
 	DropTable(entity migratorDto.MigratorInfo) error
 
 	// Constraints

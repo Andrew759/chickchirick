@@ -3,6 +3,9 @@ package migrator
 import (
 	migratorDto "chickChirick/pkg/chirik_migrator/migrator/provider"
 	"chickChirick/pkg/chirik_migrator/migrator/service"
+	"context"
+
+	"golang.org/x/sync/errgroup"
 )
 
 type Migrator struct {
@@ -16,31 +19,30 @@ func (m Migrator) CreateTables(migratorEntities map[string][]migratorDto.Migrato
 	if err != nil {
 		return err
 	}
+
+	//TODO: сейчас фикстуры не поддерживают целостность данных, поэтому использование горутин легко реализуется
 	if m.FixtureCreator.FixtureCount > 0 {
+		g, gCtx := errgroup.WithContext(context.Background())
+
 		for _, processedSqlMetas := range processedTablesSqlMeta {
-			for _, processedSqlMeta := range processedSqlMetas {
-				err = m.FixtureCreator.InsertFixtures(processedSqlMeta)
-				if err != nil {
-					return err
-				}
+			for _, meta := range processedSqlMetas {
+				meta := meta // Важно для старых версий Go (до 1.22)
+
+				g.Go(func() error {
+					select {
+					case <-gCtx.Done():
+						return gCtx.Err()
+					default:
+						// Идеоматично здесь передать gCtx в InsertFixtures, но метод этого не поддерживает
+						return m.FixtureCreator.InsertFixtures(meta)
+					}
+				})
 			}
 		}
-	}
 
-	return nil
-}
-
-func (m Migrator) CreateTable(migratorInfo migratorDto.MigratorInfo) error {
-	processedSqlMetas, err := m.TableCreator.CreateTable(migratorInfo)
-	if err != nil {
-		return err
-	}
-	if m.FixtureCreator.FixtureCount > 0 {
-		for _, processedSqlMeta := range processedSqlMetas {
-			err = m.FixtureCreator.InsertFixtures(processedSqlMeta)
-			if err != nil {
-				return err
-			}
+		// Wait вернет первую возникшую ошибку
+		if err := g.Wait(); err != nil {
+			return err
 		}
 	}
 

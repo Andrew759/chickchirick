@@ -7,10 +7,11 @@ import (
 	"chickChirick/pkg/chirik_migrator/db_schema/data_type"
 	"chickChirick/pkg/chirik_migrator/migrator/helper"
 	"fmt"
-	"github.com/spf13/viper"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/spf13/viper"
 )
 
 type MigratorInfo struct {
@@ -165,8 +166,12 @@ func (mInfo *MigratorInfo) FillByGormTagAndSchemaField(schemaField *db_schema.Fi
 		case "column":
 			schemaField.Name = tValue
 		case "type":
-			_, typeErr := schemaField.FillDataTypeByString(tValue)
-			mInfo.InfoErrList = append(mInfo.InfoErrList, typeErr)
+			field, typeErr := schemaField.FillDataTypeByString(tValue)
+			if typeErr != nil {
+				mInfo.InfoErrList = append(mInfo.InfoErrList, typeErr)
+				break
+			}
+			schemaField.DataType = field.DataType
 		case "size":
 			schemaField.Size, err = strconv.Atoi(tValue)
 		case "primaryKey":

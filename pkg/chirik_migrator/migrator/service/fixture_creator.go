@@ -11,24 +11,32 @@ type FixtureCreator struct {
 }
 
 func (fc FixtureCreator) InsertFixtures(sqlMeta dto.Meta) error {
-	var errList []error
 	for i := 0; i < fc.FixtureCount; i++ {
-		sqlMetaIterationCopy := sqlMeta
-		err := fc.writeFixtureToSqlMeta(&sqlMetaIterationCopy)
-		if err != nil {
-			errList = append(errList, err)
-		}
-		err = fc.ProcessSQLMeta(sqlMetaIterationCopy)
-		if err != nil {
-			errList = append(errList, err)
-		}
-	}
-	if len(errList) > 0 {
-		//TODO: доработать
-		return fmt.Errorf("%s", errList)
-	}
+		//Глубокое копирование мета-данных, чтобы итерации не влияли друг на друга
+		metaCopy := fc.deepCopyMeta(sqlMeta)
 
+		//Генерация фикстурных данных
+		if err := fc.writeFixtureToSqlMeta(&metaCopy); err != nil {
+			return fmt.Errorf("failed to generate fixtures: %w", err)
+		}
+
+		// Выполнение SQL. Если упало один раз — цикл прерывается
+		if err := fc.ProcessSQLMeta(metaCopy); err != nil {
+			return fmt.Errorf("failed to process fixture SQL: %w", err)
+		}
+	}
 	return nil
+}
+
+func (fc FixtureCreator) deepCopyMeta(src dto.Meta) dto.Meta {
+	dst := src
+	dst.SqlValues = make([]dto.ValueMeta, len(src.SqlValues))
+	copy(dst.SqlValues, src.SqlValues)
+
+	dst.SqlFieldList = make([]string, len(src.SqlFieldList))
+	copy(dst.SqlFieldList, src.SqlFieldList)
+
+	return dst
 }
 
 func (fc FixtureCreator) writeFixtureToSqlMeta(sqlMeta *dto.Meta) error {
