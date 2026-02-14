@@ -3,6 +3,10 @@ services:
     build: ./build/stage/nginx
     ports:
       - '81:80'
+      - '443:443'
+    volumes:
+      - ./build/stage/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./build/stage/nginx/certs:/etc/nginx/certs:ro
     depends_on:
       - api
     networks:
@@ -11,8 +15,8 @@ services:
     build:
       context: .
       dockerfile: ./build/stage/Dockerfile
-    ports:
-      - "8081:8080"
+#    ports:
+#      - "8081:8080"
     depends_on:
       postgres:
         condition: service_healthy
