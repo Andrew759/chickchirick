@@ -21,5 +21,4 @@ type RequestHandler interface {
 
 type ControllerInterface interface {
 	RequestHandler
-	Router()
 }

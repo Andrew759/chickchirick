@@ -9,3 +9,5 @@ const (
 	UserMetaKey     contextKey = "validateUserMeta"
 	UserBanKey      contextKey = "validateUserBan"
 )
+
+const AuthKey contextKey = "authKey"

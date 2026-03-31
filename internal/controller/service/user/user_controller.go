@@ -5,6 +5,7 @@ import (
 	"chickChirick/internal/controller/c_http"
 	"chickChirick/internal/middleware"
 	"chickChirick/internal/middleware/config"
+	authValidator "chickChirick/internal/middleware/validators"
 	"chickChirick/internal/model/user"
 	"errors"
 	"net/http"
@@ -13,30 +14,34 @@ import (
 type UserController struct {
 	Controller c_controller.Controller
 	middleware.Validator
+	authValidator.AuthValidator
 }
 
 func (uc *UserController) HandleRequest() {
-	uc.Controller.ServeMux.HandleFunc("GET /users", func(w http.ResponseWriter, r *http.Request) {
-		uc.GetUsers(w)
-	})
+	uc.Controller.ServeMux.HandleFunc("GET /users",
+		uc.ValidateAuth(func(w http.ResponseWriter, r *http.Request) {
+			uc.GetUsers(w)
+		}))
 
 	uc.Controller.ServeMux.HandleFunc("POST /user",
 		uc.Validate(func(w http.ResponseWriter, r *http.Request) {
 			uc.CreateUser(w, c_http.NewRequest(r))
 		}))
 
-	uc.Controller.ServeMux.HandleFunc("GET /user/{id}", func(w http.ResponseWriter, r *http.Request) {
-		uc.GetUser(w, c_http.NewRequest(r))
-	})
-
-	uc.Controller.ServeMux.HandleFunc("PUT /user/{id}",
-		uc.Validate(func(w http.ResponseWriter, r *http.Request) {
-			uc.UpdateUser(w, c_http.NewRequest(r))
+	uc.Controller.ServeMux.HandleFunc("GET /user/{id}",
+		uc.ValidateAuth(func(w http.ResponseWriter, r *http.Request) {
+			uc.GetUser(w, c_http.NewRequest(r))
 		}))
 
-	uc.Controller.ServeMux.HandleFunc("DELETE /user/{id}", func(w http.ResponseWriter, r *http.Request) {
-		uc.DeleteUser(w, c_http.NewRequest(r))
-	})
+	uc.Controller.ServeMux.HandleFunc("PUT /user/{id}",
+		uc.ValidateAuth(uc.Validate(func(w http.ResponseWriter, r *http.Request) {
+			uc.UpdateUser(w, c_http.NewRequest(r))
+		})))
+
+	uc.Controller.ServeMux.HandleFunc("DELETE /user/{id}",
+		uc.ValidateAuth(func(w http.ResponseWriter, r *http.Request) {
+			uc.DeleteUser(w, c_http.NewRequest(r))
+		}))
 }
 
 func (uc *UserController) GetUsers(w http.ResponseWriter) {

@@ -18,7 +18,6 @@ func main() {
 	redisDecorator := service.InitRedis(appConfig.RedisConfig)
 	defer redisDecorator.RedisClose()
 
-	//TODO: если не потребуется - удалить
-	//httpClient := factory.InitHttpClient()
-	factory.BuildAndServe(dbDecorator, redisDecorator)
+	httpClient := factory.InitHttpClient()
+	factory.BuildAndServe(dbDecorator, redisDecorator, httpClient)
 }

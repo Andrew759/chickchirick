@@ -9,15 +9,8 @@ import (
 	_ "net/http/pprof"
 )
 
-func pingHandler(w http.ResponseWriter, r *http.Request) {
-	_, err := w.Write([]byte("pong"))
-	if err != nil {
-		panic(err)
-	}
-}
-
-func BuildAndServe(dbDecorator service.DBDecorator, redisDecorator service.RedisDecorator) {
-	mux := BuildServer(dbDecorator, redisDecorator)
+func BuildAndServe(dbDecorator service.DBDecorator, redisDecorator service.RedisDecorator, httpClient *http.Client) {
+	mux := BuildServer(dbDecorator, redisDecorator, httpClient)
 	go func() {
 		log.Println("Pprof server started on :6060")
 		log.Fatal(http.ListenAndServe(":6060", nil))
@@ -29,20 +22,17 @@ func BuildAndServe(dbDecorator service.DBDecorator, redisDecorator service.Redis
 	}
 }
 
-func BuildServer(dbDecorator service.DBDecorator, redisDecorator service.RedisDecorator) *http.ServeMux {
+func BuildServer(dbDecorator service.DBDecorator, redisDecorator service.RedisDecorator, httpClient *http.Client) *http.ServeMux {
 	mux := http.NewServeMux()
-
-	//Регистрация обработчиков для конечных точек
-	mux.HandleFunc("/ping", pingHandler)
 
 	container := c_controller.DIContainer{
 		DBDecorator:    dbDecorator,
 		RedisDecorator: redisDecorator,
 	}
 
-	InitUserServer(mux, container)
+	InitUserServer(mux, container, httpClient)
 	InitMessageServer(mux, container)
-	InitAuthServer(mux, container)
+	//InitAuthServer(mux, container)
 
 	return mux
 }

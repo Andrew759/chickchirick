@@ -4,19 +4,25 @@ import (
 	"chickChirick/internal/controller/c_controller"
 	internalService "chickChirick/internal/controller/service/user"
 	"chickChirick/internal/middleware"
+	"chickChirick/internal/middleware/validators"
 	"chickChirick/internal/middleware/validators/user"
+	"chickChirick/pkg/chirik_config"
 	"net/http"
+
+	"github.com/spf13/viper"
 )
 
 type UserServer struct {
 	*http.ServeMux
 	c_controller.DIContainer
+	*http.Client
 }
 
-func InitUserServer(mux *http.ServeMux, abstractDiContainer c_controller.DIContainer) UserServer {
+func InitUserServer(mux *http.ServeMux, abstractDiContainer c_controller.DIContainer, httpClient *http.Client) UserServer {
 	userServer := UserServer{
 		ServeMux:    mux,
 		DIContainer: abstractDiContainer,
+		Client:      httpClient,
 	}
 
 	userServer.initUserService()
@@ -35,6 +41,11 @@ func (us *UserServer) initUserService() internalService.UserController {
 			Dependencies: us.DIContainer,
 		},
 		Validator: user.UserValidatorFactory{}.NewValidator(us.DIContainer.DBDecorator),
+		AuthValidator: validators.AuthValidator{
+			AuthServiceURL:   viper.GetString(chirik_config.AuthAppUrl),
+			Client:           us.Client,
+			ValidatorOptions: middleware.ValidatorOptions{},
+		},
 	}
 	userService.HandleRequest()
 
