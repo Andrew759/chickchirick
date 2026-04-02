@@ -5,6 +5,7 @@ import (
 	"chickChirick/internal/controller/c_http"
 	"chickChirick/internal/middleware"
 	"chickChirick/internal/middleware/config"
+	authValidator "chickChirick/internal/middleware/validators"
 	meta "chickChirick/internal/model/user"
 	"errors"
 	"net/http"
@@ -13,31 +14,38 @@ import (
 type MetaController struct {
 	Controller c_controller.Controller
 	middleware.Validator
+	authValidator.AuthValidator
 }
 
 // HandleRequest TODO: здесь временно определяется путь user для будущего микросервиса, т.к существует пересечение с
 // meta_controller в message
 func (mc *MetaController) HandleRequest() {
 	mc.Controller.ServeMux.HandleFunc("GET /user/metas", func(w http.ResponseWriter, r *http.Request) {
-		mc.GetMetas(w)
+		mc.ValidateAuth(func(w http.ResponseWriter, r *http.Request) {
+			mc.GetMetas(w)
+		})
 	})
 
 	mc.Controller.ServeMux.HandleFunc("POST /user/meta",
-		mc.Validate(func(w http.ResponseWriter, r *http.Request) {
+		mc.ValidateAuth(mc.Validate(func(w http.ResponseWriter, r *http.Request) {
 			mc.CreateMeta(w, c_http.NewRequest(r))
-		}))
+		})))
 
 	mc.Controller.ServeMux.HandleFunc("GET /user/{id}/meta", func(w http.ResponseWriter, r *http.Request) {
-		mc.GetMeta(w, c_http.NewRequest(r))
+		mc.ValidateAuth(func(w http.ResponseWriter, r *http.Request) {
+			mc.GetMeta(w, c_http.NewRequest(r))
+		})
 	})
 
 	mc.Controller.ServeMux.HandleFunc("PUT /user/{id}/meta",
-		mc.Validate(func(w http.ResponseWriter, r *http.Request) {
+		mc.ValidateAuth(mc.Validate(func(w http.ResponseWriter, r *http.Request) {
 			mc.UpdateMeta(w, c_http.NewRequest(r))
-		}))
+		})))
 
 	mc.Controller.ServeMux.HandleFunc("DELETE /user/{id}/meta", func(w http.ResponseWriter, r *http.Request) {
-		mc.DeleteMeta(w, c_http.NewRequest(r))
+		mc.ValidateAuth(mc.Validate(func(w http.ResponseWriter, r *http.Request) {
+			mc.DeleteMeta(w, c_http.NewRequest(r))
+		}))
 	})
 }
 

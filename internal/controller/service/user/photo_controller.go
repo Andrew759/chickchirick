@@ -5,6 +5,7 @@ import (
 	"chickChirick/internal/controller/c_http"
 	"chickChirick/internal/middleware"
 	"chickChirick/internal/middleware/config"
+	authValidator "chickChirick/internal/middleware/validators"
 	photo "chickChirick/internal/model/user"
 	"errors"
 	"net/http"
@@ -13,33 +14,42 @@ import (
 type PhotoController struct {
 	Controller c_controller.Controller
 	middleware.Validator
+	authValidator.AuthValidator
 }
 
 func (pc *PhotoController) HandleRequest() {
 	pc.Controller.ServeMux.HandleFunc("GET /photos", func(w http.ResponseWriter, r *http.Request) {
-		pc.GetPhotos(w)
+		pc.ValidateAuth(func(w http.ResponseWriter, r *http.Request) {
+			pc.GetPhotos(w)
+		})
 	})
 
 	pc.Controller.ServeMux.HandleFunc("POST /photo",
-		pc.Validate(func(w http.ResponseWriter, r *http.Request) {
+		pc.ValidateAuth(pc.Validate(func(w http.ResponseWriter, r *http.Request) {
 			pc.CreatePhoto(w, c_http.NewRequest(r))
-		}))
+		})))
 
 	pc.Controller.ServeMux.HandleFunc("GET /photo/{id}", func(w http.ResponseWriter, r *http.Request) {
-		pc.GetPhoto(w, c_http.NewRequest(r))
+		pc.ValidateAuth(func(w http.ResponseWriter, r *http.Request) {
+			pc.GetPhoto(w, c_http.NewRequest(r))
+		})
 	})
 
 	pc.Controller.ServeMux.HandleFunc("GET /user/{id}/photos", func(w http.ResponseWriter, r *http.Request) {
-		pc.GetPhotosByUserId(w, c_http.NewRequest(r))
+		pc.ValidateAuth(func(w http.ResponseWriter, r *http.Request) {
+			pc.GetPhotosByUserId(w, c_http.NewRequest(r))
+		})
 	})
 
 	pc.Controller.ServeMux.HandleFunc("PUT /photo/{id}",
-		pc.Validate(func(w http.ResponseWriter, r *http.Request) {
+		pc.ValidateAuth(pc.Validate(func(w http.ResponseWriter, r *http.Request) {
 			pc.UpdatePhoto(w, c_http.NewRequest(r))
-		}))
+		})))
 
 	pc.Controller.ServeMux.HandleFunc("DELETE /photo/{id}", func(w http.ResponseWriter, r *http.Request) {
-		pc.UpdatePhoto(w, c_http.NewRequest(r))
+		pc.ValidateAuth(func(w http.ResponseWriter, r *http.Request) {
+			pc.UpdatePhoto(w, c_http.NewRequest(r))
+		})
 	})
 }
 

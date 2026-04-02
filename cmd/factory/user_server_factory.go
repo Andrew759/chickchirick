@@ -59,6 +59,11 @@ func (us *UserServer) initBanService() internalService.BanController {
 			Dependencies: us.DIContainer,
 		},
 		Validator: user.BanValidatorFactory{}.NewValidator(us.DIContainer.DBDecorator, middleware.ActivateDBValidation()),
+		AuthValidator: validators.AuthValidator{
+			AuthServiceURL:   viper.GetString(chirik_config.AuthAppUrl),
+			Client:           us.Client,
+			ValidatorOptions: middleware.ValidatorOptions{},
+		},
 	}
 	banService.HandleRequest()
 
@@ -72,6 +77,11 @@ func (us *UserServer) initUserMetaService() internalService.MetaController {
 			Dependencies: us.DIContainer,
 		},
 		Validator: user.MetaValidatorFactory{}.NewValidator(us.DIContainer.DBDecorator, middleware.ActivateDBValidation()),
+		AuthValidator: validators.AuthValidator{
+			AuthServiceURL:   viper.GetString(chirik_config.AuthAppUrl),
+			Client:           us.Client,
+			ValidatorOptions: middleware.ValidatorOptions{},
+		},
 	}
 	metaService.HandleRequest()
 
@@ -85,6 +95,11 @@ func (us *UserServer) initPhotoService() internalService.PhotoController {
 			Dependencies: us.DIContainer,
 		},
 		Validator: user.PhotoValidatorFactory{}.NewValidator(us.DIContainer.DBDecorator, middleware.ActivateDBValidation()),
+		AuthValidator: validators.AuthValidator{
+			AuthServiceURL:   viper.GetString(chirik_config.AuthAppUrl),
+			Client:           us.Client,
+			ValidatorOptions: middleware.ValidatorOptions{},
+		},
 	}
 	photoService.HandleRequest()
 
@@ -99,6 +114,11 @@ func (us *UserServer) initPropertyService() internalService.PropertyController {
 		},
 		CPV: user.CreatePropertyValidatorFactory{}.NewValidator(us.DIContainer.DBDecorator, middleware.ActivateDBValidation()),
 		UPV: user.UpdatePropertyValidatorFactory{}.NewValidator(us.DIContainer.DBDecorator, middleware.ActivateDBValidation()),
+		AuthValidator: validators.AuthValidator{
+			AuthServiceURL:   viper.GetString(chirik_config.AuthAppUrl),
+			Client:           us.Client,
+			ValidatorOptions: middleware.ValidatorOptions{},
+		},
 	}
 	propertyService.HandleRequest()
 

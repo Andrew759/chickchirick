@@ -30,8 +30,8 @@ type ValidateResponsePayload struct {
 }
 
 type ValidateResponse struct {
-	ValidateResponsePayload
-	Error string `json:"error"`
+	ValidateResponsePayload `json:"payload"`
+	Error                   string `json:"error"`
 }
 
 type AuthValidator struct {
@@ -48,9 +48,12 @@ func (av AuthValidator) ValidateAuth(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		req, err := http.NewRequestWithContext(r.Context(), "GET", av.AuthServiceURL+"/validate", nil)
+		req, err := http.NewRequestWithContext(r.Context(), "GET", av.AuthServiceURL+"/auth/validate", nil)
 		if err != nil {
-			c_http.NewResponse().SendError(w, "internal auth error", http.StatusInternalServerError)
+			c_http.NewResponse().SendError(w, ""+
+				"internal error at constructing request to the authorization service",
+				http.StatusInternalServerError,
+			)
 			return
 		}
 		req.AddCookie(cookie)

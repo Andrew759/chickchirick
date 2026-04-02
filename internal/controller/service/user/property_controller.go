@@ -5,6 +5,7 @@ import (
 	"chickChirick/internal/controller/c_http"
 	"chickChirick/internal/middleware"
 	"chickChirick/internal/middleware/config"
+	authValidator "chickChirick/internal/middleware/validators"
 	property "chickChirick/internal/model/user"
 	"errors"
 	"net/http"
@@ -14,6 +15,7 @@ type PropertyController struct {
 	Controller c_controller.Controller
 	CPV        middleware.Validator
 	UPV        middleware.Validator
+	authValidator.AuthValidator
 }
 
 func (pc *PropertyController) HandleRequest() {
@@ -22,21 +24,25 @@ func (pc *PropertyController) HandleRequest() {
 	})
 
 	pc.Controller.ServeMux.HandleFunc("POST /property",
-		pc.CPV.Validate(func(w http.ResponseWriter, r *http.Request) {
+		pc.ValidateAuth(pc.CPV.Validate(func(w http.ResponseWriter, r *http.Request) {
 			pc.CreateProperty(w, c_http.NewRequest(r))
-		}))
+		})))
 
 	pc.Controller.ServeMux.HandleFunc("GET /user/{id}/property", func(w http.ResponseWriter, r *http.Request) {
-		pc.GetPropertyByUserId(w, c_http.NewRequest(r))
+		pc.ValidateAuth(func(w http.ResponseWriter, r *http.Request) {
+			pc.GetPropertyByUserId(w, c_http.NewRequest(r))
+		})
 	})
 
 	pc.Controller.ServeMux.HandleFunc("PUT /user/{id}/property",
-		pc.UPV.Validate(func(w http.ResponseWriter, r *http.Request) {
+		pc.ValidateAuth(pc.UPV.Validate(func(w http.ResponseWriter, r *http.Request) {
 			pc.UpdateProperty(w, c_http.NewRequest(r))
-		}))
+		})))
 
 	pc.Controller.ServeMux.HandleFunc("DELETE /user/{id}/property", func(w http.ResponseWriter, r *http.Request) {
-		pc.DeleteProperty(w, c_http.NewRequest(r))
+		pc.ValidateAuth(func(w http.ResponseWriter, r *http.Request) {
+			pc.DeleteProperty(w, c_http.NewRequest(r))
+		})
 	})
 }
 

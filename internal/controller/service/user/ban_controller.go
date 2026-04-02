@@ -5,6 +5,7 @@ import (
 	"chickChirick/internal/controller/c_http"
 	"chickChirick/internal/middleware"
 	"chickChirick/internal/middleware/config"
+	authValidator "chickChirick/internal/middleware/validators"
 	ban "chickChirick/internal/model/user"
 	"errors"
 	"net/http"
@@ -13,31 +14,44 @@ import (
 type BanController struct {
 	Controller c_controller.Controller
 	middleware.Validator
+	authValidator.AuthValidator
 }
 
 func (bc *BanController) HandleRequest() {
 	bc.Controller.ServeMux.HandleFunc("GET /bans", func(w http.ResponseWriter, r *http.Request) {
-		bc.GetBans(w)
+		bc.ValidateAuth(func(w http.ResponseWriter, r *http.Request) {
+			bc.GetBans(w)
+		})
 	})
 
 	bc.Controller.ServeMux.HandleFunc("POST /ban", func(w http.ResponseWriter, r *http.Request) {
-		bc.CreateBan(w, c_http.NewRequest(r))
+		bc.ValidateAuth(bc.Validate(func(w http.ResponseWriter, r *http.Request) {
+			bc.CreateBan(w, c_http.NewRequest(r))
+		}))
 	})
 
 	bc.Controller.ServeMux.HandleFunc("GET /ban/{id}", func(w http.ResponseWriter, r *http.Request) {
-		bc.GetBan(w, c_http.NewRequest(r))
+		bc.ValidateAuth(func(w http.ResponseWriter, r *http.Request) {
+			bc.GetBan(w, c_http.NewRequest(r))
+		})
 	})
 
 	bc.Controller.ServeMux.HandleFunc("GET /user/{id}/bans", func(w http.ResponseWriter, r *http.Request) {
-		bc.GetBansByUserId(w, c_http.NewRequest(r))
+		bc.ValidateAuth(func(w http.ResponseWriter, r *http.Request) {
+			bc.GetBansByUserId(w, c_http.NewRequest(r))
+		})
 	})
 
 	bc.Controller.ServeMux.HandleFunc("PUT /ban/{id}", func(w http.ResponseWriter, r *http.Request) {
-		bc.UpdateBan(w, c_http.NewRequest(r))
+		bc.ValidateAuth(bc.Validate(func(w http.ResponseWriter, r *http.Request) {
+			bc.UpdateBan(w, c_http.NewRequest(r))
+		}))
 	})
 
 	bc.Controller.ServeMux.HandleFunc("DELETE /ban/{id}", func(w http.ResponseWriter, r *http.Request) {
-		bc.DeleteBan(w, c_http.NewRequest(r))
+		bc.ValidateAuth(func(w http.ResponseWriter, r *http.Request) {
+			bc.DeleteBan(w, c_http.NewRequest(r))
+		})
 	})
 }
 

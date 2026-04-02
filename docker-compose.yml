@@ -29,6 +29,8 @@ services:
 
 networks:
   backend:
+  chickchirick-shared-network:
+    external: true
 
 volumes:
   db_data:
