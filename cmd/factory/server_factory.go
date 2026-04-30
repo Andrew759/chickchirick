@@ -31,8 +31,6 @@ func BuildServer(dbDecorator service.DBDecorator, redisDecorator service.RedisDe
 	}
 
 	InitUserServer(mux, container, httpClient)
-	InitMessageServer(mux, container)
-	//InitAuthServer(mux, container)
 
 	return mux
 }
