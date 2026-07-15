@@ -11,7 +11,6 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"strings"
 )
 
 type UpdatePropertyValidatorFactory struct{}
@@ -67,7 +66,7 @@ func (pv UpdatePropertyValidator) Validate(next http.HandlerFunc) http.HandlerFu
 func (pv UpdatePropertyValidator) validateRequestRules(p user.Property) []error {
 	var errList []error
 
-	if strings.TrimSpace(p.Email) != "" && !service.IsEmail(p.Email) {
+	if p.Email != nil && !service.IsEmail(*p.Email) {
 		errList = append(errList, errors.New("invalid email"))
 	}
 	if p.Password != nil && !service.IsHasCorrectLength(*p.Password, 1024) {
@@ -86,7 +85,7 @@ func (pv UpdatePropertyValidator) validateAndSendResponseByDBRules(p user.Proper
 			Code:    http.StatusNotFound,
 		}
 	}
-	property, err := user.GetPropertyToAnotherUserByEmail(pv.DBDecorator.GormInterface, p.UserId, p.Email)
+	property, err := user.GetPropertyToAnotherUserByEmail(pv.DBDecorator.GormInterface, p.UserId, *p.Email)
 	if err != nil && errors.Is(err, user.PropertyNotFoundErr) {
 		err = nil
 	} else if property.Email == p.Email {

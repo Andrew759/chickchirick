@@ -4,10 +4,10 @@ services:
     ports:
       - '81:80'
     depends_on:
-      - api
+      - api-users
     networks:
       - backend
-  api:
+  api-users:
     build:
       context: .
       dockerfile: ./build/prod/Dockerfile

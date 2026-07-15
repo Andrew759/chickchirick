@@ -2,6 +2,7 @@ package user
 
 import (
 	"chickChirick/pkg/chirik_gorm_tweaks/time"
+	"context"
 	"errors"
 
 	"gorm.io/gorm"
@@ -13,8 +14,8 @@ type Ban struct {
 	UserId       int  `json:"user_id" gorm:"type:int;not null;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	User         User `json:"user" gorm:"foreignKey:UserId;references:Id"`
 	BannedUserId int  `json:"banned_user_id" gorm:"type:int"`
-	BannedUser   User `json:"banned_user" gorm:"references:UserId"`
-	Type         int  `json:"type" gorm:"type:int, not null"`
+	BannedUser   User `json:"banned_user" gorm:"foreignKey:BannedUserId;references:Id"`
+	Type         int  `json:"type" gorm:"type:int;not null"`
 	CreatedAt    time.TimestampWithTimeZoneMicro
 	UpdatedAt    time.TimestampWithTimeZoneMicro
 	DeletedAt    gorm.DeletedAt `gorm:"index"`
@@ -22,49 +23,51 @@ type Ban struct {
 
 var BanNotFoundErr = errors.New("ban not found")
 
-func CreateBan(db *gorm.DB, b *Ban) error {
-	return db.Create(b).Error
+func CreateBan(ctx context.Context, db *gorm.DB, b *Ban) error {
+	return db.WithContext(ctx).Create(b).Error
 }
 
-func UpdateBanById(db *gorm.DB, b *Ban, id int) error {
+func UpdateBanById(ctx context.Context, db *gorm.DB, b *Ban, id int) error {
 	var ban Ban
-	result := db.First(&ban, id)
+	tx := db.WithContext(ctx)
 
+	result := tx.First(&ban, id)
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		return BanNotFoundErr
 	}
 
-	return db.Save(b).Error
+	return tx.Save(b).Error
 }
 
-func GetBans(db *gorm.DB) ([]Ban, error) {
+func GetBans(ctx context.Context, db *gorm.DB) ([]Ban, error) {
 	var bans []Ban
-	result := db.Find(&bans)
+	result := db.WithContext(ctx).Find(&bans)
 
 	return bans, result.Error
 }
 
-func GetBanById(db *gorm.DB, id int) (Ban, error) {
+func GetBanById(ctx context.Context, db *gorm.DB, id int) (Ban, error) {
 	var ban Ban
-	result := db.First(&ban, id)
+	result := db.WithContext(ctx).First(&ban, id)
 
 	return ban, result.Error
 }
 
-func GetBansByUserId(db *gorm.DB, userId int) ([]Ban, error) {
+func GetBansByUserId(ctx context.Context, db *gorm.DB, userId int) ([]Ban, error) {
 	var bans []Ban
-	result := db.Model(&Ban{}).Where("user_id = ?", userId).Find(&bans)
+	result := db.WithContext(ctx).Model(&Ban{}).Where("user_id = ?", userId).Find(&bans)
 
 	return bans, result.Error
 }
 
-func DeleteBanById(db *gorm.DB, id int) error {
+func DeleteBanById(ctx context.Context, db *gorm.DB, id int) error {
 	var ban Ban
-	result := db.First(&ban, id)
+	tx := db.WithContext(ctx)
 
+	result := tx.First(&ban, id)
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		return BanNotFoundErr
 	}
 
-	return db.Delete(&Ban{}, id).Error
+	return tx.Delete(&Ban{}, id).Error
 }

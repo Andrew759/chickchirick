@@ -20,16 +20,16 @@ type MetaController struct {
 // HandleRequest TODO: здесь временно определяется путь user для будущего микросервиса, т.к существует пересечение с
 // meta_controller в message
 func (mc *MetaController) HandleRequest() {
-	mc.Controller.ServeMux.HandleFunc("GET /user/metas", func(w http.ResponseWriter, r *http.Request) {
+	mc.Controller.ServeMux.HandleFunc("GET /metas", func(w http.ResponseWriter, r *http.Request) {
 		mc.ValidateAuth(func(w http.ResponseWriter, r *http.Request) {
-			mc.GetMetas(w)
+			mc.GetMetas(w, c_http.NewRequest(r))
 		})
 	})
 
-	mc.Controller.ServeMux.HandleFunc("POST /user/meta",
-		mc.ValidateAuth(mc.Validate(func(w http.ResponseWriter, r *http.Request) {
+	mc.Controller.ServeMux.HandleFunc("POST /meta",
+		mc.Validate(func(w http.ResponseWriter, r *http.Request) {
 			mc.CreateMeta(w, c_http.NewRequest(r))
-		})))
+		}))
 
 	mc.Controller.ServeMux.HandleFunc("GET /user/{id}/meta", func(w http.ResponseWriter, r *http.Request) {
 		mc.ValidateAuth(func(w http.ResponseWriter, r *http.Request) {
@@ -49,8 +49,9 @@ func (mc *MetaController) HandleRequest() {
 	})
 }
 
-func (mc *MetaController) GetMetas(w http.ResponseWriter) {
-	metas, err := meta.GetMetas(mc.Controller.Dependencies.DBDecorator.GDB())
+func (mc *MetaController) GetMetas(w http.ResponseWriter, r *c_http.Request) {
+	ctx := r.Context()
+	metas, err := meta.GetMetas(ctx, mc.Controller.Dependencies.DBDecorator.GDB())
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -66,7 +67,8 @@ func (mc *MetaController) GetMeta(w http.ResponseWriter, r *c_http.Request) {
 		return
 	}
 
-	m, err := meta.GetMetaByUserId(mc.Controller.Dependencies.DBDecorator.GDB(), id)
+	ctx := r.Context()
+	m, err := meta.GetMetaByUserId(ctx, mc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		c_http.NewResponse().SendError(w, "Meta not found: "+err.Error(), http.StatusNotFound)
 		return
@@ -76,9 +78,10 @@ func (mc *MetaController) GetMeta(w http.ResponseWriter, r *c_http.Request) {
 }
 
 func (mc *MetaController) CreateMeta(w http.ResponseWriter, r *c_http.Request) {
-	m := r.Context().Value(config.UserMetaKey).(*meta.Meta)
+	ctx := r.Context()
+	m := ctx.Value(config.UserMetaKey).(*meta.Meta)
 
-	if err := meta.CreateMeta(mc.Controller.Dependencies.DBDecorator.GDB(), m); err != nil {
+	if err := meta.CreateMeta(ctx, mc.Controller.Dependencies.DBDecorator.GDB(), m); err != nil {
 		c_http.NewResponse().SendError(w, "Failed to create meta: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -93,9 +96,10 @@ func (mc *MetaController) UpdateMeta(w http.ResponseWriter, r *c_http.Request) {
 		return
 	}
 
-	m := r.Context().Value(config.UserMetaKey).(*meta.Meta)
+	ctx := r.Context()
+	m := ctx.Value(config.UserMetaKey).(*meta.Meta)
 
-	err = meta.UpdateMetaByUserId(mc.Controller.Dependencies.DBDecorator.GDB(), m, userId)
+	err = meta.UpdateMetaByUserId(ctx, mc.Controller.Dependencies.DBDecorator.GDB(), m, userId)
 	if err != nil && errors.Is(err, meta.MetaNotFoundErr) {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
 		return
@@ -114,7 +118,8 @@ func (mc *MetaController) DeleteMeta(w http.ResponseWriter, r *c_http.Request) {
 		return
 	}
 
-	err = meta.DeleteMetaByUserId(mc.Controller.Dependencies.DBDecorator.GDB(), userId)
+	ctx := r.Context()
+	err = meta.DeleteMetaByUserId(ctx, mc.Controller.Dependencies.DBDecorator.GDB(), userId)
 	if err != nil && errors.Is(err, meta.MetaNotFoundErr) {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
 		return

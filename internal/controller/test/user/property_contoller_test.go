@@ -39,7 +39,8 @@ func initPCContainer(t *testing.T) PropertyControllerTestContainer {
 	CreateUserTable(db)
 	CreatePropertyTable(db)
 
-	server := testAbstraction.StartTestServer(t, db, redis)
+	httpClient := factory.InitHttpClient()
+	server := testAbstraction.StartTestServer(t, db, redis, httpClient)
 
 	ac := c_controller.Controller{
 		Dependencies: c_controller.DIContainer{
@@ -57,7 +58,7 @@ func initPCContainer(t *testing.T) PropertyControllerTestContainer {
 				RedisDecorator: redis,
 			},
 			HttpServer: server,
-			HttpClient: factory.InitHttpClient(),
+			HttpClient: httpClient,
 		},
 		PropertyController: &user.PropertyController{
 			Controller: ac,
@@ -168,10 +169,11 @@ func TestCreatePropertySuccess(t *testing.T) {
 	}
 	userModels.CreateUser(pctc.GormInterface, &user)
 
+	email := "Andreyvelkov@chirik.com"
 	newProperty := userModels.Property{
 		UserId:   user.Id,
 		Timezone: 3,
-		Email:    "Andreyvelkov@chirik.com",
+		Email:    &email,
 	}
 	newProperty.SetPassword("p@ssWoR_D1!")
 
@@ -189,10 +191,11 @@ func TestCreatePropertySuccess(t *testing.T) {
 func TestCreatePropertyWithNotExistUserFail(t *testing.T) {
 	pctc := initPCContainer(t)
 
+	email := "Andreyvelkov@chirik.com"
 	newProperty := userModels.Property{
 		UserId:   9999,
 		Timezone: 3,
-		Email:    "Andreyvelkov@chirik.com",
+		Email:    &email,
 	}
 	newProperty.SetPassword("p@ssWoR_D1!")
 
@@ -214,10 +217,11 @@ func TestCreatePropertyWithInvalidEmail(t *testing.T) {
 	}
 	userModels.CreateUser(pctc.GormInterface, &user)
 
+	email := "1_INVALID_EMAIL_@"
 	newProperty := userModels.Property{
 		UserId:   user.Id,
 		Timezone: 3,
-		Email:    "1_INVALID_EMAIL_@",
+		Email:    &email,
 	}
 	newProperty.SetPassword("p@ssWoR_D1!")
 
@@ -239,10 +243,11 @@ func TestCreatePropertyWithToLongPassword(t *testing.T) {
 	}
 	userModels.CreateUser(pctc.GormInterface, &user)
 
+	email := "Andreyvelkov@chirik.com@"
 	newProperty := userModels.Property{
 		UserId:   user.Id,
 		Timezone: 3,
-		Email:    "Andreyvelkov@chirik.com",
+		Email:    &email,
 	}
 	newProperty.SetPassword(chirik_faker.FakeStringWithLength(1025))
 
@@ -264,18 +269,20 @@ func TestCreatePropertyIfItAlreadyExistFail(t *testing.T) {
 	}
 	userModels.CreateUser(pctc.GormInterface, &user)
 
+	email := "Andreyvelkov@chirik.com"
 	firstProperty := userModels.Property{
 		UserId:   user.Id,
 		Timezone: 3,
-		Email:    "Andreyvelkov@chirik.com",
+		Email:    &email,
 	}
 	firstProperty.SetPassword("p@ssWoR_D1!")
 	resp, _ := doCreatePropertyRequest(t, pctc, firstProperty)
 
+	emailTwo := "Andreyvelkov@chirik.com"
 	secondProperty := userModels.Property{
 		UserId:   user.Id,
 		Timezone: 4,
-		Email:    "Andreyvelkov2@chirik.com",
+		Email:    &emailTwo,
 	}
 	firstProperty.SetPassword("p@ssWoR_D2!")
 	secondResp, secondDecodedResp := doCreatePropertyRequest(t, pctc, secondProperty)
@@ -297,10 +304,11 @@ func TestCreateAndGetPropertySuccess(t *testing.T) {
 	}
 	userModels.CreateUser(pctc.GormInterface, &user)
 
+	email := "Andreyvelkov@chirik.com"
 	newProperty := userModels.Property{
 		UserId:   user.Id,
 		Timezone: 3,
-		Email:    "Andreyvelkov@chirik.com",
+		Email:    &email,
 	}
 	newProperty.SetPassword("p@ssWoR_D1!")
 
@@ -326,10 +334,11 @@ func TestCreteTwoPropertiesAndGetAll(t *testing.T) {
 	}
 	userModels.CreateUser(pctc.GormInterface, &firstUser)
 
+	email := "Andreyvelkov@chirik.com"
 	firstProperty := userModels.Property{
 		UserId:   firstUser.Id,
 		Timezone: 3,
-		Email:    "Andreyvelkov@chirik.com",
+		Email:    &email,
 	}
 	firstProperty.SetPassword("p@ssWoR_D1!")
 	userModels.CreateProperty(pctc.GormInterface, &firstProperty)
@@ -343,10 +352,11 @@ func TestCreteTwoPropertiesAndGetAll(t *testing.T) {
 	}
 	userModels.CreateUser(pctc.GormInterface, &secondUser)
 
+	emailTwo := "Andreyvelkov@chirik.com"
 	secondProperty := userModels.Property{
 		UserId:   secondUser.Id,
 		Timezone: 4,
-		Email:    "Andreyvelkov2@chirik.com",
+		Email:    &emailTwo,
 	}
 	secondProperty.SetPassword("p@ssWoR_D2!")
 	userModels.CreateProperty(pctc.GormInterface, &secondProperty)
@@ -373,10 +383,11 @@ func TestUpdatePropertySuccess(t *testing.T) {
 	}
 	userModels.CreateUser(pctc.GormInterface, &user)
 
+	email := "Andreyvelkov@chirik.com"
 	Property := userModels.Property{
 		UserId:   user.Id,
 		Timezone: 3,
-		Email:    "Andreyvelkov@chirik.com",
+		Email:    &email,
 	}
 	Property.SetPassword("p@ssWoR_D1!")
 
@@ -384,7 +395,7 @@ func TestUpdatePropertySuccess(t *testing.T) {
 
 	updatingProperty := Property
 	updatingProperty.Timezone = 4
-	updatingProperty.Email = "Andreyvelkov@chirik.com"
+	updatingProperty.Email = &email
 	updatingProperty.SetPassword("NewP@ssWoR_D1!")
 
 	updatePropertyResp, updatePropertyDecodedResp := doUpdatePropertyRequest(t, pctc, updatingProperty.UserId, updatingProperty)
@@ -408,10 +419,11 @@ func TestUpdatePropertyFail(t *testing.T) {
 	}
 	userModels.CreateUser(pctc.GormInterface, &firstUser)
 
+	uniqueEmail := "ihaveuniqueemail@chirik.com"
 	firstProperty := userModels.Property{
 		UserId:   firstUser.Id,
 		Timezone: 3,
-		Email:    "ihaveuniqueemailassall@chirik.com",
+		Email:    &uniqueEmail,
 	}
 	firstProperty.SetPassword("p@ssWoR_D1!")
 	userModels.CreateProperty(pctc.GormInterface, &firstProperty)
@@ -425,17 +437,18 @@ func TestUpdatePropertyFail(t *testing.T) {
 	}
 	userModels.CreateUser(pctc.GormInterface, &secondUser)
 
+	uniqueEmailTwo := "ihaveuniqueemail2@chirik.com"
 	secondProperty := userModels.Property{
 		UserId:   secondUser.Id,
 		Timezone: 4,
-		Email:    "ihaveuniqueemailassall2@chirik.com",
+		Email:    &uniqueEmailTwo,
 	}
 	secondProperty.SetPassword("p@ssWoR_D2!")
 	userModels.CreateProperty(pctc.GormInterface, &secondProperty)
 
 	updatingProperty := secondProperty
 	updatingProperty.Timezone = secondProperty.Timezone
-	updatingProperty.Email = "ihaveuniqueemailassall@chirik.com"
+	updatingProperty.Email = &uniqueEmailTwo
 	updatingProperty.SetPassword("NewP@ssWoR_D1!")
 
 	updatePropertyResp, updatePropertyDecodedResp := doUpdatePropertyRequest(t, pctc, updatingProperty.UserId, updatingProperty)
@@ -456,10 +469,11 @@ func TestDeletePropertySuccess(t *testing.T) {
 	}
 	userModels.CreateUser(pctc.GormInterface, &user)
 
+	email := "Andreyvelkov@chirik.com"
 	property := userModels.Property{
 		UserId:   user.Id,
 		Timezone: 3,
-		Email:    "Andreyvelkov@chirik.com",
+		Email:    &email,
 	}
 	property.SetPassword("p@ssWoR_D1!")
 

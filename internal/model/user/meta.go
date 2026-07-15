@@ -2,6 +2,7 @@ package user
 
 import (
 	"chickChirick/pkg/chirik_gorm_tweaks/time"
+	"context"
 	"errors"
 
 	"github.com/google/uuid"
@@ -11,8 +12,9 @@ import (
 type Meta struct {
 	gorm.Model `c_migrator:"enabled"  c_migrator_t_name:"user_meta"`
 	//TODO: мигратор не обрабатывает поле UUID. Исправить!
+	Id        int       `json:"id" gorm:"type:int;unique;primaryKey;autoIncrement"`
 	UserUuid  uuid.UUID `json:"user_uuid" gorm:"type:uuid;default:gen_random_uuid()"`
-	UserId    int       `json:"user_id" gorm:"type:int;not null;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	UserId    int       `json:"user_id" gorm:"type:int;unique;not null;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	User      User      `json:"user" gorm:"foreignKey:UserId;references:Id"`
 	CreatedAt time.TimestampWithTimeZoneMicro
 	UpdatedAt time.TimestampWithTimeZoneMicro
@@ -25,30 +27,32 @@ func (Meta) TableName() string {
 	return "user_meta"
 }
 
-func CreateMeta(db *gorm.DB, b *Meta) error {
-	return db.Create(b).Error
+func CreateMeta(ctx context.Context, db *gorm.DB, b *Meta) error {
+	return db.WithContext(ctx).Create(b).Error
 }
 
-func UpdateMetaByUserId(db *gorm.DB, m *Meta, userId int) error {
+func UpdateMetaByUserId(ctx context.Context, db *gorm.DB, m *Meta, userId int) error {
 	var meta Meta
-	result := db.Model(&Meta{}).Where("user_id = ?", userId).Take(&meta)
+	tx := db.WithContext(ctx)
+
+	result := tx.Model(&Meta{}).Where("user_id = ?", userId).Take(&meta)
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		return MetaNotFoundErr
 	}
 
-	return db.Save(m).Error
+	return tx.Save(m).Error
 }
 
-func GetMetas(db *gorm.DB) ([]Meta, error) {
+func GetMetas(ctx context.Context, db *gorm.DB) ([]Meta, error) {
 	var metas []Meta
-	result := db.Find(&metas)
+	result := db.WithContext(ctx).Find(&metas)
 
 	return metas, result.Error
 }
 
-func GetMetaByUserId(db *gorm.DB, userId int) (Meta, error) {
+func GetMetaByUserId(ctx context.Context, db *gorm.DB, userId int) (Meta, error) {
 	var meta Meta
-	result := db.Model(&Meta{}).Where("user_id = ?", userId).Take(&meta)
+	result := db.WithContext(ctx).Model(&Meta{}).Where("user_id = ?", userId).Take(&meta)
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		return meta, MetaNotFoundErr
 	}
@@ -56,9 +60,14 @@ func GetMetaByUserId(db *gorm.DB, userId int) (Meta, error) {
 	return meta, result.Error
 }
 
-// TODO: тут баг
-func DeleteMetaByUserId(db *gorm.DB, userId int) error {
-	var meta Meta
+func DeleteMetaByUserId(ctx context.Context, db *gorm.DB, userId int) error {
+	tx := db.WithContext(ctx)
 
-	return db.Model(&Meta{}).Where("user_id = ?", userId).Delete(&meta).Error
+	var meta Meta
+	result := tx.Model(&Meta{}).Where("user_id = ?", userId).Take(&meta)
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return MetaNotFoundErr
+	}
+
+	return tx.Delete(&Meta{}, meta.Id).Error
 }

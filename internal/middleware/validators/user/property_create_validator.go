@@ -11,7 +11,6 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"strings"
 )
 
 type CreatePropertyValidatorFactory struct{}
@@ -66,7 +65,7 @@ func (pv CreatePropertyValidator) Validate(next http.HandlerFunc) http.HandlerFu
 func (pv CreatePropertyValidator) validateRequestRules(p user.Property) []error {
 	var errList []error
 
-	if strings.TrimSpace(p.Email) != "" && !service.IsEmail(p.Email) {
+	if p.Email != nil && !service.IsEmail(*p.Email) {
 		errList = append(errList, errors.New("invalid email"))
 	}
 	if p.Password != nil && !service.IsHasCorrectLength(*p.Password, 1024) {

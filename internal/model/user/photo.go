@@ -2,6 +2,7 @@ package user
 
 import (
 	"chickChirick/pkg/chirik_gorm_tweaks/time"
+	"context"
 	"errors"
 
 	"github.com/google/uuid"
@@ -11,7 +12,7 @@ import (
 type Photo struct {
 	gorm.Model `c_migrator:"enabled"`
 	Id         int       `json:"id" gorm:"type:int;unique;primaryKey;autoIncrement"`
-	FileUuid   uuid.UUID `gorm:"type:uuid, not null"`
+	FileUuid   uuid.UUID `gorm:"type:uuid;not null"`
 	UserId     int       `json:"user_id" gorm:"type:int;not null;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	User       User      `json:"user" gorm:"foreignKey:UserId;references:Id"`
 	CreatedAt  time.TimestampWithTimeZoneMicro
@@ -19,51 +20,53 @@ type Photo struct {
 	DeletedAt  gorm.DeletedAt `gorm:"index"`
 }
 
-var PhotoNotFoundErr = errors.New("user not found")
+var PhotoNotFoundErr = errors.New("photo not found")
 
-func CreatePhoto(db *gorm.DB, b *Photo) error {
-	return db.Create(b).Error
+func CreatePhoto(ctx context.Context, db *gorm.DB, b *Photo) error {
+	return db.WithContext(ctx).Create(b).Error
 }
 
-func UpdatePhotoById(db *gorm.DB, p *Photo, id int) error {
+func UpdatePhotoById(ctx context.Context, db *gorm.DB, p *Photo, id int) error {
 	var photo Photo
-	result := db.First(&photo, id)
+	tx := db.WithContext(ctx)
 
+	result := tx.First(&photo, id)
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		return PhotoNotFoundErr
 	}
 
-	return db.Save(p).Error
+	return tx.Save(p).Error
 }
 
-func GetPhotos(db *gorm.DB) ([]Photo, error) {
+func GetPhotos(ctx context.Context, db *gorm.DB) ([]Photo, error) {
 	var photos []Photo
-	result := db.Find(&photos)
+	result := db.WithContext(ctx).Find(&photos)
 
 	return photos, result.Error
 }
 
-func GetPhotoById(db *gorm.DB, id int) (Photo, error) {
+func GetPhotoById(ctx context.Context, db *gorm.DB, id int) (Photo, error) {
 	var photo Photo
-	result := db.First(&photo, id)
+	result := db.WithContext(ctx).First(&photo, id)
 
 	return photo, result.Error
 }
 
-func GetPhotosByUserId(db *gorm.DB, userId int) ([]Photo, error) {
+func GetPhotosByUserId(ctx context.Context, db *gorm.DB, userId int) ([]Photo, error) {
 	var photos []Photo
-	result := db.Where("user_id = ?", userId).Find(&photos)
+	result := db.WithContext(ctx).Where("user_id = ?", userId).Find(&photos)
 
 	return photos, result.Error
 }
 
-func DeletePhotoById(db *gorm.DB, id int) error {
+func DeletePhotoById(ctx context.Context, db *gorm.DB, id int) error {
 	var photo Photo
-	result := db.First(&photo, id)
+	tx := db.WithContext(ctx)
 
+	result := tx.First(&photo, id)
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		return PhotoNotFoundErr
 	}
 
-	return db.Delete(&Photo{}, id).Error
+	return tx.Delete(&Photo{}, id).Error
 }

@@ -20,7 +20,7 @@ type PhotoController struct {
 func (pc *PhotoController) HandleRequest() {
 	pc.Controller.ServeMux.HandleFunc("GET /photos", func(w http.ResponseWriter, r *http.Request) {
 		pc.ValidateAuth(func(w http.ResponseWriter, r *http.Request) {
-			pc.GetPhotos(w)
+			pc.GetPhotos(w, c_http.NewRequest(r))
 		})
 	})
 
@@ -48,13 +48,14 @@ func (pc *PhotoController) HandleRequest() {
 
 	pc.Controller.ServeMux.HandleFunc("DELETE /photo/{id}", func(w http.ResponseWriter, r *http.Request) {
 		pc.ValidateAuth(func(w http.ResponseWriter, r *http.Request) {
-			pc.UpdatePhoto(w, c_http.NewRequest(r))
+			pc.DeletePhoto(w, c_http.NewRequest(r))
 		})
 	})
 }
 
-func (pc *PhotoController) GetPhotos(w http.ResponseWriter) {
-	photos, err := photo.GetPhotos(pc.Controller.Dependencies.DBDecorator.GDB())
+func (pc *PhotoController) GetPhotos(w http.ResponseWriter, r *c_http.Request) {
+	ctx := r.Context()
+	photos, err := photo.GetPhotos(ctx, pc.Controller.Dependencies.DBDecorator.GDB())
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -70,7 +71,8 @@ func (pc *PhotoController) GetPhoto(w http.ResponseWriter, r *c_http.Request) {
 		return
 	}
 
-	p, err := photo.GetPhotoById(pc.Controller.Dependencies.DBDecorator.GDB(), id)
+	ctx := r.Context()
+	p, err := photo.GetPhotoById(ctx, pc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		c_http.NewResponse().SendError(w, "Photo not found: "+err.Error(), http.StatusNotFound)
 		return
@@ -86,7 +88,8 @@ func (pc *PhotoController) GetPhotosByUserId(w http.ResponseWriter, r *c_http.Re
 		return
 	}
 
-	photos, err := photo.GetPhotosByUserId(pc.Controller.Dependencies.DBDecorator.GDB(), userId)
+	ctx := r.Context()
+	photos, err := photo.GetPhotosByUserId(ctx, pc.Controller.Dependencies.DBDecorator.GDB(), userId)
 	if err != nil {
 		c_http.NewResponse().SendError(w, "Photos by user id not found: "+err.Error(), http.StatusNotFound)
 		return
@@ -96,10 +99,11 @@ func (pc *PhotoController) GetPhotosByUserId(w http.ResponseWriter, r *c_http.Re
 }
 
 func (pc *PhotoController) CreatePhoto(w http.ResponseWriter, r *c_http.Request) {
-	p := r.Context().Value(config.UserPhotoKey).(*photo.Photo)
+	ctx := r.Context()
+	p := ctx.Value(config.UserPhotoKey).(*photo.Photo)
 
 	//TODO: доработать ошибки
-	if err := photo.CreatePhoto(pc.Controller.Dependencies.DBDecorator.GDB(), p); err != nil {
+	if err := photo.CreatePhoto(ctx, pc.Controller.Dependencies.DBDecorator.GDB(), p); err != nil {
 		c_http.NewResponse().SendError(w, "Failed to create photo: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -114,9 +118,10 @@ func (pc *PhotoController) UpdatePhoto(w http.ResponseWriter, r *c_http.Request)
 		return
 	}
 
-	p := r.Context().Value(config.UserPhotoKey).(*photo.Photo)
+	ctx := r.Context()
+	p := ctx.Value(config.UserPhotoKey).(*photo.Photo)
 
-	err = photo.UpdatePhotoById(pc.Controller.Dependencies.DBDecorator.GDB(), p, id)
+	err = photo.UpdatePhotoById(ctx, pc.Controller.Dependencies.DBDecorator.GDB(), p, id)
 	if err != nil && errors.Is(err, photo.PhotoNotFoundErr) {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
 		return
@@ -135,7 +140,8 @@ func (pc *PhotoController) DeletePhoto(w http.ResponseWriter, r *c_http.Request)
 		return
 	}
 
-	err = photo.DeletePhotoById(pc.Controller.Dependencies.DBDecorator.GDB(), id)
+	ctx := r.Context()
+	err = photo.DeletePhotoById(ctx, pc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil && errors.Is(err, photo.PhotoNotFoundErr) {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
 		return

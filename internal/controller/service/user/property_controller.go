@@ -20,7 +20,7 @@ type PropertyController struct {
 
 func (pc *PropertyController) HandleRequest() {
 	pc.Controller.ServeMux.HandleFunc("GET /properties", func(w http.ResponseWriter, r *http.Request) {
-		pc.GetProperties(w)
+		pc.GetProperties(w, c_http.NewRequest(r))
 	})
 
 	pc.Controller.ServeMux.HandleFunc("POST /property",
@@ -46,8 +46,9 @@ func (pc *PropertyController) HandleRequest() {
 	})
 }
 
-func (pc *PropertyController) GetProperties(w http.ResponseWriter) {
-	properties, err := property.GetProperties(pc.Controller.Dependencies.DBDecorator.GDB())
+func (pc *PropertyController) GetProperties(w http.ResponseWriter, r *c_http.Request) {
+	ctx := r.Context()
+	properties, err := property.GetProperties(ctx, pc.Controller.Dependencies.DBDecorator.GDB())
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -63,7 +64,8 @@ func (pc *PropertyController) GetPropertyByUserId(w http.ResponseWriter, r *c_ht
 		return
 	}
 
-	p, err := property.GetPropertyByUserId(pc.Controller.Dependencies.DBDecorator.GDB(), userId)
+	ctx := r.Context()
+	p, err := property.GetPropertyByUserId(ctx, pc.Controller.Dependencies.DBDecorator.GDB(), userId)
 	if err != nil {
 		c_http.NewResponse().SendError(w, "Property not found: "+err.Error(), http.StatusNotFound)
 		return
@@ -73,11 +75,13 @@ func (pc *PropertyController) GetPropertyByUserId(w http.ResponseWriter, r *c_ht
 }
 
 func (pc *PropertyController) CreateProperty(w http.ResponseWriter, r *c_http.Request) {
-	p := r.Context().Value(config.UserPropertyKey).(*property.Property)
+	ctx := r.Context()
+	p := ctx.Value(config.UserPropertyKey).(*property.Property)
 
-	err := property.CreateProperty(pc.Controller.Dependencies.DBDecorator.GDB(), p)
+	err := property.CreateProperty(ctx, pc.Controller.Dependencies.DBDecorator.GDB(), p)
 	if err != nil && errors.Is(err, property.PropertyForUserAlreadyExistsErr) {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusConflict)
+		return
 	} else if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to create property: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -93,9 +97,10 @@ func (pc *PropertyController) UpdateProperty(w http.ResponseWriter, r *c_http.Re
 		return
 	}
 
-	p := r.Context().Value(config.UserPropertyKey).(*property.Property)
+	ctx := r.Context()
+	p := ctx.Value(config.UserPropertyKey).(*property.Property)
 
-	err = property.UpdatePropertyByUserId(pc.Controller.Dependencies.DBDecorator.GDB(), p, id)
+	err = property.UpdatePropertyByUserId(ctx, pc.Controller.Dependencies.DBDecorator.GDB(), p, id)
 	if err != nil && errors.Is(err, property.PropertyNotFoundErr) {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
 		return
@@ -113,7 +118,9 @@ func (pc *PropertyController) DeleteProperty(w http.ResponseWriter, r *c_http.Re
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	err = property.DeletePropertyByUserId(pc.Controller.Dependencies.DBDecorator.GDB(), id)
+
+	ctx := r.Context()
+	err = property.DeletePropertyByUserId(ctx, pc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil && errors.Is(err, property.PropertyNotFoundErr) {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
 		return

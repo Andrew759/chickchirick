@@ -20,7 +20,7 @@ type UserController struct {
 func (uc *UserController) HandleRequest() {
 	uc.Controller.ServeMux.HandleFunc("GET /users",
 		uc.ValidateAuth(func(w http.ResponseWriter, r *http.Request) {
-			uc.GetUsers(w)
+			uc.GetUsers(w, c_http.NewRequest(r))
 		}))
 
 	uc.Controller.ServeMux.HandleFunc("POST /user",
@@ -44,8 +44,9 @@ func (uc *UserController) HandleRequest() {
 		}))
 }
 
-func (uc *UserController) GetUsers(w http.ResponseWriter) {
-	users, err := user.GetAllUsers(uc.Controller.Dependencies.DBDecorator.GDB())
+func (uc *UserController) GetUsers(w http.ResponseWriter, r *c_http.Request) {
+	ctx := r.Context()
+	users, err := user.GetAllUsers(ctx, uc.Controller.Dependencies.DBDecorator.GDB())
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -58,9 +59,11 @@ func (uc *UserController) GetUser(w http.ResponseWriter, r *c_http.Request) {
 	id, err := r.HTTPId()
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
-	u, err := user.GetUserById(uc.Controller.Dependencies.DBDecorator.GDB(), id)
+	ctx := r.Context()
+	u, err := user.GetUserById(ctx, uc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil && errors.Is(err, user.UserNotFoundErr) {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
 		return
@@ -73,9 +76,10 @@ func (uc *UserController) GetUser(w http.ResponseWriter, r *c_http.Request) {
 }
 
 func (uc *UserController) CreateUser(w http.ResponseWriter, r *c_http.Request) {
-	u := r.Context().Value(config.UserUserKey).(*user.User)
+	ctx := r.Context()
+	u := ctx.Value(config.UserUserKey).(*user.User)
 
-	err := user.CreateUser(uc.Controller.Dependencies.DBDecorator.GDB(), u)
+	err := user.CreateUser(ctx, uc.Controller.Dependencies.DBDecorator.GDB(), u)
 
 	var userAlreadyExistError *user.UserAlreadyExistErr
 	if err != nil && errors.As(err, &userAlreadyExistError) {
@@ -96,9 +100,10 @@ func (uc *UserController) UpdateUser(w http.ResponseWriter, r *c_http.Request) {
 		return
 	}
 
-	u := r.Context().Value(config.UserUserKey).(*user.User)
+	ctx := r.Context()
+	u := ctx.Value(config.UserUserKey).(*user.User)
 
-	err = user.UpdateUserById(uc.Controller.Dependencies.DBDecorator.GDB(), u, id)
+	err = user.UpdateUserById(ctx, uc.Controller.Dependencies.DBDecorator.GDB(), u, id)
 	if err != nil && errors.Is(err, user.UserNotFoundErr) {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
 		return
@@ -117,7 +122,8 @@ func (uc *UserController) DeleteUser(w http.ResponseWriter, r *c_http.Request) {
 		return
 	}
 
-	err = user.DeleteUserById(uc.Controller.Dependencies.DBDecorator.GDB(), id)
+	ctx := r.Context()
+	err = user.DeleteUserById(ctx, uc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil && errors.Is(err, user.UserNotFoundErr) {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
 		return

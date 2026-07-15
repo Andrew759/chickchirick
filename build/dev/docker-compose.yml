@@ -4,12 +4,16 @@ services:
     ports:
       - '81:80'
     depends_on:
-      - api
+      - api-users
+    volumes:
+      - ./build/dev/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     networks:
-      - backend
-      - chickchirick-shared-network
+      backend:
+      chickchirick-shared-network:
+        aliases:
+        - api-users-nginx
 
-  api:
+  api-users:
     build:
       context: .
       dockerfile: ./build/dev/Dockerfile

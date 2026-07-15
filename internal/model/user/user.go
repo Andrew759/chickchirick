@@ -2,8 +2,10 @@ package user
 
 import (
 	"chickChirick/pkg/chirik_gorm_tweaks/time"
+	"context"
 	"errors"
 	"fmt"
+
 	"gorm.io/gorm"
 )
 
@@ -15,6 +17,7 @@ type User struct {
 	Surname    string    `json:"surname" gorm:"type:varchar(256);not null"`
 	Login      string    `json:"login" gorm:"type:varchar(256);unique; not null"`
 	Property   *Property `json:"property" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	Meta       *Meta     `json:"meta" gorm:"foreignKey:UserId"`
 	CreatedAt  time.TimestampWithTimeZoneMicro
 	UpdatedAt  time.TimestampWithTimeZoneMicro
 	DeletedAt  gorm.DeletedAt `gorm:"index"`
@@ -31,9 +34,11 @@ func (e *UserAlreadyExistErr) Error() string {
 
 var UserNotFoundErr = errors.New("user not found")
 
-func CreateUser(db *gorm.DB, u *User) error {
+func CreateUser(ctx context.Context, db *gorm.DB, u *User) error {
 	var existing User
-	err := db.Where("login = ? OR phone = ?", u.Login, u.Phone).First(&existing).Error
+	tx := db.WithContext(ctx)
+
+	err := tx.Where("login = ? OR phone = ?", u.Login, u.Phone).First(&existing).Error
 
 	if err == nil {
 		if existing.Login == u.Login {
@@ -46,31 +51,31 @@ func CreateUser(db *gorm.DB, u *User) error {
 		return err
 	}
 
-	return db.Create(u).Error
-
+	return tx.Create(u).Error
 }
 
-func UpdateUserById(db *gorm.DB, u *User, id int) error {
+func UpdateUserById(ctx context.Context, db *gorm.DB, u *User, id int) error {
 	var user User
-	result := db.First(&user, id)
+	tx := db.WithContext(ctx)
 
+	result := tx.First(&user, id)
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		return UserNotFoundErr
 	}
 
-	return db.Save(u).Error
+	return tx.Save(u).Error
 }
 
-func GetAllUsers(db *gorm.DB) ([]User, error) {
+func GetAllUsers(ctx context.Context, db *gorm.DB) ([]User, error) {
 	var users []User
-	result := db.Find(&users)
+	result := db.WithContext(ctx).Find(&users)
 
 	return users, result.Error
 }
 
-func GetUserById(db *gorm.DB, id int) (User, error) {
+func GetUserById(ctx context.Context, db *gorm.DB, id int) (User, error) {
 	var user User
-	result := db.First(&user, id)
+	result := db.WithContext(ctx).First(&user, id)
 
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		return User{}, UserNotFoundErr
@@ -79,13 +84,14 @@ func GetUserById(db *gorm.DB, id int) (User, error) {
 	return user, result.Error
 }
 
-func DeleteUserById(db *gorm.DB, id int) error {
+func DeleteUserById(ctx context.Context, db *gorm.DB, id int) error {
 	var user User
-	result := db.First(&user, id)
+	tx := db.WithContext(ctx)
 
+	result := tx.First(&user, id)
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		return UserNotFoundErr
 	}
 
-	return db.Delete(&User{}, id).Error
+	return tx.Delete(&User{}, id).Error
 }

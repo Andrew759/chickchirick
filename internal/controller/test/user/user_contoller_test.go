@@ -16,10 +16,11 @@ import (
 	"chickChirick/pkg/chirik_gorm_tweaks/schema"
 	"context"
 	"encoding/json"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"strconv"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type UserControllerTestContainer struct {
@@ -37,7 +38,8 @@ func initUCContainer(t *testing.T) UserControllerTestContainer {
 
 	CreateUserTable(db)
 
-	server := testAbstraction.StartTestServer(t, db, redis)
+	httpClient := factory.InitHttpClient()
+	server := testAbstraction.StartTestServer(t, db, redis, httpClient)
 
 	ac := c_controller.Controller{
 		Dependencies: c_controller.DIContainer{
@@ -54,7 +56,7 @@ func initUCContainer(t *testing.T) UserControllerTestContainer {
 				RedisDecorator: redis,
 			},
 			HttpServer: server,
-			HttpClient: factory.InitHttpClient(),
+			HttpClient: httpClient,
 		},
 		UserController: &user.UserController{
 			Controller: ac,

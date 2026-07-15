@@ -20,7 +20,7 @@ type BanController struct {
 func (bc *BanController) HandleRequest() {
 	bc.Controller.ServeMux.HandleFunc("GET /bans", func(w http.ResponseWriter, r *http.Request) {
 		bc.ValidateAuth(func(w http.ResponseWriter, r *http.Request) {
-			bc.GetBans(w)
+			bc.GetBans(w, c_http.NewRequest(r))
 		})
 	})
 
@@ -55,8 +55,9 @@ func (bc *BanController) HandleRequest() {
 	})
 }
 
-func (bc *BanController) GetBans(w http.ResponseWriter) {
-	bans, err := ban.GetBans(bc.Controller.Dependencies.DBDecorator.GDB())
+func (bc *BanController) GetBans(w http.ResponseWriter, r *c_http.Request) {
+	ctx := r.Context()
+	bans, err := ban.GetBans(ctx, bc.Controller.Dependencies.DBDecorator.GDB())
 	if err != nil {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -72,7 +73,8 @@ func (bc *BanController) GetBan(w http.ResponseWriter, r *c_http.Request) {
 		return
 	}
 
-	b, err := ban.GetBanById(bc.Controller.Dependencies.DBDecorator.GDB(), id)
+	ctx := r.Context()
+	b, err := ban.GetBanById(ctx, bc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil {
 		c_http.NewResponse().SendError(w, "Ban not found: "+err.Error(), http.StatusNotFound)
 		return
@@ -88,7 +90,8 @@ func (bc *BanController) GetBansByUserId(w http.ResponseWriter, r *c_http.Reques
 		return
 	}
 
-	b, err := ban.GetBansByUserId(bc.Controller.Dependencies.DBDecorator.GDB(), userId)
+	ctx := r.Context()
+	b, err := ban.GetBansByUserId(ctx, bc.Controller.Dependencies.DBDecorator.GDB(), userId)
 	if err != nil {
 		c_http.NewResponse().SendError(w, "Ban not found: "+err.Error(), http.StatusNotFound)
 		return
@@ -98,9 +101,10 @@ func (bc *BanController) GetBansByUserId(w http.ResponseWriter, r *c_http.Reques
 }
 
 func (bc *BanController) CreateBan(w http.ResponseWriter, r *c_http.Request) {
-	b := r.Context().Value(config.UserBanKey).(*ban.Ban)
+	ctx := r.Context()
+	b := ctx.Value(config.UserBanKey).(*ban.Ban)
 
-	if err := ban.CreateBan(bc.Controller.Dependencies.DBDecorator.GDB(), b); err != nil {
+	if err := ban.CreateBan(ctx, bc.Controller.Dependencies.DBDecorator.GDB(), b); err != nil {
 		c_http.NewResponse().SendError(w, "Failed to create ban: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -115,9 +119,10 @@ func (bc *BanController) UpdateBan(w http.ResponseWriter, r *c_http.Request) {
 		return
 	}
 
-	b := r.Context().Value(config.UserBanKey).(*ban.Ban)
+	ctx := r.Context()
+	b := ctx.Value(config.UserBanKey).(*ban.Ban)
 
-	err = ban.UpdateBanById(bc.Controller.Dependencies.DBDecorator.GDB(), b, id)
+	err = ban.UpdateBanById(ctx, bc.Controller.Dependencies.DBDecorator.GDB(), b, id)
 	if err != nil && errors.Is(err, ban.BanNotFoundErr) {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
 		return
@@ -136,7 +141,8 @@ func (bc *BanController) DeleteBan(w http.ResponseWriter, r *c_http.Request) {
 		return
 	}
 
-	err = ban.DeleteBanById(bc.Controller.Dependencies.DBDecorator.GDB(), id)
+	ctx := r.Context()
+	err = ban.DeleteBanById(ctx, bc.Controller.Dependencies.DBDecorator.GDB(), id)
 	if err != nil && errors.Is(err, ban.BanNotFoundErr) {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusNotFound)
 		return

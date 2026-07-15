@@ -28,8 +28,8 @@ type ControllerTestContainer struct {
 	HttpClient *http.Client
 }
 
-func StartTestServer(t *testing.T, db service.DBDecorator, redis service.RedisDecorator) *httptest.Server {
+func StartTestServer(t *testing.T, db service.DBDecorator, redis service.RedisDecorator, httpClient *http.Client) *httptest.Server {
 	t.Helper()
-	mux := factory.BuildServer(db, redis)
+	mux := factory.BuildServer(db, redis, httpClient)
 	return httptest.NewServer(mux)
 }

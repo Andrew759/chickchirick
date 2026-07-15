@@ -8,10 +8,10 @@ services:
       - ./build/stage/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - ./build/stage/nginx/certs:/etc/nginx/certs:ro
     depends_on:
-      - api
+      - api-users
     networks:
       - backend
-  api:
+  api-users:
     build:
       context: .
       dockerfile: ./build/stage/Dockerfile

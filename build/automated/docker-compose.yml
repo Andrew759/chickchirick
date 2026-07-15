@@ -4,11 +4,11 @@ services:
     ports:
       - '81:80'
     depends_on:
-      - api-automated
+      - api-users-automated
     networks:
       - backend
 
-  api-automated:
+  api-users-automated:
     build:
       context: .
       dockerfile: ./build/automated/Dockerfile
