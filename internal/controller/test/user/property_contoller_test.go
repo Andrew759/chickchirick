@@ -159,6 +159,7 @@ func doDeletePropertyRequest(t *testing.T, pctc PropertyControllerTestContainer,
 
 func TestCreatePropertySuccess(t *testing.T) {
 	pctc := initPCContainer(t)
+	ctx := context.Background()
 
 	user := userModels.User{
 		Id:      1,
@@ -167,7 +168,7 @@ func TestCreatePropertySuccess(t *testing.T) {
 		Phone:   "+79634823344",
 		Login:   "andrey_velkov",
 	}
-	userModels.CreateUser(pctc.GormInterface, &user)
+	userModels.CreateUser(ctx, pctc.GormInterface, &user)
 
 	email := "Andreyvelkov@chirik.com"
 	newProperty := userModels.Property{
@@ -207,6 +208,7 @@ func TestCreatePropertyWithNotExistUserFail(t *testing.T) {
 
 func TestCreatePropertyWithInvalidEmail(t *testing.T) {
 	pctc := initPCContainer(t)
+	ctx := context.Background()
 
 	user := userModels.User{
 		Id:      1,
@@ -215,7 +217,7 @@ func TestCreatePropertyWithInvalidEmail(t *testing.T) {
 		Phone:   "+79634823344",
 		Login:   "andrey_velkov",
 	}
-	userModels.CreateUser(pctc.GormInterface, &user)
+	userModels.CreateUser(ctx, pctc.GormInterface, &user)
 
 	email := "1_INVALID_EMAIL_@"
 	newProperty := userModels.Property{
@@ -233,6 +235,7 @@ func TestCreatePropertyWithInvalidEmail(t *testing.T) {
 
 func TestCreatePropertyWithToLongPassword(t *testing.T) {
 	pctc := initPCContainer(t)
+	ctx := context.Background()
 
 	user := userModels.User{
 		Id:      1,
@@ -241,7 +244,7 @@ func TestCreatePropertyWithToLongPassword(t *testing.T) {
 		Phone:   "+79634823344",
 		Login:   "andrey_velkov",
 	}
-	userModels.CreateUser(pctc.GormInterface, &user)
+	userModels.CreateUser(ctx, pctc.GormInterface, &user)
 
 	email := "Andreyvelkov@chirik.com@"
 	newProperty := userModels.Property{
@@ -259,6 +262,7 @@ func TestCreatePropertyWithToLongPassword(t *testing.T) {
 
 func TestCreatePropertyIfItAlreadyExistFail(t *testing.T) {
 	pctc := initPCContainer(t)
+	ctx := context.Background()
 
 	user := userModels.User{
 		Id:      1,
@@ -267,7 +271,7 @@ func TestCreatePropertyIfItAlreadyExistFail(t *testing.T) {
 		Phone:   "+79634823344",
 		Login:   "andrey_velkov",
 	}
-	userModels.CreateUser(pctc.GormInterface, &user)
+	userModels.CreateUser(ctx, pctc.GormInterface, &user)
 
 	email := "Andreyvelkov@chirik.com"
 	firstProperty := userModels.Property{
@@ -294,6 +298,7 @@ func TestCreatePropertyIfItAlreadyExistFail(t *testing.T) {
 
 func TestCreateAndGetPropertySuccess(t *testing.T) {
 	pctc := initPCContainer(t)
+	ctx := context.Background()
 
 	user := userModels.User{
 		Id:      1,
@@ -302,7 +307,7 @@ func TestCreateAndGetPropertySuccess(t *testing.T) {
 		Phone:   "+79634823344",
 		Login:   "andrey_velkov",
 	}
-	userModels.CreateUser(pctc.GormInterface, &user)
+	userModels.CreateUser(ctx, pctc.GormInterface, &user)
 
 	email := "Andreyvelkov@chirik.com"
 	newProperty := userModels.Property{
@@ -325,6 +330,8 @@ func TestCreateAndGetPropertySuccess(t *testing.T) {
 
 func TestCreteTwoPropertiesAndGetAll(t *testing.T) {
 	pctc := initPCContainer(t)
+	ctx := context.Background()
+
 	firstUser := userModels.User{
 		Id:      1,
 		Name:    "Andrey",
@@ -332,7 +339,7 @@ func TestCreteTwoPropertiesAndGetAll(t *testing.T) {
 		Phone:   "+79634823344",
 		Login:   "andrey_velkov",
 	}
-	userModels.CreateUser(pctc.GormInterface, &firstUser)
+	userModels.CreateUser(ctx, pctc.GormInterface, &firstUser)
 
 	email := "Andreyvelkov@chirik.com"
 	firstProperty := userModels.Property{
@@ -341,7 +348,7 @@ func TestCreteTwoPropertiesAndGetAll(t *testing.T) {
 		Email:    &email,
 	}
 	firstProperty.SetPassword("p@ssWoR_D1!")
-	userModels.CreateProperty(pctc.GormInterface, &firstProperty)
+	userModels.CreateProperty(ctx, pctc.GormInterface, &firstProperty)
 
 	secondUser := userModels.User{
 		Id:      2,
@@ -350,7 +357,7 @@ func TestCreteTwoPropertiesAndGetAll(t *testing.T) {
 		Phone:   "+79634823345",
 		Login:   "andrey_velkov2",
 	}
-	userModels.CreateUser(pctc.GormInterface, &secondUser)
+	userModels.CreateUser(ctx, pctc.GormInterface, &secondUser)
 
 	emailTwo := "Andreyvelkov@chirik.com"
 	secondProperty := userModels.Property{
@@ -359,7 +366,7 @@ func TestCreteTwoPropertiesAndGetAll(t *testing.T) {
 		Email:    &emailTwo,
 	}
 	secondProperty.SetPassword("p@ssWoR_D2!")
-	userModels.CreateProperty(pctc.GormInterface, &secondProperty)
+	userModels.CreateProperty(ctx, pctc.GormInterface, &secondProperty)
 
 	getAllResp, err := pctc.HttpClient.Get(pctc.ServerURL + "/properties")
 	defer getAllResp.Body.Close()
@@ -373,6 +380,7 @@ func TestCreteTwoPropertiesAndGetAll(t *testing.T) {
 
 func TestUpdatePropertySuccess(t *testing.T) {
 	pctc := initPCContainer(t)
+	ctx := context.Background()
 
 	user := userModels.User{
 		Id:      1,
@@ -381,7 +389,7 @@ func TestUpdatePropertySuccess(t *testing.T) {
 		Phone:   "+79634823344",
 		Login:   "andrey_velkov",
 	}
-	userModels.CreateUser(pctc.GormInterface, &user)
+	userModels.CreateUser(ctx, pctc.GormInterface, &user)
 
 	email := "Andreyvelkov@chirik.com"
 	Property := userModels.Property{
@@ -410,6 +418,8 @@ func TestUpdatePropertySuccess(t *testing.T) {
 
 func TestUpdatePropertyFail(t *testing.T) {
 	pctc := initPCContainer(t)
+	ctx := context.Background()
+
 	firstUser := userModels.User{
 		Id:      1,
 		Name:    "Andrey",
@@ -417,7 +427,7 @@ func TestUpdatePropertyFail(t *testing.T) {
 		Phone:   "+79634823344",
 		Login:   "andrey_velkov",
 	}
-	userModels.CreateUser(pctc.GormInterface, &firstUser)
+	userModels.CreateUser(ctx, pctc.GormInterface, &firstUser)
 
 	uniqueEmail := "ihaveuniqueemail@chirik.com"
 	firstProperty := userModels.Property{
@@ -426,7 +436,7 @@ func TestUpdatePropertyFail(t *testing.T) {
 		Email:    &uniqueEmail,
 	}
 	firstProperty.SetPassword("p@ssWoR_D1!")
-	userModels.CreateProperty(pctc.GormInterface, &firstProperty)
+	userModels.CreateProperty(ctx, pctc.GormInterface, &firstProperty)
 
 	secondUser := userModels.User{
 		Id:      2,
@@ -435,7 +445,7 @@ func TestUpdatePropertyFail(t *testing.T) {
 		Phone:   "+79634823345",
 		Login:   "andrey_velkov2",
 	}
-	userModels.CreateUser(pctc.GormInterface, &secondUser)
+	userModels.CreateUser(ctx, pctc.GormInterface, &secondUser)
 
 	uniqueEmailTwo := "ihaveuniqueemail2@chirik.com"
 	secondProperty := userModels.Property{
@@ -444,7 +454,7 @@ func TestUpdatePropertyFail(t *testing.T) {
 		Email:    &uniqueEmailTwo,
 	}
 	secondProperty.SetPassword("p@ssWoR_D2!")
-	userModels.CreateProperty(pctc.GormInterface, &secondProperty)
+	userModels.CreateProperty(ctx, pctc.GormInterface, &secondProperty)
 
 	updatingProperty := secondProperty
 	updatingProperty.Timezone = secondProperty.Timezone
@@ -459,6 +469,7 @@ func TestUpdatePropertyFail(t *testing.T) {
 
 func TestDeletePropertySuccess(t *testing.T) {
 	pctc := initPCContainer(t)
+	ctx := context.Background()
 
 	user := userModels.User{
 		Id:      1,
@@ -467,7 +478,7 @@ func TestDeletePropertySuccess(t *testing.T) {
 		Phone:   "+79634823344",
 		Login:   "andrey_velkov",
 	}
-	userModels.CreateUser(pctc.GormInterface, &user)
+	userModels.CreateUser(ctx, pctc.GormInterface, &user)
 
 	email := "Andreyvelkov@chirik.com"
 	property := userModels.Property{
@@ -477,20 +488,21 @@ func TestDeletePropertySuccess(t *testing.T) {
 	}
 	property.SetPassword("p@ssWoR_D1!")
 
-	userModels.CreateProperty(pctc.GormInterface, &property)
+	userModels.CreateProperty(ctx, pctc.GormInterface, &property)
 
 	resp, _ := doDeletePropertyRequest(t, pctc, user.Id)
 
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 
 	var foundProperty userModels.Property
-	result := pctc.GormInterface.Where("user_id = ?", user.Id).First(&foundProperty)
+	result := pctc.GormInterface.WithContext(ctx).Where("user_id = ?", user.Id).First(&foundProperty)
 
 	assert.Error(t, result.Error)
 }
 
 func TestDeleteNotExistingProperty(t *testing.T) {
 	pctc := initPCContainer(t)
+	ctx := context.Background()
 
 	user := userModels.User{
 		Id:      1,
@@ -499,7 +511,7 @@ func TestDeleteNotExistingProperty(t *testing.T) {
 		Login:   "andrey_velkov",
 	}
 
-	userModels.CreateUser(pctc.GormInterface, &user)
+	userModels.CreateUser(ctx, pctc.GormInterface, &user)
 
 	resp, decodedResponse := doDeletePropertyRequest(t, pctc, user.Id)
 

@@ -49,7 +49,7 @@ func (bv BanValidator) Validate(next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		if bv.IsDBValidationActivated() {
-			errContext := bv.validateAndSendResponseByDBRules(b)
+			errContext := bv.validateAndSendResponseByDBRules(r.Context(), b)
 			if errContext != nil {
 				c_http.NewResponse().SendError(w, errContext.Message, errContext.Code)
 				return
@@ -71,8 +71,8 @@ func (bv BanValidator) validateRequestRules(b user.Ban) []error {
 	return errList
 }
 
-func (bv BanValidator) validateAndSendResponseByDBRules(b user.Ban) *middleware.ValidatorErrorContext {
-	_, err := user.GetUserById(bv.DBDecorator.GormInterface, b.UserId)
+func (bv BanValidator) validateAndSendResponseByDBRules(ctx context.Context, b user.Ban) *middleware.ValidatorErrorContext {
+	_, err := user.GetUserById(ctx, bv.DBDecorator.GormInterface, b.UserId)
 	if err != nil && errors.Is(err, user.UserNotFoundErr) {
 		return &middleware.ValidatorErrorContext{
 			Message: err.Error(),

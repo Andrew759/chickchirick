@@ -50,7 +50,7 @@ func (pv CreatePropertyValidator) Validate(next http.HandlerFunc) http.HandlerFu
 		}
 
 		if pv.IsDBValidationActivated() {
-			errContext := pv.validateAndSendResponseByDBRules(p)
+			errContext := pv.validateAndSendResponseByDBRules(r.Context(), p)
 			if errContext != nil {
 				c_http.NewResponse().SendError(w, errContext.Message, errContext.Code)
 				return
@@ -75,15 +75,15 @@ func (pv CreatePropertyValidator) validateRequestRules(p user.Property) []error 
 	return errList
 }
 
-func (pv CreatePropertyValidator) validateAndSendResponseByDBRules(p user.Property) *middleware.ValidatorErrorContext {
-	_, err := user.GetUserById(pv.DBDecorator.GormInterface, p.UserId)
+func (pv CreatePropertyValidator) validateAndSendResponseByDBRules(ctx context.Context, p user.Property) *middleware.ValidatorErrorContext {
+	_, err := user.GetUserById(ctx, pv.DBDecorator.GormInterface, p.UserId)
 	if err != nil && errors.Is(err, user.UserNotFoundErr) {
 		return &middleware.ValidatorErrorContext{
 			Message: err.Error(),
 			Code:    http.StatusNotFound,
 		}
 	}
-	_, err = user.HasProperty(pv.DBDecorator.GormInterface, p)
+	_, err = user.HasProperty(ctx, pv.DBDecorator.GormInterface, p)
 	if err != nil && errors.Is(err, user.PropertyForUserAlreadyExistsErr) {
 		return &middleware.ValidatorErrorContext{
 			Message: err.Error(),

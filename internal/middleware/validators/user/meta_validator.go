@@ -50,7 +50,7 @@ func (mv MetaValidator) Validate(next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		if mv.IsDBValidationActivated() {
-			errContext := mv.validateAndSendResponseByDBRules(m)
+			errContext := mv.validateAndSendResponseByDBRules(r.Context(), m)
 			if errContext != nil {
 				c_http.NewResponse().SendError(w, errContext.Message, errContext.Code)
 				return
@@ -72,8 +72,8 @@ func (mv MetaValidator) validateRequestRules(m user.Meta) []error {
 	return errList
 }
 
-func (mv MetaValidator) validateAndSendResponseByDBRules(m user.Meta) *middleware.ValidatorErrorContext {
-	_, err := user.GetUserById(mv.DBDecorator.GormInterface, m.UserId)
+func (mv MetaValidator) validateAndSendResponseByDBRules(ctx context.Context, m user.Meta) *middleware.ValidatorErrorContext {
+	_, err := user.GetUserById(ctx, mv.DBDecorator.GormInterface, m.UserId)
 	if err != nil && errors.Is(err, user.UserNotFoundErr) {
 		return &middleware.ValidatorErrorContext{
 			Message: err.Error(),

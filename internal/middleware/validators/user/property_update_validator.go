@@ -50,7 +50,7 @@ func (pv UpdatePropertyValidator) Validate(next http.HandlerFunc) http.HandlerFu
 		}
 
 		if pv.IsDBValidationActivated() {
-			errContext := pv.validateAndSendResponseByDBRules(p)
+			errContext := pv.validateAndSendResponseByDBRules(r.Context(), p)
 			if errContext != nil {
 				c_http.NewResponse().SendError(w, errContext.Message, errContext.Code)
 				return
@@ -77,15 +77,15 @@ func (pv UpdatePropertyValidator) validateRequestRules(p user.Property) []error 
 	return errList
 }
 
-func (pv UpdatePropertyValidator) validateAndSendResponseByDBRules(p user.Property) *middleware.ValidatorErrorContext {
-	_, err := user.GetUserById(pv.DBDecorator.GormInterface, p.UserId)
+func (pv UpdatePropertyValidator) validateAndSendResponseByDBRules(ctx context.Context, p user.Property) *middleware.ValidatorErrorContext {
+	_, err := user.GetUserById(ctx, pv.DBDecorator.GormInterface, p.UserId)
 	if err != nil && errors.Is(err, user.UserNotFoundErr) {
 		return &middleware.ValidatorErrorContext{
 			Message: err.Error(),
 			Code:    http.StatusNotFound,
 		}
 	}
-	property, err := user.GetPropertyToAnotherUserByEmail(pv.DBDecorator.GormInterface, p.UserId, *p.Email)
+	property, err := user.GetPropertyToAnotherUserByEmail(ctx, pv.DBDecorator.GormInterface, p.UserId, *p.Email)
 	if err != nil && errors.Is(err, user.PropertyNotFoundErr) {
 		err = nil
 	} else if property.Email == p.Email {

@@ -4,13 +4,13 @@ import (
 	"chickChirick/cmd/config/dto"
 	"database/sql"
 	"fmt"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
 	"strconv"
 	"strings"
+
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
-// DBDecorator TODO: отрефакторить. Выбрать имя без постфикса интерфейс. Сделать также во всём приложении
 type DBDecorator struct {
 	GormInterface   *gorm.DB
 	NativeInterface *sql.DB

@@ -50,7 +50,7 @@ func (pv PhotoValidator) Validate(next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		if pv.IsDBValidationActivated() {
-			errContext := pv.validateAndSendResponseByDBRules(p)
+			errContext := pv.validateAndSendResponseByDBRules(r.Context(), p)
 			if errContext != nil {
 				c_http.NewResponse().SendError(w, errContext.Message, errContext.Code)
 				return
@@ -72,8 +72,8 @@ func (pv PhotoValidator) validateRequestRules(p user.Photo) []error {
 	return errList
 }
 
-func (pv PhotoValidator) validateAndSendResponseByDBRules(p user.Photo) *middleware.ValidatorErrorContext {
-	_, err := user.GetUserById(pv.DBDecorator.GormInterface, p.UserId)
+func (pv PhotoValidator) validateAndSendResponseByDBRules(ctx context.Context, p user.Photo) *middleware.ValidatorErrorContext {
+	_, err := user.GetUserById(ctx, pv.DBDecorator.GormInterface, p.UserId)
 	if err != nil && errors.Is(err, user.UserNotFoundErr) {
 		return &middleware.ValidatorErrorContext{
 			Message: err.Error(),
