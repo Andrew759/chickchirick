@@ -1,6 +1,7 @@
 package user
 
 import (
+	"bytes"
 	mainService "chickChirick/cmd/service"
 	"chickChirick/internal/controller/c_http"
 	"chickChirick/internal/middleware"
@@ -10,6 +11,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 )
 
@@ -34,9 +36,15 @@ type CreatePropertyValidator struct {
 
 func (pv CreatePropertyValidator) Validate(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var p user.Property
+		bodyBytes, err := io.ReadAll(r.Body)
+		if err != nil {
+			c_http.NewResponse().SendError(w, "Failed to read request body: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+		r.Body.Close()
 
-		if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+		var p user.Property
+		if err := json.NewDecoder(bytes.NewReader(bodyBytes)).Decode(&p); err != nil {
 			c_http.NewResponse().SendError(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -44,7 +52,6 @@ func (pv CreatePropertyValidator) Validate(next http.HandlerFunc) http.HandlerFu
 		if errorList := pv.validateRequestRules(p); len(errorList) > 0 {
 			errResponse := c_http.NewResponse()
 			errResponse.AddErrorsToErrorContainer(errorList)
-
 			errResponse.Send(w, http.StatusBadRequest)
 			return
 		}
@@ -56,6 +63,8 @@ func (pv CreatePropertyValidator) Validate(next http.HandlerFunc) http.HandlerFu
 				return
 			}
 		}
+
+		r.Body = io.NopCloser(bytes.NewReader(bodyBytes))
 
 		ctx := context.WithValue(r.Context(), config.UserPropertyKey, &p)
 		next(w, r.WithContext(ctx))

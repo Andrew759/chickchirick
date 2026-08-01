@@ -13,20 +13,30 @@ import (
 
 type CreateUserProxy struct {
 	Controller c_controller.Controller
-	middleware.Validator
+	UPV        middleware.Validator
+	PV         middleware.Validator
 }
 
 func (cup *CreateUserProxy) HandleRequest() {
 	cup.Controller.ServeMux.HandleFunc("POST /frontend/user", func(w http.ResponseWriter, r *http.Request) {
-		cup.Validate(func(w http.ResponseWriter, r *http.Request) {
-			cup.CreateUser(w, c_http.NewRequest(r))
-		})
+		cup.UPV.Validate(func(w http.ResponseWriter, r *http.Request) {
+			cup.PV.Validate(func(w http.ResponseWriter, r *http.Request) {
+				cup.CreateUser(w, c_http.NewRequest(r))
+			})(w, r)
+		})(w, r)
 	})
 }
 
 func (cup *CreateUserProxy) CreateUser(w http.ResponseWriter, r *c_http.Request) {
 	ctx := r.Context()
-	u := ctx.Value(config.UserProxyKey).(*user.User)
+
+	u, ok := ctx.Value(config.UserUserKey).(*user.User)
+	if !ok {
+		c_http.NewResponse().SendError(w, "User identity missing in context", http.StatusInternalServerError)
+		return
+	}
+
+	p, _ := ctx.Value(config.UserPropertyKey).(*user.Property)
 
 	err := user.CreateUser(ctx, cup.Controller.Dependencies.DBDecorator.GDB(), u)
 
@@ -40,7 +50,7 @@ func (cup *CreateUserProxy) CreateUser(w http.ResponseWriter, r *c_http.Request)
 	}
 
 	cup.createMeta(ctx, w, u)
-
+	cup.createProperty(ctx, w, u, p)
 }
 
 func (cup *CreateUserProxy) createMeta(ctx context.Context, w http.ResponseWriter, u *user.User) user.Meta {
@@ -56,6 +66,5 @@ func (cup *CreateUserProxy) createMeta(ctx context.Context, w http.ResponseWrite
 	return m
 }
 
-func (cup *CreateUserProxy) createProperty(ctx context.Context, w http.ResponseWriter, u *user.User) {
-
+func (cup *CreateUserProxy) createProperty(ctx context.Context, w http.ResponseWriter, u *user.User, p *user.Property) {
 }

@@ -58,7 +58,7 @@ func (upv UserProxyValidator) Validate(next http.HandlerFunc) http.HandlerFunc {
 
 		r.Body = io.NopCloser(bytes.NewReader(bodyBytes))
 
-		ctx := context.WithValue(r.Context(), config.UserProxyKey, &u)
+		ctx := context.WithValue(r.Context(), config.UserUserKey, &u)
 		next(w, r.WithContext(ctx))
 	}
 }

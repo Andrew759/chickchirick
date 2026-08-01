@@ -141,11 +141,9 @@ func (us *UserServer) initUserProxyService() internalService.CreateUserProxy {
 	}
 
 	userProxyService := internalService.CreateUserProxy{
-		Controller:     basicController,
-		UserController: us.UserService,
-		MetaController: us.UserMetaService,
-		UserValidator:  us.UserService.Validator,
-		MetaValidator:  us.UserMetaService.Validator,
+		Controller: basicController,
+		UPV:        user.UserProxyValidatorFactory{}.NewValidator(us.DIContainer.DBDecorator, middleware.ActivateDBValidation()),
+		PV:         user.CreatePropertyValidatorFactory{}.NewValidator(us.DIContainer.DBDecorator),
 	}
 	userProxyService.HandleRequest()
 
