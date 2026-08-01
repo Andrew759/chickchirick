@@ -8,6 +8,7 @@ const (
 	UserPhotoKey    contextKey = "validateUserPhoto"
 	UserMetaKey     contextKey = "validateUserMeta"
 	UserBanKey      contextKey = "validateUserBan"
+	UserProxyKey    contextKey = "validateUserInProxy"
 )
 
 const AuthKey contextKey = "authKey"

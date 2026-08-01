@@ -1,4 +1,4 @@
-package validators
+package validator
 
 import (
 	"chickChirick/internal/controller/c_http"

@@ -10,7 +10,7 @@ import (
 	"chickChirick/internal/controller/service/user"
 	testAbstraction "chickChirick/internal/controller/test/abstraction"
 	"chickChirick/internal/middleware/config"
-	userMiddleware "chickChirick/internal/middleware/validators/user"
+	userMiddleware "chickChirick/internal/middleware/validator/user"
 	userModels "chickChirick/internal/model/user"
 	"chickChirick/pkg/chirik_faker"
 	"chickChirick/pkg/chirik_gorm_tweaks/schema"

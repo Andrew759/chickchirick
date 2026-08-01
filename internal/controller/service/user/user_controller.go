@@ -5,7 +5,7 @@ import (
 	"chickChirick/internal/controller/c_http"
 	"chickChirick/internal/middleware"
 	"chickChirick/internal/middleware/config"
-	authValidator "chickChirick/internal/middleware/validators"
+	authValidator "chickChirick/internal/middleware/validator"
 	"chickChirick/internal/model/user"
 	"errors"
 	"net/http"
