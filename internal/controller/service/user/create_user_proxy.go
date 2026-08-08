@@ -9,6 +9,8 @@ import (
 	"context"
 	"errors"
 	"net/http"
+
+	"gorm.io/gorm"
 )
 
 type CreateUserProxy struct {
@@ -36,35 +38,55 @@ func (cup *CreateUserProxy) CreateUser(w http.ResponseWriter, r *c_http.Request)
 		return
 	}
 
-	p, _ := ctx.Value(config.UserPropertyKey).(*user.Property)
+	p, ok := ctx.Value(config.UserPropertyKey).(*user.Property)
+	if !ok {
+		c_http.NewResponse().SendError(w, "Property identity missing in context", http.StatusInternalServerError)
+		return
+	}
 
-	err := user.CreateUser(ctx, cup.Controller.Dependencies.DBDecorator.GDB(), u)
+	err := cup.Controller.Dependencies.DBDecorator.GDB().WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := user.CreateUser(ctx, tx, u); err != nil {
+			return err
+		}
+
+		if _, err := cup.createMeta(ctx, tx, u); err != nil {
+			return err
+		}
+
+		if err := cup.createProperty(ctx, tx, p); err != nil {
+			return err
+		}
+
+		return nil
+	})
 
 	var userAlreadyExistError *user.UserAlreadyExistErr
 	if err != nil && errors.As(err, &userAlreadyExistError) {
 		c_http.NewResponse().SendError(w, err.Error(), http.StatusConflict)
 		return
 	} else if err != nil {
-		c_http.NewResponse().SendError(w, "Failed to create user. "+err.Error(), http.StatusInternalServerError)
+		c_http.NewResponse().SendError(w, "Failed to create user sequence. "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	cup.createMeta(ctx, w, u)
-	cup.createProperty(ctx, w, u, p)
+	c_http.NewResponse().SendSuccess(w, u, http.StatusCreated)
 }
 
-func (cup *CreateUserProxy) createMeta(ctx context.Context, w http.ResponseWriter, u *user.User) user.Meta {
+func (cup *CreateUserProxy) createMeta(ctx context.Context, tx *gorm.DB, u *user.User) (user.Meta, error) {
 	m := user.Meta{
 		UserId: u.Id,
 	}
 
-	if err := user.CreateMeta(ctx, cup.Controller.Dependencies.DBDecorator.GDB(), &m); err != nil {
-		c_http.NewResponse().SendError(w, "Failed to create meta: "+err.Error(), http.StatusInternalServerError)
-		return m
+	if err := user.CreateMeta(ctx, tx, &m); err != nil {
+		return m, err
 	}
 
-	return m
+	return m, nil
 }
 
-func (cup *CreateUserProxy) createProperty(ctx context.Context, w http.ResponseWriter, u *user.User, p *user.Property) {
+func (cup *CreateUserProxy) createProperty(ctx context.Context, tx *gorm.DB, p *user.Property) error {
+	if p == nil {
+		return nil
+	}
+	return user.CreateProperty(ctx, tx, p)
 }
