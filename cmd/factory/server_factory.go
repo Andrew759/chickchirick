@@ -3,10 +3,14 @@ package factory
 import (
 	"chickChirick/cmd/service"
 	"chickChirick/internal/controller/c_controller"
+	middleware "chickChirick/internal/middleware/cors"
+	"chickChirick/pkg/chirik_config"
 	"log"
 	"net/http"
 	//TODO: подумать - оставить или удалить профилировщик
 	_ "net/http/pprof"
+
+	"github.com/spf13/viper"
 )
 
 func BuildAndServe(dbDecorator service.DBDecorator, redisDecorator service.RedisDecorator, httpClient *http.Client) {
@@ -16,7 +20,10 @@ func BuildAndServe(dbDecorator service.DBDecorator, redisDecorator service.Redis
 		log.Fatal(http.ListenAndServe(":6060", nil))
 	}()
 
-	err := http.ListenAndServe(":8080", mux)
+	frontendURL := viper.GetString(chirik_config.FrontendUrl)
+	handlerWithCORS := middleware.CORS(frontendURL, mux)
+
+	err := http.ListenAndServe(":8080", handlerWithCORS)
 	if err != nil {
 		panic(err)
 	}
@@ -28,6 +35,7 @@ func BuildServer(dbDecorator service.DBDecorator, redisDecorator service.RedisDe
 	container := c_controller.DIContainer{
 		DBDecorator:    dbDecorator,
 		RedisDecorator: redisDecorator,
+		Client:         httpClient,
 	}
 
 	InitUserServer(mux, container, httpClient)

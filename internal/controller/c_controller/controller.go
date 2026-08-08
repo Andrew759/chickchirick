@@ -8,6 +8,7 @@ import (
 type DIContainer struct {
 	DBDecorator    service.DBDecorator
 	RedisDecorator service.RedisDecorator
+	*http.Client
 }
 
 type Controller struct {

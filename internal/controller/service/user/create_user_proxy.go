@@ -1,17 +1,34 @@
 package user
 
 import (
+	"bytes"
 	"chickChirick/internal/controller/c_controller"
 	"chickChirick/internal/controller/c_http"
 	"chickChirick/internal/middleware"
 	"chickChirick/internal/middleware/config"
 	"chickChirick/internal/model/user"
+	"chickChirick/pkg/chirik_config"
 	"context"
+	"encoding/json"
 	"errors"
+	"io"
+	"log/slog"
 	"net/http"
 
+	"github.com/google/uuid"
+	"github.com/spf13/viper"
 	"gorm.io/gorm"
 )
+
+type CreateAuthUserRequest struct {
+	Password string    `json:"password"`
+	UserUuid uuid.UUID `json:"user_uuid"`
+}
+
+type Tokens struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+}
 
 type CreateUserProxy struct {
 	Controller c_controller.Controller
@@ -44,12 +61,16 @@ func (cup *CreateUserProxy) CreateUser(w http.ResponseWriter, r *c_http.Request)
 		return
 	}
 
+	var meta user.Meta
+
 	err := cup.Controller.Dependencies.DBDecorator.GDB().WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := user.CreateUser(ctx, tx, u); err != nil {
 			return err
 		}
 
-		if _, err := cup.createMeta(ctx, tx, u); err != nil {
+		var err error
+		meta, err = cup.createMeta(ctx, tx, u)
+		if err != nil {
 			return err
 		}
 
@@ -68,6 +89,31 @@ func (cup *CreateUserProxy) CreateUser(w http.ResponseWriter, r *c_http.Request)
 		c_http.NewResponse().SendError(w, "Failed to create user sequence. "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	tokens, err := cup.createAuthUser(ctx, p, meta)
+	if err != nil {
+		c_http.NewResponse().SendError(w, "Failed to auth. "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "access_token",
+		Value:    tokens.AccessToken,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false, //TODO Оставить false для HTTP, сделать true HTTPS
+
+		SameSite: http.SameSiteLaxMode,
+	})
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    tokens.RefreshToken,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	})
 
 	c_http.NewResponse().SendSuccess(w, u, http.StatusCreated)
 }
@@ -89,4 +135,57 @@ func (cup *CreateUserProxy) createProperty(ctx context.Context, tx *gorm.DB, p *
 		return nil
 	}
 	return user.CreateProperty(ctx, tx, p)
+}
+
+func (cup *CreateUserProxy) createAuthUser(
+	ctx context.Context,
+	p *user.Property,
+	m user.Meta,
+) (Tokens, error) {
+	var tokens Tokens
+
+	reqData := CreateAuthUserRequest{
+		UserUuid: m.UserUuid,
+	}
+	if p != nil && p.Password != nil {
+		reqData.Password = *p.Password
+	}
+
+	reqBody, err := json.Marshal(reqData)
+	if err != nil {
+		slog.Error("error marshaling auth request data: ", err.Error())
+		return tokens, err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "POST", viper.GetString(chirik_config.AuthAppUrl)+"/user/create", bytes.NewBuffer(reqBody))
+	if err != nil {
+		return tokens, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := cup.Controller.Dependencies.Client.Do(req)
+	if err != nil {
+		slog.Error("error sending request to auth service: ", err.Error())
+		return tokens, err
+	}
+	defer func(Body io.ReadCloser) {
+		if err := Body.Close(); err != nil {
+			slog.Error("error closing auth response body: ", err.Error())
+		}
+	}(resp.Body)
+
+	if resp.StatusCode != http.StatusCreated {
+		return tokens, errors.New("auth service returned non-ok status")
+	}
+
+	for _, cookie := range resp.Cookies() {
+		switch cookie.Name {
+		case "access_token":
+			tokens.AccessToken = cookie.Value
+		case "refresh_token":
+			tokens.RefreshToken = cookie.Value
+		}
+	}
+
+	return tokens, nil
 }

@@ -15,7 +15,6 @@ import (
 type UserServer struct {
 	*http.ServeMux
 	c_controller.DIContainer
-	*http.Client
 
 	//Кэш сервисов для проксирования
 	UserService     internalService.UserController
@@ -29,7 +28,6 @@ func InitUserServer(mux *http.ServeMux, abstractDiContainer c_controller.DIConta
 	userServer := UserServer{
 		ServeMux:    mux,
 		DIContainer: abstractDiContainer,
-		Client:      httpClient,
 	}
 
 	userServer.UserService = userServer.initUserService()
