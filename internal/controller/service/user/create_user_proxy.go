@@ -74,7 +74,7 @@ func (cup *CreateUserProxy) CreateUser(w http.ResponseWriter, r *c_http.Request)
 			return err
 		}
 
-		if err := cup.createProperty(ctx, tx, p); err != nil {
+		if err := cup.createProperty(ctx, tx, p, u); err != nil {
 			return err
 		}
 
@@ -96,24 +96,26 @@ func (cup *CreateUserProxy) CreateUser(w http.ResponseWriter, r *c_http.Request)
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{
+	cookieAccess := &http.Cookie{
 		Name:     "access_token",
 		Value:    tokens.AccessToken,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   false, //TODO Оставить false для HTTP, сделать true HTTPS
-
+		Secure:   false, //TODO: для https: true
 		SameSite: http.SameSiteLaxMode,
-	})
+	}
 
-	http.SetCookie(w, &http.Cookie{
+	cookieRefresh := &http.Cookie{
 		Name:     "refresh_token",
 		Value:    tokens.RefreshToken,
 		Path:     "/",
 		HttpOnly: true,
 		Secure:   false,
 		SameSite: http.SameSiteLaxMode,
-	})
+	}
+
+	w.Header().Add("Set-Cookie", cookieAccess.String())
+	w.Header().Add("Set-Cookie", cookieRefresh.String())
 
 	c_http.NewResponse().SendSuccess(w, u, http.StatusCreated)
 }
@@ -130,10 +132,15 @@ func (cup *CreateUserProxy) createMeta(ctx context.Context, tx *gorm.DB, u *user
 	return m, nil
 }
 
-func (cup *CreateUserProxy) createProperty(ctx context.Context, tx *gorm.DB, p *user.Property) error {
+func (cup *CreateUserProxy) createProperty(ctx context.Context, tx *gorm.DB, p *user.Property, u *user.User) error {
 	if p == nil {
 		return nil
 	}
+
+	if p.UserId == 0 {
+		p.UserId = u.Id
+	}
+
 	return user.CreateProperty(ctx, tx, p)
 }
 
