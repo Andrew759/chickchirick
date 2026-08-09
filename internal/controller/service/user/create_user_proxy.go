@@ -20,6 +20,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// TODO: отрефакторить
 type CreateAuthUserRequest struct {
 	Password string    `json:"password"`
 	UserUuid uuid.UUID `json:"user_uuid"`
@@ -44,6 +45,11 @@ func (cup *CreateUserProxy) HandleRequest() {
 			})(w, r)
 		})(w, r)
 	})
+
+	cup.Controller.ServeMux.HandleFunc("GET /frontend/user/me", func(w http.ResponseWriter, r *http.Request) {
+		cup.GetMe(w, c_http.NewRequest(r))
+	})
+
 }
 
 func (cup *CreateUserProxy) CreateUser(w http.ResponseWriter, r *c_http.Request) {
@@ -195,4 +201,49 @@ func (cup *CreateUserProxy) createAuthUser(
 	}
 
 	return tokens, nil
+}
+
+func (cup *CreateUserProxy) GetMe(w http.ResponseWriter, r *c_http.Request) {
+	ctx := r.Context()
+
+	cookie, err := r.Cookie("access_token")
+	if err != nil {
+		c_http.NewResponse().SendError(w, "Unauthorized: missing token", http.StatusUnauthorized)
+		return
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "GET", viper.GetString(chirik_config.AuthAppUrl)+"/auth/validate", nil)
+	if err != nil {
+		c_http.NewResponse().SendError(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+	req.AddCookie(cookie)
+
+	resp, err := cup.Controller.Dependencies.Client.Do(req)
+	if err != nil {
+		slog.Error("error sending request to auth service: ", err.Error())
+		c_http.NewResponse().SendError(w, "Auth service unavailable", http.StatusInternalServerError)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		c_http.NewResponse().SendError(w, "Unauthorized: invalid session", http.StatusUnauthorized)
+		return
+	}
+
+	var authResult struct {
+		Payload struct {
+			Valid    bool   `json:"valid"`
+			UserUuid string `json:"user_uuid"`
+		} `json:"payload"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&authResult); err != nil {
+		slog.Error("error decoding token validation response: ", err.Error())
+		c_http.NewResponse().SendError(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	c_http.NewResponse().SendSuccess(w, authResult, http.StatusOK)
 }
