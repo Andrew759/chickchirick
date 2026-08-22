@@ -7,6 +7,7 @@ import (
 	"chickChirick/internal/middleware/config"
 	authValidator "chickChirick/internal/middleware/validator"
 	"chickChirick/internal/model/user"
+	"log/slog"
 	"net/http"
 )
 
@@ -19,23 +20,32 @@ func (upp *UserProfileProxy) HandleRequest() {
 	upp.Controller.ServeMux.HandleFunc("GET /frontend/profile", func(w http.ResponseWriter, r *http.Request) {
 		upp.ValidateAuth(func(w http.ResponseWriter, r *http.Request) {
 			upp.GetProfile(w, c_http.NewRequest(r))
-		})
+		})(w, r)
 	})
 }
 
 func (upp *UserProfileProxy) GetProfile(w http.ResponseWriter, request *c_http.Request) {
 	ctx := request.Context()
 
-	uuid := ctx.Value(config.AuthKey)
+	uuidVal := ctx.Value(config.AuthKey)
+	uuidStr, ok := uuidVal.(string)
+	if !ok || uuidStr == "" {
+		c_http.NewResponse().SendError(w, "Unauthorized: invalid user uuid in session", http.StatusUnauthorized)
+		return
+	}
+
 	db := upp.Controller.Dependencies.DBDecorator.GDB().WithContext(ctx)
 
-	u, err := user.GetUserByUuid(ctx, db, uuid.(string))
+	u, err := user.GetUserByUuid(ctx, db, uuidStr)
 	if err != nil {
+		slog.Error("failed to get user by uuid: ", err.Error())
+		c_http.NewResponse().SendError(w, "User profile not found", http.StatusNotFound)
 		return
 	}
 
 	p, err := user.GetPropertyByUserId(ctx, db, u.Id)
 	if err != nil {
+		slog.Error("failed to get property by user id: ", err.Error())
 		c_http.NewResponse().SendError(w, "Property not found: "+err.Error(), http.StatusNotFound)
 		return
 	}

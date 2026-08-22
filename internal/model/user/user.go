@@ -100,9 +100,8 @@ func GetUserByUuid(ctx context.Context, db *gorm.DB, uuid string) (*User, error)
 	var user User
 
 	err := db.WithContext(ctx).
-		Joins("Meta").
-		Preload("Meta").
-		Where("meta.uuid = ?", uuid).
+		Joins("JOIN user_meta ON user_meta.user_id = users.id").
+		Where("user_meta.user_uuid = ?", uuid).
 		First(&user).
 		Error
 
