@@ -37,6 +37,7 @@ func InitUserServer(mux *http.ServeMux, abstractDiContainer c_controller.DIConta
 	userServer.PropertyService = userServer.initPropertyService()
 
 	userServer.initUserProxyService()
+	userServer.initUserProfileProxy()
 
 	return userServer
 }
@@ -146,4 +147,21 @@ func (us *UserServer) initUserProxyService() internalService.CreateUserProxy {
 	userProxyService.HandleRequest()
 
 	return userProxyService
+}
+
+func (us *UserServer) initUserProfileProxy() internalService.UserProfileProxy {
+	profileService := internalService.UserProfileProxy{
+		Controller: c_controller.Controller{
+			ServeMux:     us.ServeMux,
+			Dependencies: us.DIContainer,
+		},
+		AuthValidator: validator.AuthValidator{
+			AuthServiceURL:   viper.GetString(chirik_config.AuthAppUrl),
+			Client:           us.Client,
+			ValidatorOptions: middleware.ValidatorOptions{},
+		},
+	}
+	profileService.HandleRequest()
+
+	return profileService
 }

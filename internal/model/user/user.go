@@ -95,3 +95,23 @@ func DeleteUserById(ctx context.Context, db *gorm.DB, id int) error {
 
 	return tx.Delete(&User{}, id).Error
 }
+
+func GetUserByUuid(ctx context.Context, db *gorm.DB, uuid string) (*User, error) {
+	var user User
+
+	err := db.WithContext(ctx).
+		Joins("Meta").
+		Preload("Meta").
+		Where("meta.uuid = ?", uuid).
+		First(&user).
+		Error
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, UserNotFoundErr
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}

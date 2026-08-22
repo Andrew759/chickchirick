@@ -50,7 +50,7 @@ func (av AuthValidator) ValidateAuth(next http.HandlerFunc) http.HandlerFunc {
 
 		req, err := http.NewRequestWithContext(r.Context(), "GET", av.AuthServiceURL+"/auth/validate", nil)
 		if err != nil {
-			c_http.NewResponse().SendError(w, ""+
+			c_http.NewResponse().SendError(w,
 				"internal error at constructing request to the authorization service",
 				http.StatusInternalServerError,
 			)

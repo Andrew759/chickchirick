@@ -20,7 +20,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// TODO: отрефакторить
+// TODO: отрефакторить, поправить баг с введением емейл
 type CreateAuthUserRequest struct {
 	Password string    `json:"password"`
 	UserUuid uuid.UUID `json:"user_uuid"`
@@ -49,7 +49,6 @@ func (cup *CreateUserProxy) HandleRequest() {
 	cup.Controller.ServeMux.HandleFunc("GET /frontend/user/me", func(w http.ResponseWriter, r *http.Request) {
 		cup.GetMe(w, c_http.NewRequest(r))
 	})
-
 }
 
 func (cup *CreateUserProxy) CreateUser(w http.ResponseWriter, r *c_http.Request) {
