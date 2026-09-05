@@ -26,6 +26,10 @@ type CreateAuthUserRequest struct {
 	UserUuid uuid.UUID `json:"user_uuid"`
 }
 
+type CreateMessageUserRequest struct {
+	UserUuid uuid.UUID `json:"user_uuid"`
+}
+
 type Tokens struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
@@ -95,9 +99,16 @@ func (cup *CreateUserProxy) CreateUser(w http.ResponseWriter, r *c_http.Request)
 		return
 	}
 
+	//TODO: оба запроса во внешние сервисы должны выполняться безусловно, а транзакция выше должна откатываться
+	// тут нужно применить реббит или кафку
 	tokens, err := cup.createAuthUser(ctx, p, meta)
 	if err != nil {
 		c_http.NewResponse().SendError(w, "Failed to auth. "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	err = cup.createMessageUser(ctx, meta)
+	if err != nil {
+		c_http.NewResponse().SendError(w, "Failed to create message user. "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -200,6 +211,36 @@ func (cup *CreateUserProxy) createAuthUser(
 	}
 
 	return tokens, nil
+}
+
+func (cup *CreateUserProxy) createMessageUser(ctx context.Context, m user.Meta) error {
+	reqData := CreateMessageUserRequest{
+		UserUuid: m.UserUuid,
+	}
+
+	reqBody, err := json.Marshal(reqData)
+	if err != nil {
+		slog.Error("error marshaling message request data: ", err.Error())
+		return err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "POST", viper.GetString(chirik_config.MessageAppUrl)+"/user-relation", bytes.NewBuffer(reqBody))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := cup.Controller.Dependencies.Client.Do(req)
+	if err != nil {
+		slog.Error("error sending request to message service: ", err.Error())
+		return err
+	}
+	defer func(Body io.ReadCloser) {
+		if err := Body.Close(); err != nil {
+			slog.Error("error closing message response body: ", err.Error())
+		}
+	}(resp.Body)
+	return nil
 }
 
 func (cup *CreateUserProxy) GetMe(w http.ResponseWriter, r *c_http.Request) {

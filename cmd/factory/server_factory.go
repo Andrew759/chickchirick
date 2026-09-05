@@ -20,7 +20,7 @@ func BuildAndServe(dbDecorator service.DBDecorator, redisDecorator service.Redis
 		log.Fatal(http.ListenAndServe(":6060", nil))
 	}()
 
-	frontendURL := viper.GetString(chirik_config.FrontendUrl)
+	frontendURL := viper.GetString(chirik_config.FrontendAppUrl)
 	handlerWithCORS := middleware.CORS(frontendURL, mux)
 
 	err := http.ListenAndServe(":8080", handlerWithCORS)
