@@ -29,6 +29,13 @@ func (upp *UserProfileProxy) HandleRequest() {
 			upp.GetUsersByUuids(w, c_http.NewRequest(r))
 		})(w, r)
 	})
+
+	//TODO: вынести в отдельный сервис
+	upp.Controller.ServeMux.HandleFunc("GET /frontend/users/search", func(w http.ResponseWriter, r *http.Request) {
+		upp.ValidateAuth(func(w http.ResponseWriter, r *http.Request) {
+			upp.SearchUsers(w, c_http.NewRequest(r))
+		})(w, r)
+	})
 }
 
 func (upp *UserProfileProxy) GetProfile(w http.ResponseWriter, request *c_http.Request) {
@@ -104,6 +111,50 @@ func (upp *UserProfileProxy) GetUsersByUuids(w http.ResponseWriter, request *c_h
 	if err != nil {
 		slog.Error("GetUsersByUuids failed: ", err.Error())
 		c_http.NewResponse().SendError(w, "failed to load users: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	out := make([]dto.UserBrief, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, dto.UserBrief{
+			ID:       row.Id,
+			UserUuid: row.UserUuid,
+			Name:     row.Name,
+			Surname:  row.Surname,
+			Login:    row.Login,
+		})
+	}
+
+	c_http.NewResponse().SendSuccess(w, out, http.StatusOK)
+}
+
+// SearchUsers ищет пользователей по логину или телефону (query param q).
+// В ответе — id user-сервиса и userUuid (нужен для связи с messages).
+func (upp *UserProfileProxy) SearchUsers(w http.ResponseWriter, request *c_http.Request) {
+	ctx := request.Context()
+	q := strings.TrimSpace(request.URL.Query().Get("q"))
+	if q == "" {
+		c_http.NewResponse().SendSuccess(w, []dto.UserBrief{}, http.StatusOK)
+		return
+	}
+	if len(q) < 2 {
+		c_http.NewResponse().SendError(w, "query must be at least 2 characters", http.StatusBadRequest)
+		return
+	}
+
+	db := upp.Controller.Dependencies.DBDecorator.GDB()
+
+	excludeUuid := ""
+	if uuidVal := ctx.Value(config.AuthKey); uuidVal != nil {
+		if uuidStr, ok := uuidVal.(string); ok {
+			excludeUuid = uuidStr
+		}
+	}
+
+	rows, err := user.SearchUsersWithUuid(ctx, db, q, excludeUuid, 20)
+	if err != nil {
+		slog.Error("SearchUsers failed: ", err.Error())
+		c_http.NewResponse().SendError(w, "search failed: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 

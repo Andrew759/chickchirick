@@ -35,6 +35,17 @@ type Tokens struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
+// LoginRequest — тело запроса входа с фронта (логин или телефон + пароль).
+type LoginRequest struct {
+	Login    string `json:"login"`
+	Password string `json:"password"`
+}
+
+type authLoginRequest struct {
+	UserUuid string `json:"user_uuid"`
+	Password string `json:"password"`
+}
+
 type CreateUserProxy struct {
 	Controller c_controller.Controller
 	UPV        middleware.Validator
@@ -50,8 +61,16 @@ func (cup *CreateUserProxy) HandleRequest() {
 		})(w, r)
 	})
 
+	cup.Controller.ServeMux.HandleFunc("POST /frontend/login", func(w http.ResponseWriter, r *http.Request) {
+		cup.Login(w, c_http.NewRequest(r))
+	})
+
 	cup.Controller.ServeMux.HandleFunc("GET /frontend/user/me", func(w http.ResponseWriter, r *http.Request) {
 		cup.GetMe(w, c_http.NewRequest(r))
+	})
+
+	cup.Controller.ServeMux.HandleFunc("POST /frontend/logout", func(w http.ResponseWriter, r *http.Request) {
+		cup.Logout(w, c_http.NewRequest(r))
 	})
 }
 
@@ -241,6 +260,184 @@ func (cup *CreateUserProxy) createMessageUser(ctx context.Context, m user.Meta) 
 		}
 	}(resp.Body)
 	return nil
+}
+
+// Login авторизует пользователя по логину/телефону и паролю.
+// Ищет пользователя в user-сервисе, затем вызывает auth-сервис /auth/login.
+func (cup *CreateUserProxy) Login(w http.ResponseWriter, r *c_http.Request) {
+	ctx := r.Context()
+
+	var req LoginRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		c_http.NewResponse().SendError(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if req.Login == "" || req.Password == "" {
+		c_http.NewResponse().SendError(w, "login and password are required", http.StatusBadRequest)
+		return
+	}
+
+	u, err := user.GetUserByLoginOrPhone(ctx, cup.Controller.Dependencies.DBDecorator.GDB(), req.Login)
+	if err != nil {
+		if errors.Is(err, user.UserNotFoundErr) {
+			c_http.NewResponse().SendError(w, "invalid credentials", http.StatusUnauthorized)
+			return
+		}
+		slog.Error("login: failed to find user", "error", err.Error())
+		c_http.NewResponse().SendError(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	meta, err := user.GetMetaByUserId(ctx, cup.Controller.Dependencies.DBDecorator.GDB(), u.Id)
+	if err != nil {
+		slog.Error("login: failed to get user meta", "error", err.Error())
+		c_http.NewResponse().SendError(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	authBody, err := json.Marshal(authLoginRequest{
+		UserUuid: meta.UserUuid.String(),
+		Password: req.Password,
+	})
+	if err != nil {
+		c_http.NewResponse().SendError(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	authReq, err := http.NewRequestWithContext(
+		ctx,
+		"POST",
+		viper.GetString(chirik_config.AuthAppUrl)+"/auth/login",
+		bytes.NewBuffer(authBody),
+	)
+	if err != nil {
+		c_http.NewResponse().SendError(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+	authReq.Header.Set("Content-Type", "application/json")
+
+	resp, err := cup.Controller.Dependencies.Client.Do(authReq)
+	if err != nil {
+		slog.Error("login: auth service request failed", "error", err.Error())
+		c_http.NewResponse().SendError(w, "Auth service unavailable", http.StatusInternalServerError)
+		return
+	}
+	defer func(Body io.ReadCloser) {
+		if err := Body.Close(); err != nil {
+			slog.Error("login: error closing auth response body", "error", err.Error())
+		}
+	}(resp.Body)
+
+	if resp.StatusCode != http.StatusOK {
+		c_http.NewResponse().SendError(w, "invalid credentials", http.StatusUnauthorized)
+		return
+	}
+
+	var accessToken, refreshToken string
+	for _, cookie := range resp.Cookies() {
+		switch cookie.Name {
+		case "access_token":
+			accessToken = cookie.Value
+		case "refresh_token":
+			refreshToken = cookie.Value
+		}
+	}
+
+	if accessToken == "" {
+		c_http.NewResponse().SendError(w, "Auth service did not return tokens", http.StatusInternalServerError)
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "access_token",
+		Value:    accessToken,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	})
+	if refreshToken != "" {
+		http.SetCookie(w, &http.Cookie{
+			Name:     "refresh_token",
+			Value:    refreshToken,
+			Path:     "/",
+			HttpOnly: true,
+			Secure:   false,
+			SameSite: http.SameSiteLaxMode,
+		})
+	}
+
+	c_http.NewResponse().SendSuccess(w, map[string]any{
+		"message":     "successfully logged in",
+		"user_uuid":   meta.UserUuid.String(),
+		"accessToken": accessToken,
+	}, http.StatusOK)
+}
+
+// Logout вызывает auth-сервис /auth/logout и сбрасывает cookies на клиенте.
+func (cup *CreateUserProxy) Logout(w http.ResponseWriter, r *c_http.Request) {
+	ctx := r.Context()
+
+	authReq, err := http.NewRequestWithContext(
+		ctx,
+		"POST",
+		viper.GetString(chirik_config.AuthAppUrl)+"/auth/logout",
+		nil,
+	)
+	if err != nil {
+		c_http.NewResponse().SendError(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	// прокидываем cookies клиента в auth
+	for _, c := range r.Cookies() {
+		authReq.AddCookie(c)
+	}
+
+	resp, err := cup.Controller.Dependencies.Client.Do(authReq)
+	if err != nil {
+		slog.Error("logout: auth service request failed", "error", err.Error())
+		// всё равно чистим cookies у клиента
+	} else {
+		defer func(Body io.ReadCloser) {
+			if Body != nil {
+				_ = Body.Close()
+			}
+		}(resp.Body)
+	}
+
+	// сброс cookies на стороне браузера
+	http.SetCookie(w, &http.Cookie{
+		Name:     "access_token",
+		Value:    "",
+		Path:     "/",
+		MaxAge:   -1,
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    "",
+		Path:     "/",
+		MaxAge:   -1,
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	})
+	// на случай если refresh был с path /auth/refresh
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    "",
+		Path:     "/auth/refresh",
+		MaxAge:   -1,
+		HttpOnly: true,
+		Secure:   false,
+		SameSite: http.SameSiteLaxMode,
+	})
+
+	c_http.NewResponse().SendSuccess(w, map[string]string{"message": "logged out"}, http.StatusOK)
 }
 
 func (cup *CreateUserProxy) GetMe(w http.ResponseWriter, r *c_http.Request) {

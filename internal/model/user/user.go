@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"gorm.io/gorm"
 )
@@ -113,4 +114,75 @@ func GetUserByUuid(ctx context.Context, db *gorm.DB, uuid string) (*User, error)
 	}
 
 	return &user, nil
+}
+
+// GetUserByLoginOrPhone ищет пользователя по логину или номеру телефона.
+func GetUserByLoginOrPhone(ctx context.Context, db *gorm.DB, loginOrPhone string) (*User, error) {
+	var u User
+
+	err := db.WithContext(ctx).
+		Where("login = ? OR phone = ?", loginOrPhone, loginOrPhone).
+		First(&u).
+		Error
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, UserNotFoundErr
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return &u, nil
+}
+
+// SearchUsersByLoginOrPhone ищет пользователей по подстроке логина или телефона.
+// excludeUserId — id текущего пользователя (0 = не исключать).
+// limit — макс. число результатов (если <= 0, берётся 20).
+func SearchUsersByLoginOrPhone(ctx context.Context, db *gorm.DB, query string, excludeUserId int, limit int) ([]User, error) {
+	if limit <= 0 {
+		limit = 20
+	}
+	q := strings.TrimSpace(query)
+	if q == "" {
+		return []User{}, nil
+	}
+
+	pattern := "%" + q + "%"
+	tx := db.WithContext(ctx).Model(&User{}).
+		Where("login ILIKE ? OR phone ILIKE ?", pattern, pattern)
+
+	if excludeUserId > 0 {
+		tx = tx.Where("id <> ?", excludeUserId)
+	}
+
+	var users []User
+	err := tx.Order("login ASC").Limit(limit).Find(&users).Error
+	return users, err
+}
+
+// SearchUsersWithUuid ищет по логину/телефону и возвращает id + uuid из user_meta.
+func SearchUsersWithUuid(ctx context.Context, db *gorm.DB, query string, excludeUuid string, limit int) ([]UserWithUuid, error) {
+	if limit <= 0 {
+		limit = 20
+	}
+	q := strings.TrimSpace(query)
+	if q == "" {
+		return []UserWithUuid{}, nil
+	}
+
+	pattern := "%" + q + "%"
+	tx := db.WithContext(ctx).
+		Table("users AS u").
+		Select("u.id, u.name, u.surname, u.login, user_meta.user_uuid::text AS user_uuid").
+		Joins("JOIN user_meta ON user_meta.user_id = u.id").
+		Where("u.login ILIKE ? OR u.phone ILIKE ?", pattern, pattern).
+		Where("u.deleted_at IS NULL")
+
+	if excludeUuid != "" {
+		tx = tx.Where("user_meta.user_uuid::text <> ?", excludeUuid)
+	}
+
+	var rows []UserWithUuid
+	err := tx.Order("u.login ASC").Limit(limit).Scan(&rows).Error
+	return rows, err
 }
