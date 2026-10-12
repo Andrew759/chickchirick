@@ -10,14 +10,18 @@ import (
 )
 
 type Photo struct {
-	Id        int       `json:"id" gorm:"type:int;unique;primaryKey;autoIncrement"`
-	FileUuid  uuid.UUID `json:"file_uuid" gorm:"type:uuid;not null"`
-	UserId    int       `json:"user_id" gorm:"type:int;not null;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-	User      User      `json:"user" gorm:"foreignKey:UserId;references:Id"`
-	MediaKind string    `json:"media_kind" gorm:"type:varchar(20);default:'file'"`
-	CreatedAt time.TimestampWithTimeZoneMicro
-	UpdatedAt time.TimestampWithTimeZoneMicro
-	DeletedAt gorm.DeletedAt `gorm:"index"`
+	Id        int                             `json:"id" gorm:"column:id;type:integer;primaryKey;autoIncrement"`
+	FileUuid  uuid.UUID                       `json:"file_uuid" gorm:"column:file_uuid;type:uuid;not null"`
+	UserId    int                             `json:"user_id" gorm:"column:user_id;type:integer;not null;index;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	User      User                            `json:"user,omitempty" gorm:"foreignKey:UserId;references:Id"`
+	MediaKind string                          `json:"media_kind" gorm:"column:media_kind;type:varchar(20);default:'file'"`
+	CreatedAt time.TimestampWithTimeZoneMicro `json:"created_at" gorm:"column:created_at;autoCreateTime"`
+	UpdatedAt time.TimestampWithTimeZoneMicro `json:"updated_at" gorm:"column:updated_at;autoUpdateTime"`
+	DeletedAt gorm.DeletedAt                  `json:"deleted_at,omitempty" gorm:"column:deleted_at;index"`
+}
+
+func (Photo) TableName() string {
+	return "photos"
 }
 
 var PhotoNotFoundErr = errors.New("photo not found")
@@ -54,7 +58,7 @@ func GetPhotoById(ctx context.Context, db *gorm.DB, id int) (Photo, error) {
 
 func GetPhotosByUserId(ctx context.Context, db *gorm.DB, userId int) ([]Photo, error) {
 	var photos []Photo
-	result := db.WithContext(ctx).Where("user_id = ?", userId).Find(&photos)
+	result := db.WithContext(ctx).Table("photos").Where("user_id = ? AND deleted_at IS NULL", userId).Order("id DESC").Find(&photos)
 
 	return photos, result.Error
 }

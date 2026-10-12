@@ -18,39 +18,35 @@ type PhotoController struct {
 }
 
 func (pc *PhotoController) HandleRequest() {
-	pc.Controller.ServeMux.HandleFunc("GET /photos", func(w http.ResponseWriter, r *http.Request) {
+	pc.Controller.ServeMux.HandleFunc("GET /photos",
 		pc.ValidateAuth(func(w http.ResponseWriter, r *http.Request) {
 			pc.GetPhotos(w, c_http.NewRequest(r))
-		})
-	})
+		}))
 
 	pc.Controller.ServeMux.HandleFunc("POST /photo",
 		pc.ValidateAuth(pc.Validate(func(w http.ResponseWriter, r *http.Request) {
 			pc.CreatePhoto(w, c_http.NewRequest(r))
 		})))
 
-	pc.Controller.ServeMux.HandleFunc("GET /photo/{id}", func(w http.ResponseWriter, r *http.Request) {
+	pc.Controller.ServeMux.HandleFunc("GET /photo/{id}",
 		pc.ValidateAuth(func(w http.ResponseWriter, r *http.Request) {
 			pc.GetPhoto(w, c_http.NewRequest(r))
-		})
-	})
+		}))
 
-	pc.Controller.ServeMux.HandleFunc("GET /user/{id}/photos", func(w http.ResponseWriter, r *http.Request) {
+	pc.Controller.ServeMux.HandleFunc("GET /user/{id}/photos",
 		pc.ValidateAuth(func(w http.ResponseWriter, r *http.Request) {
 			pc.GetPhotosByUserId(w, c_http.NewRequest(r))
-		})
-	})
+		}))
 
 	pc.Controller.ServeMux.HandleFunc("PUT /photo/{id}",
 		pc.ValidateAuth(pc.Validate(func(w http.ResponseWriter, r *http.Request) {
 			pc.UpdatePhoto(w, c_http.NewRequest(r))
 		})))
 
-	pc.Controller.ServeMux.HandleFunc("DELETE /photo/{id}", func(w http.ResponseWriter, r *http.Request) {
+	pc.Controller.ServeMux.HandleFunc("DELETE /photo/{id}",
 		pc.ValidateAuth(func(w http.ResponseWriter, r *http.Request) {
 			pc.DeletePhoto(w, c_http.NewRequest(r))
-		})
-	})
+		}))
 }
 
 func (pc *PhotoController) GetPhotos(w http.ResponseWriter, r *c_http.Request) {
