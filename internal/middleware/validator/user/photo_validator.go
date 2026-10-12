@@ -10,7 +10,8 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"strings"
+
+	"github.com/google/uuid"
 )
 
 type PhotoValidatorFactory struct{}
@@ -65,7 +66,7 @@ func (pv PhotoValidator) Validate(next http.HandlerFunc) http.HandlerFunc {
 func (pv PhotoValidator) validateRequestRules(p user.Photo) []error {
 	var errList []error
 
-	if strings.TrimSpace(p.FileUuid.String()) == "" {
+	if p.FileUuid == uuid.Nil {
 		errList = append(errList, errors.New("invalid uuid"))
 	}
 

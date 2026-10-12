@@ -10,14 +10,14 @@ import (
 )
 
 type Photo struct {
-	gorm.Model `c_migrator:"enabled"`
-	Id         int       `json:"id" gorm:"type:int;unique;primaryKey;autoIncrement"`
-	FileUuid   uuid.UUID `gorm:"type:uuid;not null"`
-	UserId     int       `json:"user_id" gorm:"type:int;not null;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-	User       User      `json:"user" gorm:"foreignKey:UserId;references:Id"`
-	CreatedAt  time.TimestampWithTimeZoneMicro
-	UpdatedAt  time.TimestampWithTimeZoneMicro
-	DeletedAt  gorm.DeletedAt `gorm:"index"`
+	Id        int       `json:"id" gorm:"type:int;unique;primaryKey;autoIncrement"`
+	FileUuid  uuid.UUID `json:"file_uuid" gorm:"type:uuid;not null"`
+	UserId    int       `json:"user_id" gorm:"type:int;not null;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	User      User      `json:"user" gorm:"foreignKey:UserId;references:Id"`
+	MediaKind string    `json:"media_kind" gorm:"type:varchar(20);default:'file'"`
+	CreatedAt time.TimestampWithTimeZoneMicro
+	UpdatedAt time.TimestampWithTimeZoneMicro
+	DeletedAt gorm.DeletedAt `gorm:"index"`
 }
 
 var PhotoNotFoundErr = errors.New("photo not found")
