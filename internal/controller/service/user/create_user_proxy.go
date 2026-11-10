@@ -118,15 +118,20 @@ func (cup *CreateUserProxy) CreateUser(w http.ResponseWriter, r *c_http.Request)
 		return
 	}
 
-	//TODO: оба запроса во внешние сервисы должны выполняться безусловно, а транзакция выше должна откатываться
-	// тут нужно применить реббит или кафку
 	tokens, err := cup.createAuthUser(ctx, p, meta)
 	if err != nil {
+		if rbErr := cup.rollbackUserCreation(ctx, u.Id); rbErr != nil {
+			slog.Error("failed to rollback user after auth service error", "user_id", u.Id, "rollback_error", rbErr.Error(), "auth_error", err.Error())
+		}
 		c_http.NewResponse().SendError(w, "Failed to auth. "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+
 	err = cup.createMessageUser(ctx, meta)
 	if err != nil {
+		if rbErr := cup.rollbackUserCreation(ctx, u.Id); rbErr != nil {
+			slog.Error("failed to rollback user after message service error", "user_id", u.Id, "rollback_error", rbErr.Error(), "message_error", err.Error())
+		}
 		c_http.NewResponse().SendError(w, "Failed to create message user. "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -177,6 +182,27 @@ func (cup *CreateUserProxy) createProperty(ctx context.Context, tx *gorm.DB, p *
 	}
 
 	return user.CreateProperty(ctx, tx, p)
+}
+
+func (cup *CreateUserProxy) rollbackUserCreation(ctx context.Context, userId int) error {
+	return cup.Controller.Dependencies.DBDecorator.GDB().WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := user.DeletePropertyByUserId(ctx, tx, userId); err != nil &&
+			!errors.Is(err, user.PropertyNotFoundErr) {
+			slog.Warn("rollback: delete property failed", "user_id", userId, "error", err.Error())
+		}
+
+		if err := user.DeleteMetaByUserId(ctx, tx, userId); err != nil &&
+			!errors.Is(err, user.MetaNotFoundErr) {
+			slog.Warn("rollback: delete meta failed", "user_id", userId, "error", err.Error())
+		}
+
+		if err := user.DeleteUserById(ctx, tx, userId); err != nil &&
+			!errors.Is(err, user.UserNotFoundErr) {
+			return err
+		}
+
+		return nil
+	})
 }
 
 func (cup *CreateUserProxy) createAuthUser(
@@ -259,6 +285,11 @@ func (cup *CreateUserProxy) createMessageUser(ctx context.Context, m user.Meta) 
 			slog.Error("error closing message response body: ", err.Error())
 		}
 	}(resp.Body)
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		return errors.New("message service returned non-ok status")
+	}
+
 	return nil
 }
 
