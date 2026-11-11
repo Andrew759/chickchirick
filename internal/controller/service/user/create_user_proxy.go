@@ -53,6 +53,8 @@ type CreateUserProxy struct {
 }
 
 func (cup *CreateUserProxy) HandleRequest() {
+	//TODO: методы названы криво, по сути это метод регистрации, рядом с которым
+	// лежит метод логина. Нужно подумать что с этим сделать
 	cup.Controller.ServeMux.HandleFunc("POST /frontend/user", func(w http.ResponseWriter, r *http.Request) {
 		cup.UPV.Validate(func(w http.ResponseWriter, r *http.Request) {
 			cup.PV.Validate(func(w http.ResponseWriter, r *http.Request) {
